@@ -1,37 +1,34 @@
 import { StyleSheet, Dimensions } from "react-native";
-import { theme } from '../../../../styles/theme';
+import { theme } from "../../../../styles/theme";
 
 const { height, width } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   luna: {
-    position: 'absolute',
-    alignSelf: 'center',
-    
+    position: "absolute",
+    alignSelf: "center",
   },
   logo: {
     position: "absolute",
     alignSelf: "center",
   },
   login: {
-    width: width, // deixa um pouco menor que a tela
-    height: '70%',
+    width: width,
+    height: "70%",
     backgroundColor: theme.colors.primary,
-    position: 'absolute',
-    bottom: 0, // inicia no final da tela
+    position: "absolute",
+    bottom: 0,
     borderTopEndRadius: theme.radius.lg,
-    
     padding: 72,
-    alignSelf: 'center', // centraliza horizontalmente
-},
-
+    alignSelf: "center",
+  },
   titleModal: {
     fontSize: theme.fontSize.title,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: "Inter_700Bold",
     color: theme.colors.secondary,
     marginBottom: theme.spacing.lg,
   },
@@ -43,21 +40,21 @@ export const styles = StyleSheet.create({
   },
   CustomButton: {
     marginTop: theme.spacing.lg,
-    alignSelf: 'center',
-    marginBottom: theme.spacing.sm
+    alignSelf: "center",
+    marginBottom: theme.spacing.sm,
   },
   row: {
     width: 262,
     height: 1,
     backgroundColor: theme.colors.secondary,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: theme.spacing.xx,
   },
   socialIcons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     width: 200,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: theme.spacing.sm,
   },
 });

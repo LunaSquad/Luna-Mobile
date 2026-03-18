@@ -31,7 +31,7 @@ type Plano = {
 };
 
 type ActivitiesProgressScreenProps = {
-  route: {
+  route?: {
     params?: RouteParams;
   };
 };
@@ -39,9 +39,9 @@ type ActivitiesProgressScreenProps = {
 export default function ActivitiesProgressScreen({
   route,
 }: ActivitiesProgressScreenProps) {
-  const { materiaId, materiaNome } = route.params || {};
+  const { materiaId, materiaNome } = route?.params || {};
 
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [planos, setPlanos] = useState<Plano[]>([]);
 
   const logoPosition = useSharedValue(height / 2 - 100);
@@ -54,10 +54,12 @@ export default function ActivitiesProgressScreen({
         duration: 600,
         easing: Easing.out(Easing.exp),
       });
+
       logoPosition.value = withTiming(90, {
         duration: 600,
         easing: Easing.out(Easing.exp),
       });
+
       modalTranslate.value = withTiming(0, {
         duration: 800,
         easing: Easing.out(Easing.exp),

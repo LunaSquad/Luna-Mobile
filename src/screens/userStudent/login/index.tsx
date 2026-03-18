@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { theme } from "../../../styles/theme";
-import CustomInput  from "../../../components/input/customInput.tsx";
+import CustomInput  from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { styles } from "./style/style";

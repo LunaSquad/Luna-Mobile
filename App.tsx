@@ -2,14 +2,16 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 
-import { useFonts, Inter_300Light, Inter_700Bold } from "@expo-google-fonts/inter";
+import {
+  useFonts,
+  Inter_300Light,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 import AppLoading from "expo-app-loading";
 
-import StudentTabs from "./src/routes/appTab.js";
+import Routes from "./src/routes/index";
 
-import Routes from "./src/routes/index.js";
-
-export default function App() {
+export default function App(): React.JSX.Element {
   const [fontsLoaded] = useFonts({
     Inter_300Light,
     Inter_700Bold,
@@ -18,7 +20,6 @@ export default function App() {
   if (!fontsLoaded) return <AppLoading />;
 
   return (
-    
     <NavigationContainer>
       <Routes />
     </NavigationContainer>

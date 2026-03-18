@@ -1,77 +1,43 @@
-import { ReactNode } from "react";
+import React from "react";
 import {
-  View,
+  TouchableOpacity,
   Text,
-  TextInput,
   StyleSheet,
   StyleProp,
   ViewStyle,
 } from "react-native";
 import { theme } from "../../styles/theme";
 
-type CustomInputProps = {
-  title?: string;
-  placeholder?: string;
-  icon?: ReactNode;
-  value: string;
-  onChangeText: (text: string) => void;
-  secureTextEntry?: boolean;
+type Props = {
+  title: string;
+  onPress?: () => void | Promise<void>;
   style?: StyleProp<ViewStyle>;
 };
 
-export default function CustomInput({
+export default function CustomButton({
   title,
-  placeholder,
-  icon,
-  value,
-  onChangeText,
-  secureTextEntry = false,
+  onPress,
   style,
-}: CustomInputProps) {
+}: Props) {
   return (
-    <View style={[styles.container, style]}>
-      {title ? <Text style={styles.label}>{title}</Text> : null}
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors.textInput}
-          value={value}
-          onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry}
-        />
-        {icon ? <View style={styles.icon}>{icon}</View> : null}
-      </View>
-    </View>
+    <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
+      <Text style={styles.buttonText}>{title}</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: theme.fontSize.normal,
-    color: theme.colors.textPrimary,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 24,
-  },
-  inputContainer: {
-    flexDirection: "row",
+  button: {
+    backgroundColor: theme.colors.secondary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderColor: theme.colors.textPrimary,
-    marginBottom: 30,
   },
-  input: {
-    flex: 1,
-    paddingVertical: 8,
-    fontSize: theme.fontSize.small,
-    color: theme.colors.textDark,
-  },
-  icon: {
-    marginLeft: 8,
+
+  buttonText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: theme.fontSize.normal,
   },
 });
