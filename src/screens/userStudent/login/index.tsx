@@ -59,6 +59,8 @@ export default function LoginScreen() {
       });
     }, 500);
 
+    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -94,6 +96,8 @@ export default function LoginScreen() {
           navigation.replace("StudentTabs", {
             userId: data.userId,
             tipoUser: data.tipoUser,
+
+            
           });
           return;
         }
@@ -103,6 +107,8 @@ export default function LoginScreen() {
           return;
         }
       }
+
+      
 
       Alert.alert("Erro", data.message || "Email ou senha inválidos");
     } catch (err) {

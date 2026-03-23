@@ -1,14 +1,10 @@
-from app.repositories.subjectRepository import find_subjects_by_school
+from app.repositories.subjectRepository import find_subjects_by_escola_id
 
-def get_subjects_by_school(escola_id: str):
-    docs = find_subjects_by_school(escola_id)
+def get_subjects_by_escola_id(escola_id: str):
 
-    lista = []
-    for m in docs:
-        lista.append({
-            "id": str(m["_id"]),
-            "nome": m.get("nome", ""),
-            "rota": m.get("rota", "Atividades"),
-        })
+    materias = find_subjects_by_escola_id(escola_id)
 
-    return {"ok": True, "materias": lista}
+    return {
+        "ok": True,
+        "materias": materias
+    }

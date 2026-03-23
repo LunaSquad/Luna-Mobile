@@ -135,68 +135,75 @@ export default function Home({ route }: HomeProps) {
     return `${n}.`;
   }
 
-  useEffect(() => {
-    async function carregarTudo() {
-      try {
-        if (!userId) {
-          console.log("❌ Sem userId vindo do login");
-          return;
-        }
+useEffect(() => {
+  async function carregarTudo() {
+    try {
+      console.log("HOME userId:", userId);
+      console.log("HOME tipoUser:", tipoUser);
 
-        const respAluno = await fetch(`http://192.168.1.73:8000/aluno/${userId}`);
-        const dataAluno: AlunoResponse = await respAluno.json();
-        console.log("DADOS ALUNO:", dataAluno);
-
-        if (!dataAluno.ok) {
-          console.log("❌", dataAluno.message);
-          return;
-        }
-
-        setAluno(dataAluno.aluno || null);
-
-        const escolaID = dataAluno.aluno?.escolaID;
-        if (!escolaID) {
-          console.log("❌ aluno sem escolaID");
-          return;
-        }
-
-        const respMat = await fetch(`http://192.168.1.73:8000/materias/${escolaID}`);
-        const dataMat: MateriasResponse = await respMat.json();
-        console.log("MATERIAS:", dataMat);
-
-        if (dataMat.ok) {
-          const cards: MateriaCardData[] = (dataMat.materias || []).map(
-            (m, idx) => {
-              const preset = materiaPreset(m.nome);
-
-              return {
-                id: m.id,
-                number: formatNumber(idx),
-                title: preset.title,
-                nome: m.nome,
-                image: preset.image,
-                backgroundColor: preset.backgroundColor,
-                buttonColor: preset.buttonColor,
-                rota: m.rota || "Atividades",
-              };
-            }
-          );
-
-          setMaterias(cards);
-        }
-      } catch (e) {
-        console.log("ERRO:", e);
-      } finally {
-        setLoading(false);
+      if (!userId) {
+        console.log("❌ Sem userId vindo do login");
+        return;
       }
-    }
 
-    if (tipoUser === "aluno") {
-      carregarTudo();
-    } else {
+      const respAluno = await fetch(`http://192.168.1.73:8000/aluno/${userId}`);
+      console.log("STATUS ALUNO:", respAluno.status);
+
+      const dataAluno: AlunoResponse = await respAluno.json();
+      console.log("DADOS ALUNO:", dataAluno);
+
+      if (!dataAluno.ok) {
+        console.log("❌", dataAluno.message);
+        return;
+      }
+
+      setAluno(dataAluno.aluno || null);
+
+      const escolaID = dataAluno.aluno?.escolaID;
+      console.log("ESCOLA ID:", escolaID);
+
+      if (!escolaID) {
+        console.log("❌ aluno sem escolaID");
+        return;
+      }
+
+      const respMat = await fetch(`http://192.168.1.73:8000/materias/${escolaID}`);
+      console.log("STATUS MATERIAS:", respMat.status);
+
+      const dataMat: MateriasResponse = await respMat.json();
+      console.log("MATERIAS:", dataMat);
+
+      if (dataMat.ok) {
+        const cards: MateriaCardData[] = (dataMat.materias || []).map((m, idx) => {
+          const preset = materiaPreset(m.nome);
+
+          return {
+            id: m.id,
+            number: formatNumber(idx),
+            title: preset.title,
+            nome: m.nome,
+            image: preset.image,
+            backgroundColor: preset.backgroundColor,
+            buttonColor: preset.buttonColor,
+            rota: m.rota || "Atividades",
+          };
+        });
+
+        setMaterias(cards);
+      }
+    } catch (e) {
+      console.log("ERRO:", e);
+    } finally {
       setLoading(false);
     }
-  }, [userId, tipoUser]);
+  }
+
+  if (tipoUser === "aluno") {
+    carregarTudo();
+  } else {
+    setLoading(false);
+  }
+}, [userId, tipoUser]);
 
   return (
     <ScrollView style={styles.container}>
