@@ -11,6 +11,7 @@ import { theme } from "../../../styles/theme";
 import CustomInput  from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
 const { height } = Dimensions.get("window");
@@ -82,7 +83,7 @@ export default function LoginScreen() {
 
   async function handleLogin(): Promise<void> {
     try {
-      const response = await fetch("http://192.168.1.73:8000/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),

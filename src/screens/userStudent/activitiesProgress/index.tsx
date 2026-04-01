@@ -17,6 +17,7 @@ import Animated, {
 import { useNavigation } from "@react-navigation/native";
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
+import API_BASE_URL from "../../../services/ip";
 
 const { height } = Dimensions.get("window");
 
@@ -89,7 +90,7 @@ useEffect(() => {
         return;
       }
 
-      const resp = await fetch(`http://192.168.1.73:8000/planos/${materiaId}`);
+      const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
       const data: { ok: boolean; planos?: Plano[] } = await resp.json();
 
       console.log("PLANOS:", data);
@@ -126,7 +127,7 @@ useEffect(() => {
         return;
       }
 
-      const resp = await fetch(`http://192.168.1.73:8000/planos/${materiaId}`);
+      const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
       const data: { ok: boolean; planos?: Plano[] } = await resp.json();
 
       console.log("PLANOS:", data);

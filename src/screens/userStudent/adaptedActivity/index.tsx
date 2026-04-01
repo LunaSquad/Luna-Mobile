@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { RouteProp } from "@react-navigation/native";
+import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
 type RootStackParamList = {
@@ -84,7 +85,7 @@ export default function AdaptedActivityScreen({
         setLoading(true);
         setErro("");
 
-        const resp = await fetch("http://192.168.1.73:8000/ai/adaptar", {
+        const resp = await fetch(`${API_BASE_URL}/ai/adaptar`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

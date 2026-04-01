@@ -10,6 +10,7 @@ import {
   ImageSourcePropType,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import API_BASE_URL from "../../../services/ip";
 
 import styles from "./style/style";
 
@@ -146,7 +147,7 @@ useEffect(() => {
         return;
       }
 
-      const respAluno = await fetch(`http://192.168.1.73:8000/aluno/${userId}`);
+      const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
       console.log("STATUS ALUNO:", respAluno.status);
 
       const dataAluno: AlunoResponse = await respAluno.json();
@@ -167,7 +168,7 @@ useEffect(() => {
         return;
       }
 
-      const respMat = await fetch(`http://192.168.1.73:8000/materias/${escolaID}`);
+      const respMat = await fetch(`http://10.228.213.235:8000/materias/${escolaID}`);
       console.log("STATUS MATERIAS:", respMat.status);
 
       const dataMat: MateriasResponse = await respMat.json();
