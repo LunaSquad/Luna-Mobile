@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { RouteProp } from "@react-navigation/native";
+import QuizMolde from "../../../components/moldes/quizMolde";
 import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
@@ -113,11 +114,35 @@ export default function AdaptedActivityScreen({
     carregarAtividadeAdaptada();
   }, [planoTitulo, planoDescricao, hiperfoco]);
 
-  function renderConteudo() {
-    if (!dados?.atividade) return null;
+  function renderQuizMolde(atividade: AtividadeAdaptada) {
+    const primeiraPergunta = atividade.conteudo.perguntas?.[0];
 
-    const atividade = dados.atividade;
+    if (!primeiraPergunta) {
+      return (
+        <View style={styles.card}>
+          <Text style={styles.label}>Atividade adaptada</Text>
+          <Text style={styles.value}>
+            Nenhuma pergunta foi encontrada para o molde de quiz.
+          </Text>
+        </View>
+      );
+    }
 
+return (
+  <QuizMolde
+    pergunta={primeiraPergunta.pergunta}
+    opcoes={primeiraPergunta.alternativas || []}
+    respostaCorreta={
+      primeiraPergunta.correta || primeiraPergunta.resposta_esperada || ""
+    }
+    imagens={[]}
+    titulo="luna"
+    subtitulo={dados?.molde?.titulo || "Atividade adaptada"}
+  />
+);
+  }
+
+  function renderConteudoGenerico(atividade: AtividadeAdaptada) {
     return (
       <View style={styles.card}>
         <Text style={styles.label}>Título da atividade</Text>
@@ -151,9 +176,10 @@ export default function AdaptedActivityScreen({
                   </Text>
                 ))}
 
-                {item.resposta_esperada ? (
+                {(item.correta || item.resposta_esperada) ? (
                   <Text style={styles.answer}>
-                    Resposta esperada: {item.resposta_esperada}
+                    Resposta esperada:{" "}
+                    {item.correta || item.resposta_esperada}
                   </Text>
                 ) : null}
               </View>
@@ -186,12 +212,49 @@ export default function AdaptedActivityScreen({
               <View key={index} style={styles.block}>
                 <Text style={styles.question}>Fase {fase.fase}</Text>
                 <Text style={styles.value}>{fase.desafio}</Text>
+                <Text style={styles.answer}>Resposta: {fase.resposta}</Text>
               </View>
             ))}
           </>
         ) : null}
+
+        {atividade.conteudo.resumo_plano ? (
+          <>
+            <Text style={styles.label}>Resumo do plano</Text>
+            <Text style={styles.value}>{atividade.conteudo.resumo_plano}</Text>
+          </>
+        ) : null}
+
+        {atividade.conteudo.palavras_chave?.length ? (
+          <>
+            <Text style={styles.label}>Palavras-chave</Text>
+            <Text style={styles.value}>
+              {atividade.conteudo.palavras_chave.join(", ")}
+            </Text>
+          </>
+        ) : null}
       </View>
     );
+  }
+
+  function renderConteudo() {
+    if (!dados?.atividade) return null;
+
+    const atividade = dados.atividade;
+    const tipoAtividade = atividade.tipo?.toLowerCase?.() || "";
+    const moldeId = dados.molde_id?.toLowerCase?.() || "";
+    const tituloMolde = dados.molde?.titulo?.toLowerCase?.() || "";
+
+    const ehQuiz =
+      tipoAtividade.includes("quiz") ||
+      moldeId.includes("quiz") ||
+      tituloMolde.includes("quiz");
+
+    if (ehQuiz) {
+      return renderQuizMolde(atividade);
+    }
+
+    return renderConteudoGenerico(atividade);
   }
 
   return (
@@ -228,10 +291,21 @@ export default function AdaptedActivityScreen({
         <>
           <View style={styles.card}>
             <Text style={styles.label}>Molde escolhido</Text>
-            <Text style={styles.value}>{dados.molde?.titulo || dados.molde_id}</Text>
+            <Text style={styles.value}>
+              {dados.molde?.titulo || dados.molde_id}
+            </Text>
 
             <Text style={styles.label}>ID do molde</Text>
             <Text style={styles.value}>{dados.molde_id}</Text>
+
+            {dados.confianca !== undefined && dados.confianca !== null ? (
+              <>
+                <Text style={styles.label}>Confiança</Text>
+                <Text style={styles.value}>
+                  {(dados.confianca * 100).toFixed(1)}%
+                </Text>
+              </>
+            ) : null}
 
             <Text style={styles.label}>Prompt da imagem</Text>
             <Text style={styles.value}>{dados.prompt_imagem}</Text>

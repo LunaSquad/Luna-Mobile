@@ -168,7 +168,7 @@ useEffect(() => {
         return;
       }
 
-      const respMat = await fetch(`http://10.228.213.235:8000/materias/${escolaID}`);
+      const respMat = await fetch(`${API_BASE_URL}/materias/${escolaID}`);
       console.log("STATUS MATERIAS:", respMat.status);
 
       const dataMat: MateriasResponse = await respMat.json();
