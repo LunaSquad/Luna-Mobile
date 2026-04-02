@@ -8,8 +8,11 @@ import {
 } from "react-native";
 import { RouteProp } from "@react-navigation/native";
 import QuizMolde from "../../../components/moldes/quizMolde";
+import FasesMolde from "../../../components/moldes/fasesMolde";
 import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
+
+const DEBUG_MOLDE: "quiz" | "fases" | null = "fases";
 
 type RootStackParamList = {
   AdaptedActivity: {
@@ -86,6 +89,78 @@ export default function AdaptedActivityScreen({
         setLoading(true);
         setErro("");
 
+        if (DEBUG_MOLDE === "quiz") {
+          const dataMockQuiz: AdaptarResponse = {
+            molde_id: "quiz",
+            molde: {
+              id: "quiz",
+              titulo: "Quiz Interativo",
+              tema_visual: "gamificado",
+              palavras_chave: ["quiz", "resposta", "alternativas"],
+            },
+            confianca: 0.98,
+            prompt_imagem: "Minions fazendo uma atividade de matemática",
+            atividade: {
+              titulo: "Quiz de Matemática",
+              tipo: "quiz",
+              descricao: "Escolha a alternativa correta.",
+              conteudo: {
+                perguntas: [
+                  {
+                    pergunta: "Quanto é 2 + 2?",
+                    alternativas: ["3", "4", "5"],
+                    correta: "4",
+                  },
+                ],
+              },
+            },
+          };
+
+          setDados(dataMockQuiz);
+          return;
+        }
+
+        if (DEBUG_MOLDE === "fases") {
+          const dataMockFases: AdaptarResponse = {
+            molde_id: "fases",
+            molde: {
+              id: "fases",
+              titulo: "Jogo de Fases",
+              tema_visual: "aventura",
+              palavras_chave: ["fases", "desafio", "missão"],
+            },
+            confianca: 0.96,
+            prompt_imagem: "Personagem infantil em missão educativa",
+            atividade: {
+              titulo: "Missão Matemática",
+              tipo: "jogo em fases",
+              descricao: "Resolva cada fase para avançar.",
+              conteudo: {
+                fases: [
+                  {
+                    fase: 1,
+                    desafio: "Quanto é 2 + 2?",
+                    resposta: "4",
+                  },
+                  {
+                    fase: 2,
+                    desafio: "Quanto é 5 + 3?",
+                    resposta: "8",
+                  },
+                  {
+                    fase: 3,
+                    desafio: "Quanto é 10 - 6?",
+                    resposta: "4",
+                  },
+                ],
+              },
+            },
+          };
+
+          setDados(dataMockFases);
+          return;
+        }
+
         const resp = await fetch(`${API_BASE_URL}/ai/adaptar`, {
           method: "POST",
           headers: {
@@ -128,18 +203,41 @@ export default function AdaptedActivityScreen({
       );
     }
 
-return (
-  <QuizMolde
-    pergunta={primeiraPergunta.pergunta}
-    opcoes={primeiraPergunta.alternativas || []}
-    respostaCorreta={
-      primeiraPergunta.correta || primeiraPergunta.resposta_esperada || ""
+    return (
+      <QuizMolde
+        pergunta={primeiraPergunta.pergunta}
+        opcoes={primeiraPergunta.alternativas || []}
+        respostaCorreta={
+          primeiraPergunta.correta || primeiraPergunta.resposta_esperada || ""
+        }
+        imagens={[]}
+        titulo="luna"
+        subtitulo={dados?.molde?.titulo || "Atividade adaptada"}
+      />
+    );
+  }
+
+  function renderFasesMolde(atividade: AtividadeAdaptada) {
+    const fases = atividade.conteudo.fases || [];
+
+    if (!fases.length) {
+      return (
+        <View style={styles.card}>
+          <Text style={styles.label}>Atividade adaptada</Text>
+          <Text style={styles.value}>
+            Nenhuma fase foi encontrada para o molde de desafios.
+          </Text>
+        </View>
+      );
     }
-    imagens={[]}
-    titulo="luna"
-    subtitulo={dados?.molde?.titulo || "Atividade adaptada"}
-  />
-);
+
+    return (
+      <FasesMolde
+        fases={fases}
+        titulo="luna"
+        subtitulo={dados?.molde?.titulo || "Missão interativa"}
+      />
+    );
   }
 
   function renderConteudoGenerico(atividade: AtividadeAdaptada) {
@@ -250,8 +348,23 @@ return (
       moldeId.includes("quiz") ||
       tituloMolde.includes("quiz");
 
+    const ehFases =
+      tipoAtividade.includes("fase") ||
+      tipoAtividade.includes("jogo") ||
+      tipoAtividade.includes("desafio") ||
+      moldeId.includes("fase") ||
+      moldeId.includes("jogo") ||
+      moldeId.includes("desafio") ||
+      tituloMolde.includes("fase") ||
+      tituloMolde.includes("jogo") ||
+      tituloMolde.includes("desafio");
+
     if (ehQuiz) {
       return renderQuizMolde(atividade);
+    }
+
+    if (ehFases) {
+      return renderFasesMolde(atividade);
     }
 
     return renderConteudoGenerico(atividade);
