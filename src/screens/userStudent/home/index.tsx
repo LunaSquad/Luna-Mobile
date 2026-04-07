@@ -38,12 +38,21 @@ type HomeProps = {
   };
 };
 
+type Hiperfoco = {
+  hiperfocoID?: string;
+  nome?: string;
+  descricao?: string;
+  urlFotoHiperfoco?: string;
+};
+
 type Aluno = {
   nome?: string;
   RA?: string;
   turmaID?: string;
   escolaID?: string;
   urlFotoAluno?: string;
+  hyperfoco?: Hiperfoco;
+  hiperfoco?: Hiperfoco;
 };
 
 type MateriaApi = {
@@ -136,75 +145,92 @@ export default function Home({ route }: HomeProps) {
     return `${n}.`;
   }
 
-useEffect(() => {
-  async function carregarTudo() {
-    try {
-      console.log("HOME userId:", userId);
-      console.log("HOME tipoUser:", tipoUser);
+  useEffect(() => {
+    async function carregarTudo() {
+      try {
+        console.log("HOME userId:", userId);
+        console.log("HOME tipoUser:", tipoUser);
 
-      if (!userId) {
-        console.log("❌ Sem userId vindo do login");
-        return;
+        if (!userId) {
+          console.log("❌ Sem userId vindo do login");
+          return;
+        }
+
+        const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
+        console.log("STATUS ALUNO:", respAluno.status);
+
+        const dataAluno: AlunoResponse = await respAluno.json();
+        console.log("DADOS ALUNO:", dataAluno);
+
+        if (!dataAluno.ok) {
+          console.log("❌", dataAluno.message);
+          return;
+        }
+
+        setAluno(dataAluno.aluno || null);
+
+        const escolaID = dataAluno.aluno?.escolaID;
+        console.log("ESCOLA ID:", escolaID);
+
+        const hiperfocoNome =
+          dataAluno.aluno?.hiperfoco?.nome ||
+          dataAluno.aluno?.hyperfoco?.nome ||
+          "";
+
+        console.log("HIPERFOCO:", hiperfocoNome);
+
+        if (!escolaID) {
+          console.log("❌ aluno sem escolaID");
+          return;
+        }
+
+        const respMat = await fetch(`${API_BASE_URL}/materias/${escolaID}`);
+        console.log("STATUS MATERIAS:", respMat.status);
+
+        const dataMat: MateriasResponse = await respMat.json();
+        console.log("MATERIAS:", dataMat);
+
+        if (dataMat.ok) {
+          const cards: MateriaCardData[] = (dataMat.materias || []).map(
+            (m, idx) => {
+              const preset = materiaPreset(m.nome);
+
+              return {
+                id: m.id,
+                number: formatNumber(idx),
+                title: preset.title,
+                nome: m.nome,
+                image: preset.image,
+                backgroundColor: preset.backgroundColor,
+                buttonColor: preset.buttonColor,
+                rota: m.rota || "Atividades",
+              };
+            }
+          );
+
+          setMaterias(cards);
+        }
+      } catch (e) {
+        console.log("ERRO:", e);
+      } finally {
+        setLoading(false);
       }
+    }
 
-      const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
-      console.log("STATUS ALUNO:", respAluno.status);
-
-      const dataAluno: AlunoResponse = await respAluno.json();
-      console.log("DADOS ALUNO:", dataAluno);
-
-      if (!dataAluno.ok) {
-        console.log("❌", dataAluno.message);
-        return;
-      }
-
-      setAluno(dataAluno.aluno || null);
-
-      const escolaID = dataAluno.aluno?.escolaID;
-      console.log("ESCOLA ID:", escolaID);
-
-      if (!escolaID) {
-        console.log("❌ aluno sem escolaID");
-        return;
-      }
-
-      const respMat = await fetch(`${API_BASE_URL}/materias/${escolaID}`);
-      console.log("STATUS MATERIAS:", respMat.status);
-
-      const dataMat: MateriasResponse = await respMat.json();
-      console.log("MATERIAS:", dataMat);
-
-      if (dataMat.ok) {
-        const cards: MateriaCardData[] = (dataMat.materias || []).map((m, idx) => {
-          const preset = materiaPreset(m.nome);
-
-          return {
-            id: m.id,
-            number: formatNumber(idx),
-            title: preset.title,
-            nome: m.nome,
-            image: preset.image,
-            backgroundColor: preset.backgroundColor,
-            buttonColor: preset.buttonColor,
-            rota: m.rota || "Atividades",
-          };
-        });
-
-        setMaterias(cards);
-      }
-    } catch (e) {
-      console.log("ERRO:", e);
-    } finally {
+    if (tipoUser === "aluno") {
+      carregarTudo();
+    } else {
       setLoading(false);
     }
-  }
+  }, [userId, tipoUser]);
 
-  if (tipoUser === "aluno") {
-    carregarTudo();
-  } else {
-    setLoading(false);
-  }
-}, [userId, tipoUser]);
+  const hiperfocoNome =
+    aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
+
+  const hiperfocoDescricao =
+    aluno?.hiperfoco?.descricao ||
+    aluno?.hyperfoco?.descricao ||
+    "Nenhum hiperfoco cadastrado.";
 
   return (
     <ScrollView style={styles.container}>
@@ -236,8 +262,16 @@ useEffect(() => {
         <View style={styles.spaceHiperfocoAux}>
           <View style={styles.spaceHiperfoco}>
             <Text style={styles.textoHiperfoco}>
-              Indique o hiperfoco {"\n"}da criança aqui!
+              {loading
+                ? "Carregando hiperfoco..."
+                : `Hiperfoco da criança:\n${hiperfocoNome}`}
             </Text>
+
+            {!loading && (
+              <Text style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+                {hiperfocoDescricao}
+              </Text>
+            )}
 
             <View style={{ flexDirection: "row" }}>
               <Image source={seta} style={styles.imageSeta} />
@@ -287,6 +321,9 @@ useEffect(() => {
             <Text>RA: {aluno.RA}</Text>
             <Text>Turma: {aluno.turmaID}</Text>
             <Text>Escola: {aluno.escolaID}</Text>
+            <Text>
+              Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome}
+            </Text>
           </View>
         )}
       </View>

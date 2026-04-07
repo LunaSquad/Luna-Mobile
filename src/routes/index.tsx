@@ -4,7 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Login from "../screens/userStudent/login/index";
 import StudentTabs from "./appTab";
 import Activies from "../screens/userStudent/activitiesProgress/index";
-import AdaptedActivity from "../screens/userStudent/adaptedActivity/index";
+import AdaptedActivity from "../screens//userStudent/adaptedActivity/index";
 
 export type RootStackParamList = {
   Login: undefined;

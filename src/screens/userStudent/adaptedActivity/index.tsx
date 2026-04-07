@@ -12,13 +12,13 @@ import FasesMolde from "../../../components/moldes/fasesMolde";
 import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
-const DEBUG_MOLDE: "quiz" | "fases" | null = "fases";
+const DEBUG_MOLDE: "quiz" | "fases" | null = null;
 
 type RootStackParamList = {
   AdaptedActivity: {
     planoTitulo: string;
     planoDescricao: string;
-    hiperfoco: string;
+    userId: string;
   };
 };
 
@@ -73,21 +73,65 @@ type AdaptarResponse = {
   atividade: AtividadeAdaptada;
 };
 
+type Hiperfoco = {
+  hiperfocoID?: string;
+  nome?: string;
+  descricao?: string;
+  urlFotoHiperfoco?: string;
+};
+
+type Aluno = {
+  nome?: string;
+  RA?: string;
+  turmaID?: string;
+  escolaID?: string;
+  urlFotoAluno?: string;
+  hiperfoco?: Hiperfoco;
+};
+
+type AlunoResponse = {
+  ok: boolean;
+  aluno?: Aluno;
+  message?: string;
+};
+
 export default function AdaptedActivityScreen({
   route,
   navigation,
 }: Props) {
-  const { planoTitulo, planoDescricao, hiperfoco } = route.params;
+  const { planoTitulo, planoDescricao, userId } = route.params;
 
   const [loading, setLoading] = useState(true);
   const [dados, setDados] = useState<AdaptarResponse | null>(null);
   const [erro, setErro] = useState("");
+  const [hiperfocoAluno, setHiperfocoAluno] = useState("");
 
   useEffect(() => {
     async function carregarAtividadeAdaptada() {
       try {
         setLoading(true);
         setErro("");
+
+        if (!userId) {
+          throw new Error("userId não foi enviado para a atividade adaptada");
+        }
+
+        const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
+        const dataAluno: AlunoResponse = await respAluno.json();
+
+        if (!respAluno.ok || !dataAluno.ok) {
+          throw new Error(
+            dataAluno.message || "Não foi possível buscar o aluno"
+          );
+        }
+
+        const hiperfoco = dataAluno.aluno?.hiperfoco?.nome || "";
+
+        if (!hiperfoco) {
+          throw new Error("O aluno não possui hiperfoco cadastrado");
+        }
+
+        setHiperfocoAluno(hiperfoco);
 
         if (DEBUG_MOLDE === "quiz") {
           const dataMockQuiz: AdaptarResponse = {
@@ -99,9 +143,9 @@ export default function AdaptedActivityScreen({
               palavras_chave: ["quiz", "resposta", "alternativas"],
             },
             confianca: 0.98,
-            prompt_imagem: "Minions fazendo uma atividade de matemática",
+            prompt_imagem: `Atividade de ${planoTitulo} com hiperfoco em ${hiperfoco}`,
             atividade: {
-              titulo: "Quiz de Matemática",
+              titulo: `Quiz com ${hiperfoco}`,
               tipo: "quiz",
               descricao: "Escolha a alternativa correta.",
               conteudo: {
@@ -130,9 +174,9 @@ export default function AdaptedActivityScreen({
               palavras_chave: ["fases", "desafio", "missão"],
             },
             confianca: 0.96,
-            prompt_imagem: "Personagem infantil em missão educativa",
+            prompt_imagem: `Missão educativa com hiperfoco em ${hiperfoco}`,
             atividade: {
-              titulo: "Missão Matemática",
+              titulo: `Missão sobre ${hiperfoco}`,
               tipo: "jogo em fases",
               descricao: "Resolva cada fase para avançar.",
               conteudo: {
@@ -168,7 +212,7 @@ export default function AdaptedActivityScreen({
           },
           body: JSON.stringify({
             plano: `${planoTitulo}. ${planoDescricao}`,
-            hiperfoco,
+            hiperfoco: hiperfoco,
           }),
         });
 
@@ -187,7 +231,7 @@ export default function AdaptedActivityScreen({
     }
 
     carregarAtividadeAdaptada();
-  }, [planoTitulo, planoDescricao, hiperfoco]);
+  }, [planoTitulo, planoDescricao, userId]);
 
   function renderQuizMolde(atividade: AtividadeAdaptada) {
     const primeiraPergunta = atividade.conteudo.perguntas?.[0];
@@ -388,8 +432,10 @@ export default function AdaptedActivityScreen({
         <Text style={styles.label}>Descrição original</Text>
         <Text style={styles.value}>{planoDescricao}</Text>
 
-        <Text style={styles.label}>Hiperfoco</Text>
-        <Text style={styles.value}>{hiperfoco}</Text>
+        <Text style={styles.label}>Hiperfoco do aluno</Text>
+        <Text style={styles.value}>
+          {loading ? "Carregando..." : hiperfocoAluno || "Não informado"}
+        </Text>
       </View>
 
       {loading ? <ActivityIndicator size="large" /> : null}

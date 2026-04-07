@@ -24,6 +24,7 @@ const { height } = Dimensions.get("window");
 type RouteParams = {
   materiaId?: string;
   materiaNome?: string;
+  userId?: string;
 };
 
 type Plano = {
@@ -43,7 +44,7 @@ export default function ActivitiesProgressScreen({
   route,
 }: ActivitiesProgressScreenProps) {
   const navigation = useNavigation<any>();
-  const { materiaId, materiaNome } = route?.params || {};
+  const { materiaId, materiaNome, userId } = route?.params || {};
 
   const [loading, setLoading] = useState(true);
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -71,7 +72,7 @@ export default function ActivitiesProgressScreen({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [logoPosition, logoSize, modalTranslate]);
+  }, []);
 
   const lunaStyle = useAnimatedStyle(() => ({
     top: logoPosition.value - 70,
@@ -79,91 +80,65 @@ export default function ActivitiesProgressScreen({
     height: logoSize.value * 0.5,
   }));
 
-useEffect(() => {
-  async function carregarPlanos() {
-    console.log("PARAMS ATIVIDADES:", route?.params);
+  useEffect(() => {
+    async function carregarPlanos() {
+      console.log("PARAMS ATIVIDADES:", route?.params);
+      console.log("materiaId recebido:", materiaId);
+      console.log("materiaNome recebido:", materiaNome);
+      console.log("userId recebido:", userId);
 
-    try {
-      if (!materiaId) {
-        console.log("❌ Sem materiaId vindo da Home");
+      try {
+        if (!materiaId) {
+          console.log("❌ Sem materiaId vindo da Home");
+          setLoading(false);
+          return;
+        }
+
+        const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
+        const data: { ok: boolean; planos?: Plano[] } = await resp.json();
+
+        console.log("PLANOS:", data);
+
+        if (data.ok) {
+          const planosBanco = data.planos || [];
+
+          const planoExtra: Plano = {
+            idPlano: "mock-2",
+            titulo: "Rimas e Leitura Divertida",
+            descricao:
+              "Leitura e interpretação de pequenas histórias com rimas e palavras infantis.",
+            status: "andamento",
+          };
+
+          setPlanos([...planosBanco, planoExtra]);
+        } else {
+          setPlanos([]);
+        }
+      } catch (e) {
+        console.log("ERRO AO BUSCAR PLANOS:", e);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
-      const data: { ok: boolean; planos?: Plano[] } = await resp.json();
-
-      console.log("PLANOS:", data);
-
-      if (data.ok) {
-        const planosBanco = data.planos || [];
-
-        const planoExtra: Plano = {
-          idPlano: "mock-2",
-          titulo: "Rimas e Leitura Divertida",
-          descricao:
-            "Leitura e interpretação de pequenas histórias com rimas e palavras infantis.",
-          status: "andamento",
-        };
-
-        setPlanos([...planosBanco, planoExtra]);
-      }
-    } catch (e) {
-      console.log("ERRO AO BUSCAR PLANOS:", e);
-    } finally {
-      setLoading(false);
     }
-  }
 
-  carregarPlanos();
-}, [materiaId, route?.params]);useEffect(() => {
-  async function carregarPlanos() {
-    console.log("PARAMS ATIVIDADES:", route?.params);
-
-    try {
-      if (!materiaId) {
-        console.log("❌ Sem materiaId vindo da Home");
-        setLoading(false);
-        return;
-      }
-
-      const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
-      const data: { ok: boolean; planos?: Plano[] } = await resp.json();
-
-      console.log("PLANOS:", data);
-
-      if (data.ok) {
-        const planosBanco = data.planos || [];
-
-        const planoExtra: Plano = {
-          idPlano: "mock-2",
-          titulo: "Rimas e Leitura Divertida",
-          descricao:
-            "Leitura e interpretação de pequenas histórias com rimas e palavras infantis.",
-          status: "andamento",
-        };
-
-        setPlanos([...planosBanco, planoExtra]);
-      }
-    } catch (e) {
-      console.log("ERRO AO BUSCAR PLANOS:", e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  carregarPlanos();
-}, [materiaId, route?.params]);
+    carregarPlanos();
+  }, [materiaId, materiaNome, userId, route?.params]);
 
   const emAndamento = planos.filter((p) => p.status === "andamento");
   const vencidas = planos.filter((p) => p.status === "vencida");
   const concluidas = planos.filter((p) => p.status === "concluida");
 
   function abrirAtividadeAdaptada(plano: Plano) {
+    console.log("Abrindo AdaptedActivity com:", {
+      planoTitulo: plano.titulo,
+      planoDescricao: plano.descricao,
+      userId,
+    });
+
     navigation.navigate("AdaptedActivity", {
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
-      hiperfoco: "videogames",
+      userId: userId,
     });
   }
 
@@ -208,6 +183,7 @@ useEffect(() => {
 
           <Text style={styles.titleData}>Hoje</Text>
           <Text style={{ marginLeft: 16 }}>materiaId: {String(materiaId)}</Text>
+          <Text style={{ marginLeft: 16 }}>userId: {String(userId)}</Text>
         </View>
 
         {loading ? (
