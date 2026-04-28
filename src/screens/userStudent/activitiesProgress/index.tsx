@@ -17,7 +17,6 @@ import Animated, {
 import { useNavigation } from "@react-navigation/native";
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
-import API_BASE_URL from "../../../services/ip";
 
 const { height } = Dimensions.get("window");
 
@@ -28,7 +27,7 @@ type RouteParams = {
 };
 
 type Plano = {
-  idPlano?: string;
+  idPlano: string;
   titulo: string;
   descricao: string;
   status: "andamento" | "vencida" | "concluida" | string;
@@ -81,64 +80,32 @@ export default function ActivitiesProgressScreen({
   }));
 
   useEffect(() => {
-    async function carregarPlanos() {
-      console.log("PARAMS ATIVIDADES:", route?.params);
-      console.log("materiaId recebido:", materiaId);
-      console.log("materiaNome recebido:", materiaNome);
-      console.log("userId recebido:", userId);
+    function carregarAtividadeDoSistema() {
+      const planoAdicao: Plano = {
+        idPlano: "plano-pdf-adicao-simples",
+        titulo: "Adição simples",
+        descricao:
+          "Aprenda a juntar quantidades e resolver somas simples até 10.",
+        status: "andamento",
+      };
 
-      try {
-        if (!materiaId) {
-          console.log("❌ Sem materiaId vindo da Home");
-          setLoading(false);
-          return;
-        }
-
-        const resp = await fetch(`${API_BASE_URL}/planos/${materiaId}`);
-        const data: { ok: boolean; planos?: Plano[] } = await resp.json();
-
-        console.log("PLANOS:", data);
-
-        if (data.ok) {
-          const planosBanco = data.planos || [];
-
-          const planoExtra: Plano = {
-            idPlano: "mock-2",
-            titulo: "Rimas e Leitura Divertida",
-            descricao:
-              "Leitura e interpretação de pequenas histórias com rimas e palavras infantis.",
-            status: "andamento",
-          };
-
-          setPlanos([...planosBanco, planoExtra]);
-        } else {
-          setPlanos([]);
-        }
-      } catch (e) {
-        console.log("ERRO AO BUSCAR PLANOS:", e);
-      } finally {
-        setLoading(false);
-      }
+      setPlanos([planoAdicao]);
+      setLoading(false);
     }
 
-    carregarPlanos();
-  }, [materiaId, materiaNome, userId, route?.params]);
+    carregarAtividadeDoSistema();
+  }, [materiaId, materiaNome, userId]);
 
   const emAndamento = planos.filter((p) => p.status === "andamento");
   const vencidas = planos.filter((p) => p.status === "vencida");
   const concluidas = planos.filter((p) => p.status === "concluida");
 
   function abrirAtividadeAdaptada(plano: Plano) {
-    console.log("Abrindo AdaptedActivity com:", {
+    navigation.navigate("AdaptedActivity", {
+      planoId: plano.idPlano,
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
       userId,
-    });
-
-    navigation.navigate("AdaptedActivity", {
-      planoTitulo: plano.titulo,
-      planoDescricao: plano.descricao,
-      userId: userId,
     });
   }
 
@@ -149,7 +116,7 @@ export default function ActivitiesProgressScreen({
 
     return lista.map((p) => (
       <TouchableOpacity
-        key={p.idPlano || p.titulo}
+        key={p.idPlano}
         activeOpacity={0.8}
         onPress={() => abrirAtividadeAdaptada(p)}
       >
@@ -182,8 +149,6 @@ export default function ActivitiesProgressScreen({
           </Text>
 
           <Text style={styles.titleData}>Hoje</Text>
-          <Text style={{ marginLeft: 16 }}>materiaId: {String(materiaId)}</Text>
-          <Text style={{ marginLeft: 16 }}>userId: {String(userId)}</Text>
         </View>
 
         {loading ? (

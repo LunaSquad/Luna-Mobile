@@ -5,17 +5,17 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
+  StyleSheet,
 } from "react-native";
 import { RouteProp } from "@react-navigation/native";
 import QuizMolde from "../../../components/moldes/quizMolde";
 import FasesMolde from "../../../components/moldes/fasesMolde";
 import API_BASE_URL from "../../../services/ip";
-import { styles } from "./style/style";
-
-const DEBUG_MOLDE: "quiz" | "fases" | null = null;
 
 type RootStackParamList = {
   AdaptedActivity: {
+    planoId?: string;
     planoTitulo: string;
     planoDescricao: string;
     userId: string;
@@ -32,47 +32,6 @@ type Props = {
   navigation: any;
 };
 
-type PerguntaQuiz = {
-  pergunta: string;
-  alternativas?: string[];
-  correta?: string;
-  resposta_esperada?: string;
-};
-
-type FaseJogo = {
-  fase: number;
-  desafio: string;
-  resposta: string;
-};
-
-type AtividadeAdaptada = {
-  titulo: string;
-  tipo: string;
-  descricao: string;
-  conteudo: {
-    perguntas?: PerguntaQuiz[];
-    texto?: string;
-    instrucoes?: string[];
-    proposta?: string;
-    fases?: FaseJogo[];
-    resumo_plano?: string;
-    palavras_chave?: string[];
-  };
-};
-
-type AdaptarResponse = {
-  molde_id: string;
-  molde?: {
-    id: string;
-    titulo: string;
-    tema_visual: string;
-    palavras_chave: string[];
-  } | null;
-  confianca?: number | null;
-  prompt_imagem: string;
-  atividade: AtividadeAdaptada;
-};
-
 type Hiperfoco = {
   hiperfocoID?: string;
   nome?: string;
@@ -87,6 +46,7 @@ type Aluno = {
   escolaID?: string;
   urlFotoAluno?: string;
   hiperfoco?: Hiperfoco;
+  hyperfoco?: Hiperfoco;
 };
 
 type AlunoResponse = {
@@ -95,19 +55,48 @@ type AlunoResponse = {
   message?: string;
 };
 
-export default function AdaptedActivityScreen({
-  route,
-  navigation,
-}: Props) {
+type QuestaoAdaptada = {
+  pergunta: string;
+  respostaCorreta: string;
+  alternativas?: string[];
+};
+
+type AtividadePlanoAdaptado = {
+  titulo: string;
+  conteudoAdaptado: string;
+  questoes: QuestaoAdaptada[];
+};
+
+type PlanoAdaptado = {
+  tituloAdaptado: string;
+  temaOriginal: string;
+  hiperfoco: string;
+  explicacaoAdaptada: string;
+  atividades: AtividadePlanoAdaptado[];
+};
+
+type AdaptarPlanoResponse = {
+  ok: boolean;
+  hiperfoco: string;
+  json_path?: string;
+  pdf_path?: string;
+  plano_adaptado: PlanoAdaptado;
+};
+
+export default function AdaptedActivityScreen({ route, navigation }: Props) {
   const { planoTitulo, planoDescricao, userId } = route.params;
 
   const [loading, setLoading] = useState(true);
-  const [dados, setDados] = useState<AdaptarResponse | null>(null);
   const [erro, setErro] = useState("");
   const [hiperfocoAluno, setHiperfocoAluno] = useState("");
+  const [planoAdaptado, setPlanoAdaptado] = useState<PlanoAdaptado | null>(
+    null
+  );
+
+  const [paginaAtual, setPaginaAtual] = useState(0);
 
   useEffect(() => {
-    async function carregarAtividadeAdaptada() {
+    async function carregarPlanoAdaptado() {
       try {
         setLoading(true);
         setErro("");
@@ -120,12 +109,13 @@ export default function AdaptedActivityScreen({
         const dataAluno: AlunoResponse = await respAluno.json();
 
         if (!respAluno.ok || !dataAluno.ok) {
-          throw new Error(
-            dataAluno.message || "Não foi possível buscar o aluno"
-          );
+          throw new Error(dataAluno.message || "Não foi possível buscar aluno");
         }
 
-        const hiperfoco = dataAluno.aluno?.hiperfoco?.nome || "";
+        const hiperfoco =
+          dataAluno.aluno?.hiperfoco?.nome ||
+          dataAluno.aluno?.hyperfoco?.nome ||
+          "";
 
         if (!hiperfoco) {
           throw new Error("O aluno não possui hiperfoco cadastrado");
@@ -133,346 +123,473 @@ export default function AdaptedActivityScreen({
 
         setHiperfocoAluno(hiperfoco);
 
-        if (DEBUG_MOLDE === "quiz") {
-          const dataMockQuiz: AdaptarResponse = {
-            molde_id: "quiz",
-            molde: {
-              id: "quiz",
-              titulo: "Quiz Interativo",
-              tema_visual: "gamificado",
-              palavras_chave: ["quiz", "resposta", "alternativas"],
-            },
-            confianca: 0.98,
-            prompt_imagem: `Atividade de ${planoTitulo} com hiperfoco em ${hiperfoco}`,
-            atividade: {
-              titulo: `Quiz com ${hiperfoco}`,
-              tipo: "quiz",
-              descricao: "Escolha a alternativa correta.",
-              conteudo: {
-                perguntas: [
-                  {
-                    pergunta: "Quanto é 2 + 2?",
-                    alternativas: ["3", "4", "5"],
-                    correta: "4",
-                  },
-                ],
-              },
-            },
-          };
-
-          setDados(dataMockQuiz);
-          return;
-        }
-
-        if (DEBUG_MOLDE === "fases") {
-          const dataMockFases: AdaptarResponse = {
-            molde_id: "fases",
-            molde: {
-              id: "fases",
-              titulo: "Jogo de Fases",
-              tema_visual: "aventura",
-              palavras_chave: ["fases", "desafio", "missão"],
-            },
-            confianca: 0.96,
-            prompt_imagem: `Missão educativa com hiperfoco em ${hiperfoco}`,
-            atividade: {
-              titulo: `Missão sobre ${hiperfoco}`,
-              tipo: "jogo em fases",
-              descricao: "Resolva cada fase para avançar.",
-              conteudo: {
-                fases: [
-                  {
-                    fase: 1,
-                    desafio: "Quanto é 2 + 2?",
-                    resposta: "4",
-                  },
-                  {
-                    fase: 2,
-                    desafio: "Quanto é 5 + 3?",
-                    resposta: "8",
-                  },
-                  {
-                    fase: 3,
-                    desafio: "Quanto é 10 - 6?",
-                    resposta: "4",
-                  },
-                ],
-              },
-            },
-          };
-
-          setDados(dataMockFases);
-          return;
-        }
-
-        const resp = await fetch(`${API_BASE_URL}/ai/adaptar`, {
+        const resp = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            plano: `${planoTitulo}. ${planoDescricao}`,
-            hiperfoco: hiperfoco,
+            hiperfoco,
           }),
         });
 
-        const data = await resp.json();
+        const data: AdaptarPlanoResponse = await resp.json();
 
-        if (!resp.ok) {
-          throw new Error(data?.detail || "Erro ao adaptar atividade");
+        if (!resp.ok || !data.ok) {
+          throw new Error("Erro ao adaptar plano de aula");
         }
 
-        setDados(data);
+        setPlanoAdaptado(data.plano_adaptado);
       } catch (e: any) {
-        setErro(e.message || "Erro ao carregar atividade adaptada");
+        setErro(e.message || "Erro ao carregar plano adaptado");
       } finally {
         setLoading(false);
       }
     }
 
-    carregarAtividadeAdaptada();
-  }, [planoTitulo, planoDescricao, userId]);
+    carregarPlanoAdaptado();
+  }, [userId]);
 
-  function renderQuizMolde(atividade: AtividadeAdaptada) {
-    const primeiraPergunta = atividade.conteudo.perguntas?.[0];
+  function extrairAlternativas(pergunta: string): string[] {
+    const alternativas: string[] = [];
 
-    if (!primeiraPergunta) {
-      return (
-        <View style={styles.card}>
-          <Text style={styles.label}>Atividade adaptada</Text>
-          <Text style={styles.value}>
-            Nenhuma pergunta foi encontrada para o molde de quiz.
-          </Text>
-        </View>
-      );
+    const regex = /[a-d]\)\s*([^\n]+)/gi;
+    let match;
+
+    while ((match = regex.exec(pergunta)) !== null) {
+      alternativas.push(match[1].trim());
     }
 
-    return (
-      <QuizMolde
-        pergunta={primeiraPergunta.pergunta}
-        opcoes={primeiraPergunta.alternativas || []}
-        respostaCorreta={
-          primeiraPergunta.correta || primeiraPergunta.resposta_esperada || ""
-        }
-        imagens={[]}
-        titulo="luna"
-        subtitulo={dados?.molde?.titulo || "Atividade adaptada"}
-      />
-    );
+    return alternativas;
   }
 
-  function renderFasesMolde(atividade: AtividadeAdaptada) {
-    const fases = atividade.conteudo.fases || [];
+  function limparPergunta(pergunta: string): string {
+    return pergunta.replace(/[a-d]\)\s*[^\n]+/gi, "").trim();
+  }
 
-    if (!fases.length) {
-      return (
-        <View style={styles.card}>
-          <Text style={styles.label}>Atividade adaptada</Text>
-          <Text style={styles.value}>
-            Nenhuma fase foi encontrada para o molde de desafios.
-          </Text>
-        </View>
-      );
+  // function gerarAlternativasPadrao(respostaCorreta: string): string[] {
+  //   const numero = Number(respostaCorreta);
+
+  //   if (Number.isNaN(numero)) {
+  //     return [respostaCorreta];
+  //   }
+
+  //   const opcoes = [
+  //     String(Math.max(0, numero - 1)),
+  //     String(numero),
+  //     String(numero + 1),
+  //     String(numero + 2),
+  //   ];
+
+  //   return Array.from(new Set(opcoes));
+  // }
+
+  function getImagensGenericasPorHiperfoco() {
+    const h = hiperfocoAluno.toLowerCase();
+
+    if (h.includes("dino")) {
+      return [];
     }
 
-    return (
-      <FasesMolde
-        fases={fases}
-        titulo="luna"
-        subtitulo={dados?.molde?.titulo || "Missão interativa"}
-      />
-    );
+    return [];
   }
 
-  function renderConteudoGenerico(atividade: AtividadeAdaptada) {
+  function renderExplicacao() {
+    if (!planoAdaptado) return null;
+
     return (
-      <View style={styles.card}>
-        <Text style={styles.label}>Título da atividade</Text>
-        <Text style={styles.title}>{atividade.titulo}</Text>
+      <View style={localStyles.page}>
+        <TouchableOpacity
+          style={localStyles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={localStyles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
 
-        <Text style={styles.label}>Tipo</Text>
-        <Text style={styles.value}>{atividade.tipo}</Text>
+        <Text style={localStyles.logo}>luna</Text>
 
-        <Text style={styles.label}>Descrição</Text>
-        <Text style={styles.value}>{atividade.descricao}</Text>
+        <View style={localStyles.explanationCard}>
+          <Text style={localStyles.kicker}>Plano adaptado</Text>
+          <Text style={localStyles.title}>{planoAdaptado.tituloAdaptado}</Text>
 
-        {atividade.conteudo.texto ? (
-          <>
-            <Text style={styles.label}>Texto</Text>
-            <Text style={styles.value}>{atividade.conteudo.texto}</Text>
-          </>
-        ) : null}
-
-        {atividade.conteudo.perguntas?.length ? (
-          <>
-            <Text style={styles.label}>Perguntas</Text>
-            {atividade.conteudo.perguntas.map((item, index) => (
-              <View key={index} style={styles.block}>
-                <Text style={styles.question}>
-                  {index + 1}. {item.pergunta}
-                </Text>
-
-                {item.alternativas?.map((alt, i) => (
-                  <Text key={i} style={styles.option}>
-                    • {alt}
-                  </Text>
-                ))}
-
-                {(item.correta || item.resposta_esperada) ? (
-                  <Text style={styles.answer}>
-                    Resposta esperada:{" "}
-                    {item.correta || item.resposta_esperada}
-                  </Text>
-                ) : null}
-              </View>
-            ))}
-          </>
-        ) : null}
-
-        {atividade.conteudo.instrucoes?.length ? (
-          <>
-            <Text style={styles.label}>Instruções</Text>
-            {atividade.conteudo.instrucoes.map((instrucao, index) => (
-              <Text key={index} style={styles.option}>
-                • {instrucao}
-              </Text>
-            ))}
-          </>
-        ) : null}
-
-        {atividade.conteudo.proposta ? (
-          <>
-            <Text style={styles.label}>Proposta</Text>
-            <Text style={styles.value}>{atividade.conteudo.proposta}</Text>
-          </>
-        ) : null}
-
-        {atividade.conteudo.fases?.length ? (
-          <>
-            <Text style={styles.label}>Fases</Text>
-            {atividade.conteudo.fases.map((fase, index) => (
-              <View key={index} style={styles.block}>
-                <Text style={styles.question}>Fase {fase.fase}</Text>
-                <Text style={styles.value}>{fase.desafio}</Text>
-                <Text style={styles.answer}>Resposta: {fase.resposta}</Text>
-              </View>
-            ))}
-          </>
-        ) : null}
-
-        {atividade.conteudo.resumo_plano ? (
-          <>
-            <Text style={styles.label}>Resumo do plano</Text>
-            <Text style={styles.value}>{atividade.conteudo.resumo_plano}</Text>
-          </>
-        ) : null}
-
-        {atividade.conteudo.palavras_chave?.length ? (
-          <>
-            <Text style={styles.label}>Palavras-chave</Text>
-            <Text style={styles.value}>
-              {atividade.conteudo.palavras_chave.join(", ")}
+          <View style={localStyles.imagePlaceholder}>
+            <Text style={localStyles.imageEmoji}>🦖</Text>
+            <Text style={localStyles.imageText}>
+              Tema visual: {hiperfocoAluno}
             </Text>
-          </>
-        ) : null}
+          </View>
+
+          <Text style={localStyles.label}>Explicação</Text>
+          <Text style={localStyles.text}>
+            {planoAdaptado.explicacaoAdaptada}
+          </Text>
+
+          <TouchableOpacity
+            style={localStyles.primaryButton}
+            onPress={() => setPaginaAtual(1)}
+          >
+            <Text style={localStyles.primaryButtonText}>
+              Começar atividades
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
-  function renderConteudo() {
-    if (!dados?.atividade) return null;
+  function extrairQuestoesDoConteudo(conteudo: string): QuestaoAdaptada[] {
+  if (!conteudo) return [];
 
-    const atividade = dados.atividade;
-    const tipoAtividade = atividade.tipo?.toLowerCase?.() || "";
-    const moldeId = dados.molde_id?.toLowerCase?.() || "";
-    const tituloMolde = dados.molde?.titulo?.toLowerCase?.() || "";
+  const linhas = conteudo
+    .split("\n")
+    .map((linha) => linha.trim())
+    .filter((linha) => linha.length > 0);
 
-    const ehQuiz =
-      tipoAtividade.includes("quiz") ||
-      moldeId.includes("quiz") ||
-      tituloMolde.includes("quiz");
+  const questoes = linhas
+    .filter((linha) => {
+      return (
+        linha.includes("=") ||
+        linha.includes("______") ||
+        linha.includes("_____") ||
+        linha.includes("?")
+      );
+    })
+    .map((linha) => {
+      const numeros = linha.match(/\d+/g) || [];
 
-    const ehFases =
-      tipoAtividade.includes("fase") ||
-      tipoAtividade.includes("jogo") ||
-      tipoAtividade.includes("desafio") ||
-      moldeId.includes("fase") ||
-      moldeId.includes("jogo") ||
-      moldeId.includes("desafio") ||
-      tituloMolde.includes("fase") ||
-      tituloMolde.includes("jogo") ||
-      tituloMolde.includes("desafio");
+      let respostaCorreta = "";
 
-    if (ehQuiz) {
-      return renderQuizMolde(atividade);
+      if (numeros.length >= 2) {
+        const soma = numeros.reduce((total, n) => total + Number(n), 0);
+        respostaCorreta = String(soma);
+      }
+
+      return {
+        pergunta: linha.replace("______", "?").replace("_____", "?"),
+        respostaCorreta,
+      };
+    })
+    .filter((q) => q.respostaCorreta !== "");
+
+  return questoes;
+}
+
+
+
+
+  function renderAtividade() {
+    if (!planoAdaptado) return null;
+
+    const indexAtividade = paginaAtual - 1;
+    const atividade = planoAdaptado.atividades[indexAtividade];
+
+    if (!atividade) {
+      return (
+        <View style={localStyles.page}>
+          <Text style={localStyles.logo}>luna</Text>
+
+          <View style={localStyles.explanationCard}>
+            <Text style={localStyles.imageEmoji}>🏆</Text>
+            <Text style={localStyles.title}>Parabéns!</Text>
+            <Text style={localStyles.text}>
+              Você concluiu todas as atividades de {planoAdaptado.tituloAdaptado}.
+            </Text>
+
+            <TouchableOpacity
+              style={localStyles.primaryButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={localStyles.primaryButtonText}>Finalizar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
     }
 
-    if (ehFases) {
-      return renderFasesMolde(atividade);
+    const questoesDaAtividade =
+  atividade.questoes && atividade.questoes.length > 0
+    ? atividade.questoes
+    : extrairQuestoesDoConteudo(atividade.conteudoAdaptado);
+
+const primeiraQuestao = questoesDaAtividade[0];
+
+    if (!primeiraQuestao) {
+      return (
+        <View style={localStyles.page}>
+          <Text style={localStyles.title}>{atividade.titulo}</Text>
+          <Text>Nenhuma questão encontrada.</Text>
+        </View>
+      );
     }
 
-    return renderConteudoGenerico(atividade);
+    const alternativasExtraidas = extrairAlternativas(primeiraQuestao.pergunta);
+
+    const alternativas =
+      primeiraQuestao.alternativas?.length
+        ? primeiraQuestao.alternativas
+        : alternativasExtraidas.length
+        ? alternativasExtraidas
+        : [];
+
+    const perguntaLimpa = alternativasExtraidas.length
+      ? limparPergunta(primeiraQuestao.pergunta)
+      : primeiraQuestao.pergunta;
+
+    const usarQuiz = alternativas.length > 0;
+
+    return (
+      <View style={localStyles.page}>
+        <TouchableOpacity
+          style={localStyles.backButton}
+          onPress={() => {
+            if (paginaAtual === 1) {
+              setPaginaAtual(0);
+            } else {
+              setPaginaAtual(paginaAtual - 1);
+            }
+          }}
+        >
+          <Text style={localStyles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+
+        <Text style={localStyles.logo}>luna</Text>
+
+        <Text style={localStyles.progress}>
+          Atividade {indexAtividade + 1} de {planoAdaptado.atividades.length}
+        </Text>
+
+        <Text style={localStyles.activityTitle}>{atividade.titulo}</Text>
+        <Text style={localStyles.activityDescription}>
+          {atividade.conteudoAdaptado}
+        </Text>
+
+        {usarQuiz ? (
+        <QuizMolde
+          key={`quiz-${paginaAtual}-${primeiraQuestao.pergunta}`}
+          pergunta={perguntaLimpa}
+          opcoes={alternativas}
+          respostaCorreta={primeiraQuestao.respostaCorreta}
+          imagens={getImagensGenericasPorHiperfoco()}
+          titulo="luna"
+          subtitulo={atividade.titulo}
+        />
+        ) : (
+        <FasesMolde
+          key={`fases-${paginaAtual}-${atividade.titulo}`}
+          fases={questoesDaAtividade.map((q, index) => ({
+            fase: index + 1,
+            desafio: q.pergunta,
+            resposta: q.respostaCorreta,
+          }))}
+          titulo="luna"
+          subtitulo={atividade.titulo}
+        />
+        )}
+
+        <TouchableOpacity
+          style={localStyles.primaryButton}
+          onPress={() => setPaginaAtual(paginaAtual + 1)}
+        >
+          <Text style={localStyles.primaryButtonText}>
+            {indexAtividade + 1 >= planoAdaptado.atividades.length
+              ? "Concluir"
+              : "Próxima atividade"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={localStyles.center}>
+        <ActivityIndicator size="large" />
+        <Text style={localStyles.loadingText}>Adaptando plano de aula...</Text>
+      </View>
+    );
+  }
+
+  if (erro) {
+    return (
+      <View style={localStyles.center}>
+        <Text style={localStyles.errorText}>{erro}</Text>
+
+        <TouchableOpacity
+          style={localStyles.primaryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={localStyles.primaryButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.backButtonText}>Voltar</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.screenTitle}>Atividade Adaptada</Text>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.label}>Plano original</Text>
-        <Text style={styles.value}>{planoTitulo}</Text>
-
-        <Text style={styles.label}>Descrição original</Text>
-        <Text style={styles.value}>{planoDescricao}</Text>
-
-        <Text style={styles.label}>Hiperfoco do aluno</Text>
-        <Text style={styles.value}>
-          {loading ? "Carregando..." : hiperfocoAluno || "Não informado"}
-        </Text>
-      </View>
-
-      {loading ? <ActivityIndicator size="large" /> : null}
-
-      {erro ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{erro}</Text>
-        </View>
-      ) : null}
-
-      {!loading && !erro && dados ? (
-        <>
-          <View style={styles.card}>
-            <Text style={styles.label}>Molde escolhido</Text>
-            <Text style={styles.value}>
-              {dados.molde?.titulo || dados.molde_id}
-            </Text>
-
-            <Text style={styles.label}>ID do molde</Text>
-            <Text style={styles.value}>{dados.molde_id}</Text>
-
-            {dados.confianca !== undefined && dados.confianca !== null ? (
-              <>
-                <Text style={styles.label}>Confiança</Text>
-                <Text style={styles.value}>
-                  {(dados.confianca * 100).toFixed(1)}%
-                </Text>
-              </>
-            ) : null}
-
-            <Text style={styles.label}>Prompt da imagem</Text>
-            <Text style={styles.value}>{dados.prompt_imagem}</Text>
-          </View>
-
-          {renderConteudo()}
-        </>
-      ) : null}
+    <ScrollView contentContainerStyle={localStyles.container}>
+      {paginaAtual === 0 ? renderExplicacao() : renderAtividade()}
     </ScrollView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    backgroundColor: "#EAF7F8",
+    padding: 20,
+  },
+
+  page: {
+    flex: 1,
+  },
+
+  center: {
+    flex: 1,
+    backgroundColor: "#EAF7F8",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#355C63",
+    fontWeight: "700",
+  },
+
+  backButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+
+  backButtonText: {
+    color: "#005A63",
+    fontWeight: "800",
+  },
+
+  logo: {
+    textAlign: "center",
+    fontSize: 32,
+    fontWeight: "300",
+    color: "#69AAB0",
+    letterSpacing: 1,
+    marginBottom: 18,
+  },
+
+  explanationCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+
+  kicker: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#005A63",
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+
+  title: {
+    fontSize: 24,
+    lineHeight: 31,
+    fontWeight: "900",
+    color: "#172B4D",
+    marginBottom: 16,
+  },
+
+  imagePlaceholder: {
+    minHeight: 150,
+    borderRadius: 20,
+    backgroundColor: "#F4D52C",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 18,
+    padding: 16,
+  },
+
+  imageEmoji: {
+    fontSize: 52,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  imageText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1C2B38",
+    textAlign: "center",
+  },
+
+  label: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#005A63",
+    marginBottom: 8,
+  },
+
+  text: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#25313C",
+    fontWeight: "500",
+  },
+
+  primaryButton: {
+    backgroundColor: "#005A63",
+    height: 52,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 18,
+    marginBottom: 10,
+  },
+
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+
+  progress: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#005A63",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+
+  activityTitle: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "900",
+    color: "#172B4D",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  activityDescription: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#425466",
+    textAlign: "center",
+    marginBottom: 14,
+    fontWeight: "600",
+  },
+
+  errorText: {
+    color: "#B00020",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+});

@@ -4,16 +4,18 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Login from "../screens/userStudent/login/index";
 import StudentTabs from "./appTab";
 import Activies from "../screens/userStudent/activitiesProgress/index";
-import AdaptedActivity from "../screens//userStudent/adaptedActivity/index";
+import AdaptedActivity from "../screens/userStudent/adaptedActivity/index";
 
 export type RootStackParamList = {
   Login: undefined;
+
   StudentTabs:
     | {
         userId?: string;
         tipoUser?: string;
       }
     | undefined;
+
   Atividades:
     | {
         userId?: string;
@@ -22,10 +24,12 @@ export type RootStackParamList = {
         materiaNome?: string;
       }
     | undefined;
+
   AdaptedActivity: {
+    planoId?: string;
     planoTitulo: string;
     planoDescricao: string;
-    hiperfoco: string;
+    userId: string;
   };
 };
 

@@ -2,12 +2,12 @@ from pydantic import BaseModel
 
 
 class AdaptarPlanoRequest(BaseModel):
-    plano: str
-    hiperfoco: str
+    hiperfoco: str | None = None
 
 
 class AdaptarPlanoResponse(BaseModel):
-    molde_id: str
-    molde: dict | None = None
-    confianca: float | None = None
-    prompt_imagem: str
+    ok: bool
+    hiperfoco: str
+    json_path: str
+    pdf_path: str
+    plano_adaptado: dict
