@@ -79,21 +79,36 @@ export default function ActivitiesProgressScreen({
     height: logoSize.value * 0.5,
   }));
 
-  useEffect(() => {
-    function carregarAtividadeDoSistema() {
-      const planoAdicao: Plano = {
-        idPlano: "plano-pdf-adicao-simples",
-        titulo: "Adição simples",
-        descricao:
-          "Aprenda a juntar quantidades e resolver somas simples até 10.",
-        status: "andamento",
-      };
+  function ehMatematica(nome?: string) {
+    return (nome || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .includes("matematica");
+  }
 
-      setPlanos([planoAdicao]);
+  useEffect(() => {
+    function carregarAtividades() {
+      setLoading(true);
+
+      if (ehMatematica(materiaNome)) {
+        const planoAdicao: Plano = {
+          idPlano: "plano-pdf-adicao-simples",
+          titulo: "Adição simples",
+          descricao:
+            "Aprenda a juntar quantidades e resolver somas simples até 10.",
+          status: "andamento",
+        };
+
+        setPlanos([planoAdicao]);
+      } else {
+        setPlanos([]);
+      }
+
       setLoading(false);
     }
 
-    carregarAtividadeDoSistema();
+    carregarAtividades();
   }, [materiaId, materiaNome, userId]);
 
   const emAndamento = planos.filter((p) => p.status === "andamento");
@@ -105,6 +120,8 @@ export default function ActivitiesProgressScreen({
       planoId: plano.idPlano,
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
+      materiaId,
+      materiaNome,
       userId,
     });
   }
@@ -128,6 +145,8 @@ export default function ActivitiesProgressScreen({
       </TouchableOpacity>
     ));
   }
+
+  const temAtividade = planos.length > 0;
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -153,6 +172,31 @@ export default function ActivitiesProgressScreen({
 
         {loading ? (
           <ActivityIndicator style={{ marginTop: 20 }} />
+        ) : !temAtividade ? (
+          <View style={{ marginTop: 40, paddingHorizontal: 24 }}>
+            <Text
+              style={{
+                textAlign: "center",
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#333",
+              }}
+            >
+              Sem aulas adaptadas no momento
+            </Text>
+
+            <Text
+              style={{
+                textAlign: "center",
+                marginTop: 8,
+                fontSize: 14,
+                color: "#666",
+              }}
+            >
+              Ainda não existem atividades adaptadas disponíveis para essa
+              matéria.
+            </Text>
+          </View>
         ) : (
           <>
             <Text style={styles.textAndamento}>Atividades em Andamento</Text>

@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   ScrollView,
   ActivityIndicator,
   ImageSourcePropType,
+  Animated,
+  Dimensions,
+  Pressable,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import API_BASE_URL from "../../../services/ip";
@@ -26,6 +29,9 @@ import matematicaImg from "../../../assets/assets-home/matematica.png";
 import geografiaImg from "../../../assets/assets-home/geografia.png";
 
 import { MateriaCard } from "../../../components/materiaCard/index";
+
+const { width } = Dimensions.get("window");
+const MENU_WIDTH = width * 0.78;
 
 type RouteParams = {
   userId?: string;
@@ -56,7 +62,8 @@ type Aluno = {
 };
 
 type MateriaApi = {
-  id: string;
+  id?: string;
+  _id?: string;
   nome: string;
   rota?: string;
 };
@@ -81,6 +88,8 @@ type AlunoResponse = {
 type MateriasResponse = {
   ok: boolean;
   materias?: MateriaApi[];
+  detail?: MateriaApi[];
+  message?: string;
 };
 
 type NavigationType = {
@@ -98,9 +107,33 @@ export default function Home({ route }: HomeProps) {
   const navigation = useNavigation<NavigationType>();
 
   const { userId, tipoUser } = route.params || {};
+
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [materias, setMaterias] = useState<MateriaCardData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [menuAberto, setMenuAberto] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
+
+  function abrirMenu() {
+    setMenuAberto(true);
+
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  function fecharMenu() {
+    Animated.timing(slideAnim, {
+      toValue: -MENU_WIDTH,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setMenuAberto(false);
+    });
+  }
 
   function materiaPreset(nome: string) {
     const n = (nome || "").toLowerCase();
@@ -132,6 +165,24 @@ export default function Home({ route }: HomeProps) {
       };
     }
 
+    if (n.includes("hist")) {
+      return {
+        title: "História",
+        image: geografiaImg as ImageSourcePropType,
+        backgroundColor: "#FFF4D6",
+        buttonColor: "#92400E",
+      };
+    }
+
+    if (n.includes("cien") || n.includes("ciên")) {
+      return {
+        title: "Ciências",
+        image: geografiaImg as ImageSourcePropType,
+        backgroundColor: "#E7F8EA",
+        buttonColor: "#166534",
+      };
+    }
+
     return {
       title: nome,
       image: geografiaImg as ImageSourcePropType,
@@ -143,6 +194,26 @@ export default function Home({ route }: HomeProps) {
   function formatNumber(i: number): string {
     const n = String(i + 1).padStart(2, "0");
     return `${n}.`;
+  }
+
+  function transformarMateriasEmCards(listaMaterias: MateriaApi[]) {
+    const cards: MateriaCardData[] = listaMaterias.map((m, idx) => {
+      const preset = materiaPreset(m.nome);
+
+      return {
+        id: m.id || m._id || String(idx),
+        number: formatNumber(idx),
+        title: preset.title,
+        nome: m.nome,
+        image: preset.image,
+        backgroundColor: preset.backgroundColor,
+        buttonColor: preset.buttonColor,
+        rota: m.rota || "Atividades",
+      };
+    });
+
+    console.log("CARDS GERADOS:", cards);
+    setMaterias(cards);
   }
 
   useEffect(() => {
@@ -163,66 +234,44 @@ export default function Home({ route }: HomeProps) {
         console.log("DADOS ALUNO:", dataAluno);
 
         if (!dataAluno.ok) {
-          console.log("❌", dataAluno.message);
+          console.log("❌ ERRO ALUNO:", dataAluno.message);
           return;
         }
 
-        setAluno(dataAluno.aluno || null);
+        const alunoData = dataAluno.aluno || null;
+        setAluno(alunoData);
 
-        const escolaID = dataAluno.aluno?.escolaID;
+        const escolaID = alunoData?.escolaID;
         console.log("ESCOLA ID:", escolaID);
-
-        const hiperfocoNome =
-          dataAluno.aluno?.hiperfoco?.nome ||
-          dataAluno.aluno?.hyperfoco?.nome ||
-          "";
-
-        console.log("HIPERFOCO:", hiperfocoNome);
 
         if (!escolaID) {
           console.log("❌ aluno sem escolaID");
           return;
         }
 
-        const respMat = await fetch(`${API_BASE_URL}/materias/${escolaID}`);
+        const respMat = await fetch(`${API_BASE_URL}/materias`);
         console.log("STATUS MATERIAS:", respMat.status);
 
         const dataMat: MateriasResponse = await respMat.json();
         console.log("MATERIAS:", dataMat);
 
-        if (dataMat.ok) {
-          const cards: MateriaCardData[] = (dataMat.materias || []).map(
-            (m, idx) => {
-              const preset = materiaPreset(m.nome);
-
-              return {
-                id: m.id,
-                number: formatNumber(idx),
-                title: preset.title,
-                nome: m.nome,
-                image: preset.image,
-                backgroundColor: preset.backgroundColor,
-                buttonColor: preset.buttonColor,
-                rota: m.rota || "Atividades",
-              };
-            }
-          );
-
-          setMaterias(cards);
+        if (!dataMat.ok) {
+          console.log("❌ ERRO MATERIAS:", dataMat.message);
+          return;
         }
+
+        const listaMaterias = dataMat.materias || dataMat.detail || [];
+
+        transformarMateriasEmCards(listaMaterias);
       } catch (e) {
-        console.log("ERRO:", e);
+        console.log("ERRO GERAL HOME:", e);
       } finally {
         setLoading(false);
       }
     }
 
-    if (tipoUser === "aluno") {
-      carregarTudo();
-    } else {
-      setLoading(false);
-    }
-  }, [userId, tipoUser]);
+    carregarTudo();
+  }, [userId]);
 
   const hiperfocoNome =
     aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
@@ -233,100 +282,187 @@ export default function Home({ route }: HomeProps) {
     "Nenhum hiperfoco cadastrado.";
 
   return (
-    <ScrollView style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={styles.screen}>
+      <ScrollView style={styles.container}>
+        <StatusBar style="dark" />
 
-      <View style={styles.navbar}>
-        <Image style={styles.menu} source={temporyMenu} />
-        <Image
-          style={styles.profilePhoto}
-          source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil}
-        />
-      </View>
+        <View style={styles.navbar}>
+          <TouchableOpacity onPress={abrirMenu} activeOpacity={0.7}>
+            <Image style={styles.menu} source={temporyMenu} />
+          </TouchableOpacity>
 
-      <View style={styles.body}>
-        <View style={styles.spaceLogo}>
-          <Image source={LogoLuna} style={styles.logo} />
+          <Image
+            style={styles.profilePhoto}
+            source={
+              aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
+            }
+          />
         </View>
 
-        <View style={styles.spaceNameUsuario}>
-          {loading ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.nameUsuario}>
-              Olá, {aluno?.nome || "Usuário"}
-            </Text>
-          )}
-        </View>
+        <View style={styles.body}>
+          <View style={styles.spaceLogo}>
+            <Image source={LogoLuna} style={styles.logo} />
+          </View>
 
-        <View style={styles.spaceHiperfocoAux}>
-          <View style={styles.spaceHiperfoco}>
-            <Text style={styles.textoHiperfoco}>
-              {loading
-                ? "Carregando hiperfoco..."
-                : `Hiperfoco da criança:\n${hiperfocoNome}`}
-            </Text>
-
-            {!loading && (
-              <Text style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-                {hiperfocoDescricao}
+          <View style={styles.spaceNameUsuario}>
+            {loading ? (
+              <ActivityIndicator />
+            ) : (
+              <Text style={styles.nameUsuario}>
+                Olá, {aluno?.nome || "Usuário"}
               </Text>
             )}
+          </View>
 
-            <View style={{ flexDirection: "row" }}>
-              <Image source={seta} style={styles.imageSeta} />
+          <View style={styles.spaceHiperfocoAux}>
+            <View style={styles.spaceHiperfoco}>
+              <View style={styles.hiperfocoContent}>
+                <Text style={styles.textoHiperfoco}>
+                  {loading
+                    ? "Carregando..."
+                    : "Indique o hiperfoco\nda criança aqui!"}
+                </Text>
 
-              <TouchableOpacity style={styles.bottonHiperfoco}>
-                <Image source={buttonIcon} style={{ width: 33, height: 33 }} />
-              </TouchableOpacity>
+                <View style={styles.hiperfocoActionArea}>
+                  <Image source={seta} style={styles.imageSeta} />
+
+                  <TouchableOpacity style={styles.bottonHiperfoco}>
+                    <Image source={buttonIcon} style={styles.buttonIconHiperfoco} />
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               <Image source={Luna3d} style={styles.luna3d} />
             </View>
           </View>
-        </View>
 
-        <View style={styles.spaceMaterias}>
-          <View style={styles.spaceTituloMaterias}>
-            <Text style={styles.textMaterias}>Matérias</Text>
-            <Text style={styles.textVejamais}>Veja mais →</Text>
+          <View style={styles.spaceMaterias}>
+            <View style={styles.spaceTituloMaterias}>
+              <Text style={styles.textMaterias}>Matérias</Text>
+              <Text style={styles.textVejamais}>Veja mais →</Text>
+            </View>
+
+            {loading ? (
+              <ActivityIndicator />
+            ) : materias.length === 0 ? (
+              <Text style={{ marginTop: 16 }}>Nenhuma matéria encontrada.</Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 16 }}
+              >
+                {materias.map((materia) => (
+                  <MateriaCard
+                    key={materia.id}
+                    title={materia.title}
+                    image={materia.image}
+                    backgroundColor={materia.backgroundColor}
+                    buttonColor={materia.buttonColor}
+                    number={materia.number}
+                    onPress={() =>
+                      navigation.navigate("Atividades", {
+                        materiaId: materia.id,
+                        materiaNome: materia.nome,
+                        userId,
+                      })
+                    }
+                  />
+                ))}
+              </ScrollView>
+            )}
           </View>
 
-          {loading ? (
-            <ActivityIndicator />
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingVertical: 16 }}
-            >
-              {materias.map((materia) => (
-                <MateriaCard
-                  key={materia.id}
-                  {...materia}
-                  onPress={() =>
-                    navigation.navigate("Atividades", {
-                      materiaId: materia.id,
-                      materiaNome: materia.nome,
-                      userId,
-                    })
-                  }
-                />
-              ))}
-            </ScrollView>
+          {!loading && aluno && (
+            <View style={{ paddingBottom: 30 }}>
+              <Text>RA: {aluno.RA}</Text>
+              <Text>Turma: {aluno.turmaID}</Text>
+              <Text>Escola: {aluno.escolaID}</Text>
+              <Text>
+                Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome}
+              </Text>
+            </View>
           )}
         </View>
+      </ScrollView>
 
-        {!loading && aluno && (
-          <View style={{ paddingBottom: 30 }}>
-            <Text>RA: {aluno.RA}</Text>
-            <Text>Turma: {aluno.turmaID}</Text>
-            <Text>Escola: {aluno.escolaID}</Text>
-            <Text>
-              Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome}
-            </Text>
+      {menuAberto && <Pressable style={styles.overlay} onPress={fecharMenu} />}
+
+      <Animated.View
+        style={[
+          styles.drawer,
+          {
+            width: MENU_WIDTH,
+            transform: [{ translateX: slideAnim }],
+          },
+        ]}
+      >
+        <View>
+          <View style={styles.drawerProfile}>
+            <Image
+              style={styles.drawerPhoto}
+              source={
+                aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
+              }
+            />
+
+            <View>
+              <Text style={styles.drawerName}>{aluno?.nome || "Usuário"}</Text>
+              <Text style={styles.drawerSchool}>E.M.E.I</Text>
+            </View>
           </View>
-        )}
-      </View>
-    </ScrollView>
+
+          <View style={styles.drawerLine} />
+
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPress={() => {
+              fecharMenu();
+              console.log("Editar hiperfoco");
+            }}
+          >
+            <Text style={styles.drawerIcon}>☸</Text>
+            <Text style={styles.drawerText}>Editar hiperfoco</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPress={() => {
+              fecharMenu();
+              console.log("Feedback");
+            }}
+          >
+            <Text style={styles.drawerIcon}>⚭</Text>
+            <Text style={styles.drawerText}>Feedback</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPress={() => {
+              fecharMenu();
+              console.log("Atividades concluídas");
+            }}
+          >
+            <Text style={styles.drawerIcon}>▣</Text>
+            <Text style={styles.drawerText}>Atividades concluídas</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View>
+          <View style={styles.drawerLineBottom} />
+
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPress={() => {
+              fecharMenu();
+              console.log("Sair");
+            }}
+          >
+            <Text style={styles.drawerIcon}>⊙</Text>
+            <Text style={styles.drawerText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
