@@ -1,194 +1,138 @@
-import React, { useEffect } from "react";
-import { View, Text, Dimensions, Image } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
-import { theme } from "../../../styles/theme";
+import React from "react";
+import { View, Text, Image } from "react-native";
 import { styles } from "./style/style";
-
-const { height } = Dimensions.get("window");
 
 type PerformanceItem = {
   matter: string;
+  name: string;
   porcent: number;
-  colorRow: string;
-  colorBorder: string;
-  colorMatter: string;
+  time: string;
+  color: string;
+  borderColor: string;
 };
 
 export default function StudentPerformanceScreen() {
-  const logoPosition = useSharedValue<number>(height / 2 - 100);
-  const logoSize = useSharedValue<number>(200);
-  const modalTranslate = useSharedValue<number>(height * 0.7);
-
   const dados: PerformanceItem[] = [
     {
       matter: "LP",
+      name: "Língua portuguesa",
       porcent: 100,
-      colorRow: theme.colors.firstMatter,
-      colorBorder: theme.colors.borderFirstMatter,
-      colorMatter: theme.colors.borderFirstMatter,
+      time: "15:30",
+      color: "#E9F7F6",
+      borderColor: "#006d77",
     },
     {
       matter: "MAT",
-      porcent: 85,
-      colorRow: theme.colors.secondMatter,
-      colorBorder: theme.colors.borderSecondMatter,
-      colorMatter: theme.colors.borderSecondMatter,
+      name: "Matemática",
+      porcent: 20,
+      time: "10:40",
+      color: "#DCE5FF",
+      borderColor: "#06156f",
     },
     {
       matter: "GEO",
-      porcent: 20,
-      colorRow: theme.colors.thirdMatter,
-      colorBorder: theme.colors.borderThirdMatter,
-      colorMatter: theme.colors.borderThirdMatter,
+      name: "Geografia",
+      porcent: 80,
+      time: "11:35",
+      color: "#FFD6C7",
+      borderColor: "#7c2d12",
     },
     {
       matter: "HIS",
-      porcent: 58,
-      colorRow: theme.colors.fourthMatter,
-      colorBorder: theme.colors.borderFourthMatter,
-      colorMatter: theme.colors.borderFourthMatter,
+      name: "História",
+      porcent: 60,
+      time: "20:25",
+      color: "#E3845B",
+      borderColor: "#7c2d12",
     },
     {
       matter: "CIÊ",
-      porcent: 90,
-      colorRow: theme.colors.fifthMatter,
-      colorBorder: theme.colors.borderFifthMatter,
-      colorMatter: theme.colors.borderFifthMatter,
+      name: "Ciências",
+      porcent: 70,
+      time: "09:35",
+      color: "#C8F7D2",
+      borderColor: "#166534",
     },
   ];
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      logoSize.value = withTiming(150, {
-        duration: 600,
-        easing: Easing.out(Easing.exp),
-      });
-
-      logoPosition.value = withTiming(90, {
-        duration: 600,
-        easing: Easing.out(Easing.exp),
-      });
-
-      modalTranslate.value = withTiming(0, {
-        duration: 800,
-        easing: Easing.out(Easing.exp),
-      });
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [logoPosition, logoSize, modalTranslate]);
-
-  const logoStyle = useAnimatedStyle(() => {
-    return {
-      top: logoPosition.value,
-      width: logoSize.value,
-      height: logoSize.value,
-    };
-  });
-
-  const lunaStyle = useAnimatedStyle(() => {
-    return {
-      top: logoPosition.value - 70,
-      width: logoSize.value * 0.5,
-      height: logoSize.value * 0.5,
-    };
-  });
-
-  const modalStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: modalTranslate.value }],
-    };
-  });
-
   return (
     <View style={styles.container}>
-      <Animated.Image
-        source={require("../../../assets/luna.png")}
-        style={[styles.luna, lunaStyle]}
-        resizeMode="contain"
-      />
+      <View style={styles.header}>
+        <Image
+          source={require("../../../assets/luna.png")}
+          style={styles.luna}
+          resizeMode="contain"
+        />
 
-      <Image
-        source={require("../../../assets/logo mobile.png")}
-        style={styles.logo}
-      />
+        <Image
+          source={require("../../../assets/logo mobile-positivo.png")}
+          style={styles.logoBorboleta}
+          resizeMode="contain"
+        />
+      </View>
 
       <Text style={styles.titleScreen}>Gráfico de desempenho geral</Text>
 
-      <View style={styles.percentMatter}>
-        {dados.map((item, index) => (
-          <View key={index}>
-            <View style={styles.barWrapper}>
+      <View style={styles.chartCard}>
+        <View style={styles.chartContent}>
+          {dados.map((item, index) => (
+            <View key={index} style={styles.barItem}>
               <Text style={styles.barText}>{item.porcent}%</Text>
 
               <View
                 style={[
-                  styles.rowGraphic,
+                  styles.bar,
                   {
-                    height: item.porcent,
-                    backgroundColor: item.colorRow,
-                    borderColor: item.colorBorder,
-                    borderBottomWidth: 2,
-                    width: 40,
-                    flexDirection: "row",
+                    height: item.porcent * 1.8,
+                    backgroundColor: item.color,
+                    borderColor: item.borderColor,
                   },
                 ]}
               />
 
-              <Text
-                style={[
-                  styles.label,
-                  {
-                    color: item.colorMatter,
-                  },
-                ]}
-              >
+              <Text style={[styles.barLabel, { color: item.borderColor }]}>
                 {item.matter}
               </Text>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
 
-        <View style={styles.rowDivisor} />
+        <View style={styles.chartLine} />
       </View>
 
-      <Animated.View style={[styles.timeMatter, modalStyle]}>
-        <Text style={styles.matter}>Matérias</Text>
-        <View style={styles.firstMatter} />
-        <Text style={styles.titleMatter}>Língua Portuguesa</Text>
-        <View style={styles.secondMatter} />
-        <Text style={styles.titleMatter}>Matemática</Text>
-        <View style={styles.thirdMatter} />
-        <Text style={styles.titleMatter}>Geografia</Text>
-        <View style={styles.fourthMatter} />
-        <Text style={styles.titleMatter}>História</Text>
-        <View style={styles.fifthMatter} />
-        <Text style={styles.titleMatter}>Ciências</Text>
-        <View style={styles.row} />
-        <Text numberOfLines={1} style={styles.averagetime}>
-          Tempo
-        </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          15:30
-        </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          15:30
-        </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          15:30
-        </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          15:30
-        </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          15:30
-        </Text>
-      </Animated.View>
+      <View style={styles.infoCard}>
+        <View style={styles.infoHeader}>
+          <Text style={styles.infoTitle}>Matérias</Text>
+          <Text style={styles.infoTitle}>Tempo médio</Text>
+        </View>
+
+        <View style={styles.infoContent}>
+          <View style={styles.leftColumn}>
+            {dados.map((item, index) => (
+              <View key={index} style={styles.subjectRow}>
+                <View
+                  style={[
+                    styles.subjectColor,
+                    { backgroundColor: item.color },
+                  ]}
+                />
+
+                <Text style={styles.subjectText}>{item.name}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.rightColumn}>
+            {dados.map((item, index) => (
+              <Text key={index} style={styles.timeText}>
+                {item.time}
+              </Text>
+            ))}
+          </View>
+        </View>
+      </View>
     </View>
   );
 }

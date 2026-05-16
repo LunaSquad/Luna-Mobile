@@ -50,7 +50,7 @@ export default function FasesMolde({
     if (acertou) {
       const novosAcertos = acertos + 1;
       setAcertos(novosAcertos);
-      setFeedback("✅ Muito bem! Você acertou.");
+      setFeedback("Ótima resposta! Você acertou.");
 
       setTimeout(() => {
         const proximaFase = faseAtual + 1;
@@ -65,7 +65,7 @@ export default function FasesMolde({
         }
       }, 900);
     } else {
-      setFeedback(`❌ Ops! Tente novamente.`);
+      setFeedback("Boa tentativa! Revise sua resposta e tente novamente.");
     }
   }
 
@@ -80,11 +80,11 @@ export default function FasesMolde({
   if (!fases.length) {
     return (
       <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.logo}>{titulo}</Text>
-          <Text style={styles.subtitulo}>{subtitulo}</Text>
-          <Text style={styles.emptyText}>
-            Nenhuma fase foi encontrada para este molde.
+        <View style={styles.finalCard}>
+          <Text style={styles.finalEmoji}>🦖</Text>
+          <Text style={styles.finalTitle}>Nenhuma fase encontrada</Text>
+          <Text style={styles.finalText}>
+            Não encontramos perguntas para esta atividade.
           </Text>
         </View>
       </View>
@@ -94,17 +94,15 @@ export default function FasesMolde({
   if (finalizado) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>{titulo}</Text>
-          <Text style={styles.subtitulo}>{subtitulo}</Text>
-        </View>
-
-        <View style={styles.card}>
+        <View style={styles.finalCard}>
           <Text style={styles.finalEmoji}>🏆</Text>
+
           <Text style={styles.finalTitle}>Parabéns!</Text>
+
           <Text style={styles.finalText}>
             Você concluiu todas as fases da atividade.
           </Text>
+
           <Text style={styles.finalScore}>
             Acertos: {acertos} de {fases.length}
           </Text>
@@ -119,189 +117,144 @@ export default function FasesMolde({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>{titulo}</Text>
-        <Text style={styles.subtitulo}>{subtitulo}</Text>
-      </View>
-
-      <View style={styles.progressBox}>
-        <Text style={styles.progressText}>
-          Fase {fase.fase} de {fases.length}
-        </Text>
-        <Text style={styles.progressPercent}>{progresso}%</Text>
-      </View>
-
-      <View style={styles.progressBarBackground}>
-        <View style={[styles.progressBarFill, { width: `${progresso}%` }]} />
-      </View>
-
       <View style={styles.challengeCard}>
-        <Text style={styles.challengeTitle}>Desafio da vez</Text>
+        <Text style={styles.dino}>🦖</Text>
+
         <Text style={styles.challengeText}>{fase.desafio}</Text>
+
+        <Text style={styles.challengeDescription}>
+          Escreva sua resposta com calma e explique do seu jeito.
+        </Text>
       </View>
 
-      <View style={styles.answerArea}>
-        <Text style={styles.inputLabel}>Digite sua resposta:</Text>
-
+      <View style={styles.answerBox}>
         <TextInput
           style={styles.input}
           value={respostaUsuario}
           onChangeText={setRespostaUsuario}
-          placeholder="Escreva aqui"
-          placeholderTextColor="#7A869A"
+          placeholder="Comece a escrever aqui..."
+          placeholderTextColor="#C9DBD8"
+          multiline
+          textAlignVertical="top"
         />
 
-        <TouchableOpacity style={styles.button} onPress={verificarResposta}>
-          <Text style={styles.buttonText}>Responder</Text>
-        </TouchableOpacity>
-
-        {feedback ? (
-          <View
-            style={[
-              styles.feedbackBox,
-              feedback.includes("✅")
-                ? styles.feedbackSuccess
-                : styles.feedbackError,
-            ]}
-          >
-            <Text style={styles.feedbackText}>{feedback}</Text>
-          </View>
-        ) : null}
+        <Text style={styles.pencil}>✍️</Text>
       </View>
+
+      <View style={styles.spacer} />
+
+      {feedback ? (
+        <View
+          style={[
+            styles.feedbackBox,
+            feedback.includes("acertou")
+              ? styles.feedbackSuccess
+              : styles.feedbackError,
+          ]}
+        >
+          <View style={styles.feedbackIcon}>
+            <Text style={styles.feedbackEmoji}>🦖</Text>
+          </View>
+
+          <Text style={styles.feedbackText}>{feedback}</Text>
+        </View>
+      ) : (
+        <View style={styles.feedbackBox}>
+          <View style={styles.feedbackIcon}>
+            <Text style={styles.feedbackEmoji}>🦖</Text>
+          </View>
+
+          <Text style={styles.feedbackText}>
+            Escreva uma resposta bem caprichada!
+          </Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.button} onPress={verificarResposta}>
+        <Text style={styles.buttonText}>Enviar Resposta</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
-    marginBottom: 20,
-  },
-
-  header: {
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  logo: {
-    fontSize: 28,
-    fontWeight: "300",
-    color: "#69AAB0",
-    letterSpacing: 1,
-  },
-
-  subtitulo: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#355C63",
-    fontWeight: "600",
-  },
-
-  progressBox: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-
-  progressText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1C2B38",
-  },
-
-  progressPercent: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#005A63",
-  },
-
-  progressBarBackground: {
-    height: 10,
-    backgroundColor: "#D9E7EA",
-    borderRadius: 999,
-    overflow: "hidden",
-    marginBottom: 16,
-  },
-
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#005A63",
-    borderRadius: 999,
+    flex: 1,
+    minHeight: 620,
+    marginTop: 22,
+    marginBottom: 24,
   },
 
   challengeCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    marginBottom: 12,
+    borderRadius: 28,
+    borderWidth: 4,
+    borderColor: "#E8F0EE",
+    paddingHorizontal: 24,
+    paddingVertical: 26,
+    marginBottom: 24,
   },
 
-  challengeTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#005A63",
-    marginBottom: 10,
-    textAlign: "center",
+  dino: {
+    fontSize: 38,
+    marginBottom: 16,
   },
 
   challengeText: {
-    fontSize: 22,
-    lineHeight: 30,
-    textAlign: "center",
-    color: "#172B4D",
-    fontWeight: "800",
+    fontSize: 23,
+    lineHeight: 31,
+    color: "#287572",
+    fontWeight: "900",
+    marginBottom: 14,
   },
 
-  answerArea: {
-    backgroundColor: "#F4D52C",
-    borderRadius: 20,
-    padding: 16,
-  },
-
-  inputLabel: {
+  challengeDescription: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#1C2B38",
-    marginBottom: 10,
+    lineHeight: 24,
+    color: "#6EA2A0",
+    fontWeight: "600",
+  },
+
+  answerBox: {
+    height: 200,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    borderWidth: 4,
+    borderColor: "#E8F0EE",
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 20,
   },
 
   input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#25313C",
-    fontWeight: "600",
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-
-  button: {
-    backgroundColor: "#005A63",
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  buttonText: {
-    color: "#FFFFFF",
+    flex: 1,
     fontSize: 16,
-    fontWeight: "800",
+    color: "#287572",
+    fontWeight: "700",
+    padding: 0,
+  },
+
+  pencil: {
+    position: "absolute",
+    right: 24,
+    bottom: 18,
+    fontSize: 26,
+  },
+
+  spacer: {
+    flex: 1,
+    minHeight: 120,
   },
 
   feedbackBox: {
-    marginTop: 12,
-    borderRadius: 14,
-    padding: 12,
+    minHeight: 64,
+    backgroundColor: "#F1F4EC",
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
   },
 
   feedbackSuccess: {
@@ -312,55 +265,86 @@ const styles = StyleSheet.create({
     backgroundColor: "#FDECEC",
   },
 
-  feedbackText: {
-    textAlign: "center",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#17212B",
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
+  feedbackIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: "#287572",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    justifyContent: "center",
+    marginRight: 14,
   },
 
-  emptyText: {
-    marginTop: 16,
-    fontSize: 15,
-    color: "#425466",
-    textAlign: "center",
+  feedbackEmoji: {
+    fontSize: 21,
+  },
+
+  feedbackText: {
+    flex: 1,
+    color: "#006d77",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "900",
+  },
+
+  button: {
+    height: 66,
+    borderRadius: 24,
+    backgroundColor: "#006d77",
+    alignItems: "center",
+    justifyContent: "center",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    elevation: 5,
+  },
+
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  finalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 4,
+    borderColor: "#E8F0EE",
   },
 
   finalEmoji: {
-    fontSize: 42,
+    fontSize: 56,
     marginBottom: 10,
   },
 
   finalTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#172B4D",
+    fontSize: 27,
+    fontWeight: "900",
+    color: "#006d77",
     marginBottom: 8,
+    textAlign: "center",
   },
 
   finalText: {
     fontSize: 15,
     color: "#425466",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 10,
+    fontWeight: "700",
+    lineHeight: 22,
   },
 
   finalScore: {
     fontSize: 16,
-    fontWeight: "800",
-    color: "#005A63",
-    marginBottom: 16,
+    fontWeight: "900",
+    color: "#006d77",
+    marginBottom: 18,
   },
 });

@@ -99,12 +99,13 @@ type NavigationType = {
       materiaId?: string;
       materiaNome?: string;
       userId?: string;
+      hiperfocoAtual?: string;
     }
   ) => void;
 };
 
 export default function Home({ route }: HomeProps) {
-  const navigation = useNavigation<NavigationType>();
+  const navigation = useNavigation<any>();
 
   const { userId, tipoUser } = route.params || {};
 
@@ -216,7 +217,21 @@ export default function Home({ route }: HomeProps) {
     setMaterias(cards);
   }
 
+  function sair() {
+    fecharMenu();
+
+    setTimeout(() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }, 260);
+  }
+
+
   useEffect(() => {
+
+
     async function carregarTudo() {
       try {
         console.log("HOME userId:", userId);
@@ -291,12 +306,21 @@ export default function Home({ route }: HomeProps) {
             <Image style={styles.menu} source={temporyMenu} />
           </TouchableOpacity>
 
-          <Image
-            style={styles.profilePhoto}
-            source={
-              aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              navigation.navigate("Perfil", {
+                userId,
+              })
             }
-          />
+          >
+            <Image
+              style={styles.profilePhoto}
+              source={
+                aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
+              }
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.body}>
@@ -326,7 +350,15 @@ export default function Home({ route }: HomeProps) {
                 <View style={styles.hiperfocoActionArea}>
                   <Image source={seta} style={styles.imageSeta} />
 
-                  <TouchableOpacity style={styles.bottonHiperfoco}>
+                  <TouchableOpacity
+                    style={styles.bottonHiperfoco}
+                    onPress={() =>
+                      navigation.navigate("EditHyperfocus", {
+                        userId,
+                        hiperfocoAtual: hiperfocoNome,
+                      })
+                    }
+                  >
                     <Image source={buttonIcon} style={styles.buttonIconHiperfoco} />
                   </TouchableOpacity>
                 </View>
@@ -375,7 +407,7 @@ export default function Home({ route }: HomeProps) {
 
           {!loading && aluno && (
             <View style={{ paddingBottom: 30 }}>
-              <Text>RA: {aluno.RA}</Text>
+              {/* <Text>RA: {aluno.RA}</Text> */}
               <Text>Turma: {aluno.turmaID}</Text>
               <Text>Escola: {aluno.escolaID}</Text>
               <Text>
@@ -418,7 +450,10 @@ export default function Home({ route }: HomeProps) {
             style={styles.drawerItem}
             onPress={() => {
               fecharMenu();
-              console.log("Editar hiperfoco");
+              navigation.navigate("EditHyperfocus", {
+                userId,
+                hiperfocoAtual: hiperfocoNome,
+              });
             }}
           >
             <Text style={styles.drawerIcon}>☸</Text>
@@ -429,7 +464,7 @@ export default function Home({ route }: HomeProps) {
             style={styles.drawerItem}
             onPress={() => {
               fecharMenu();
-              console.log("Feedback");
+              navigation.navigate("Feedback");
             }}
           >
             <Text style={styles.drawerIcon}>⚭</Text>
@@ -440,7 +475,10 @@ export default function Home({ route }: HomeProps) {
             style={styles.drawerItem}
             onPress={() => {
               fecharMenu();
-              console.log("Atividades concluídas");
+              navigation.navigate("Atividades", {
+                userId,
+                materiaNome: "Matemática",
+              });
             }}
           >
             <Text style={styles.drawerIcon}>▣</Text>
@@ -451,13 +489,7 @@ export default function Home({ route }: HomeProps) {
         <View>
           <View style={styles.drawerLineBottom} />
 
-          <TouchableOpacity
-            style={styles.drawerItem}
-            onPress={() => {
-              fecharMenu();
-              console.log("Sair");
-            }}
-          >
+          <TouchableOpacity style={styles.drawerItem} onPress={sair}>
             <Text style={styles.drawerIcon}>⊙</Text>
             <Text style={styles.drawerText}>Sair</Text>
           </TouchableOpacity>

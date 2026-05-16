@@ -24,17 +24,27 @@ type LoginResponse = {
 };
 
 type NavigationType = {
-  replace: (
+  navigate: (
     screen: string,
     params?: {
+      materiaId?: string;
+      materiaNome?: string;
       userId?: string;
-      tipoUser?: string;
+      hiperfocoAtual?: string;
     }
   ) => void;
+
+  reset: (state: {
+    index: number;
+    routes: {
+      name: string;
+      params?: any;
+    }[];
+  }) => void;
 };
 
 export default function LoginScreen() {
-  const navigation = useNavigation<NavigationType>();
+  const navigation = useNavigation<any>();
   const [email, setEmail] = useState<string>("");
   const [senha, setSenha] = useState<string>("");
 

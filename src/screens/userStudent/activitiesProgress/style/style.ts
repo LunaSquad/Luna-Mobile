@@ -1,71 +1,108 @@
 import { StyleSheet } from "react-native";
-import { theme } from "../../../../styles/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    flex: 1,
+    backgroundColor: "#006d77",
   },
-  luna: {
+
+  phoneContent: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+
+  header: {
+    height: 150,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingBottom: 30,
+  },
+
+  backButton: {
     position: "absolute",
-    alignSelf: "center",
+    left: 18,
+    top: 32,
+    zIndex: 2,
   },
+
   logo: {
-    width: "9%",
-    height: "9%",
-    top: 15,
-    marginLeft: 415,
+    width: 70,
+    height: 20,
+    marginTop: 24,
   },
-  viewBorderRadius: {
-    backgroundColor: theme.colors.primary,
-    width: 480,
-    height: 300,
-    borderBottomRightRadius: theme.radius.lg,
-    elevation: 6,
-    shadowColor: theme.colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+
+  butterfly: {
+    position: "absolute",
+    right: 28,
+    top: 32,
+    color: "#006d77",
+    fontSize: 22,
   },
-  titleActivitie: {
-    color: theme.colors.secondary,
-    fontFamily: "Inter_700Bold",
-    fontSize: theme.fontSize.large,
-    top: 100,
-    alignSelf: "center",
+
+  materiasContainer: {
+    marginTop: 6,
   },
-  titleData: {
-    color: theme.colors.textPrimary,
-    fontFamily: "Inter_300Light",
-    fontSize: theme.fontSize.large,
-    top: 150,
-    marginLeft: theme.spacing.xl,
+
+  materiasScroll: {
+    paddingHorizontal: 28,
+    gap: 22,
   },
-  imgProgress: {
-    width: "80%",
-    height: "60%",
-    alignSelf: "center",
-    top: 25,
+
+  materiaButton: {
+    width: 55,
+    height: 55,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  titleLesson: {
-    fontFamily: "Inter_700Bold",
-    color: theme.colors.borderFirstMatter,
-    bottom: 150,
-    marginLeft: 110,
-    fontSize: theme.fontSize.normal,
+
+  materiaText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
   },
-  textLesson: {
-    fontFamily: "Inter_300Light",
-    fontSize: theme.fontSize.normal,
-    bottom: 135,
-    marginLeft: 110,
+
+  titleSection: {
+    marginTop: 28,
+    marginLeft: 28,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111111",
   },
-  arrowLesson: {
-    color: theme.colors.borderFirstMatter,
-    bottom: 135,
-    marginLeft: 315,
+
+  activitiesList: {
+    paddingTop: 18,
+    paddingBottom: 40,
   },
-  textAndamento: {
-    fontFamily: theme.fonts.bold,
-    marginTop: theme.spacing.xx,
+
+  emptyContainer: {
+    marginTop: 40,
+    paddingHorizontal: 28,
+    alignItems: "center",
   },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#222222",
+    textAlign: "center",
+  },
+
+  emptyText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  logoBorboleta: {
+  position: "absolute",
+  right: 28,
+  top: 55,
+  width: 24,
+  height: 24,
+},
 });

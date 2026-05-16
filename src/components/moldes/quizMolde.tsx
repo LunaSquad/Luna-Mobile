@@ -30,9 +30,9 @@ export default function QuizMolde({
 
   const acertou = useMemo(() => {
     if (!respondeu || !selecionada) return false;
+
     return (
-      selecionada.trim().toLowerCase() ===
-      respostaCorreta.trim().toLowerCase()
+      selecionada.trim().toLowerCase() === respostaCorreta.trim().toLowerCase()
     );
   }, [respondeu, selecionada, respostaCorreta]);
 
@@ -48,42 +48,28 @@ export default function QuizMolde({
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>{titulo}</Text>
-        <Text style={styles.subtitulo}>{subtitulo}</Text>
-      </View>
-
-      <View style={styles.mainCard}>
+      <View style={styles.questionArea}>
+        <Text style={styles.dinoEmoji}>🦕</Text>
         <Text style={styles.pergunta}>{pergunta}</Text>
-
-        <View style={styles.atividadeArea}>
-          {imagens.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.imagesRow}
-            >
-              {imagens.map((img, index) => (
-                <View key={index} style={styles.imageCard}>
-                  <Image source={{ uri: img }} style={styles.image} />
-                </View>
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.placeholderBox}>
-              <Text style={styles.placeholderEmoji}>🎯</Text>
-              <Text style={styles.placeholderText}>
-                Observe os elementos e escolha a resposta correta
-              </Text>
-            </View>
-          )}
-        </View>
       </View>
 
-      <View style={styles.bottomArea}>
-        <Text style={styles.instrucao}>Escolha uma opção:</Text>
+      {imagens.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.imagesRow}
+        >
+          {imagens.map((img, index) => (
+            <View key={index} style={styles.imageCard}>
+              <Image source={{ uri: img }} style={styles.image} />
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
+      <View style={styles.optionsArea}>
         {opcoes.map((opcao, index) => {
+          const letras = ["A", "B", "C", "D", "E"];
           const estaSelecionada = selecionada === opcao;
 
           const mostrarCorreta =
@@ -104,18 +90,40 @@ export default function QuizMolde({
               activeOpacity={0.85}
               onPress={() => selecionarOpcao(opcao)}
             >
-              <Text
-                style={[
-                  styles.opcaoTexto,
-                  (mostrarCorreta || mostrarErrada) && styles.opcaoTextoDestaque,
-                ]}
-              >
-                {opcao}
-              </Text>
+              <View style={styles.letterCircle}>
+                <Text style={styles.letterText}>{letras[index]}</Text>
+              </View>
+
+              <Text style={styles.opcaoTexto}>{opcao}</Text>
             </TouchableOpacity>
           );
         })}
+      </View>
 
+      {respondeu && (
+        <View
+          style={[
+            styles.feedbackBox,
+            acertou ? styles.feedbackSucesso : styles.feedbackErro,
+          ]}
+        >
+          <Text style={styles.feedbackEmoji}>{acertou ? "🏆" : "💡"}</Text>
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.feedbackTitulo}>
+              {acertou ? "Muito bem!" : "Quase lá!"}
+            </Text>
+
+            <Text style={styles.feedbackTexto}>
+              {acertou
+                ? "Você acertou a resposta."
+                : `A resposta correta era: ${respostaCorreta}`}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.bottomBar}>
         <TouchableOpacity
           style={[
             styles.botao,
@@ -127,28 +135,13 @@ export default function QuizMolde({
           disabled={!selecionada || respondeu}
         >
           <Text style={styles.botaoTexto}>
-            {!respondeu ? "Enviar" : acertou ? "Acertou!" : "Tentar novamente"}
+            {!respondeu
+              ? "Confirmar Resposta"
+              : acertou
+              ? "Acertou!"
+              : "Resposta enviada"}
           </Text>
         </TouchableOpacity>
-
-        {respondeu ? (
-          <View
-            style={[
-              styles.feedbackBox,
-              acertou ? styles.feedbackSucesso : styles.feedbackErro,
-            ]}
-          >
-            <Text style={styles.feedbackEmoji}>{acertou ? "🏆" : "💡"}</Text>
-            <Text style={styles.feedbackTitulo}>
-              {acertou ? "Muito bem!" : "Quase lá!"}
-            </Text>
-            <Text style={styles.feedbackTexto}>
-              {acertou
-                ? "Você acertou a resposta."
-                : `A resposta correta era: ${respostaCorreta}`}
-            </Text>
-          </View>
-        ) : null}
       </View>
     </View>
   );
@@ -156,140 +149,80 @@ export default function QuizMolde({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: 8,
-    marginBottom: 20,
+    flex: 1,
+    minHeight: 650,
+    marginTop: 10,
   },
 
-  header: {
+  questionArea: {
     alignItems: "center",
+    marginTop: 24,
+    marginBottom: 34,
+  },
+
+  dinoEmoji: {
+    fontSize: 52,
     marginBottom: 12,
   },
 
-  logo: {
-    fontSize: 28,
-    fontWeight: "300",
-    color: "#69AAB0",
-    letterSpacing: 1,
-  },
-
-  subtitulo: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#355C63",
-    fontWeight: "600",
-  },
-
-  mainCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    paddingTop: 18,
-    paddingHorizontal: 18,
-    paddingBottom: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    zIndex: 2,
-  },
-
   pergunta: {
-    fontSize: 24,
+    fontSize: 23,
     lineHeight: 31,
     textAlign: "center",
-    color: "#172B4D",
-    fontWeight: "800",
-    marginBottom: 18,
-  },
-
-  atividadeArea: {
-    minHeight: 180,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    backgroundColor: "#FAFAFA",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 10,
+    color: "#287572",
+    fontWeight: "900",
   },
 
   imagesRow: {
-    alignItems: "center",
-    paddingHorizontal: 6,
-    gap: 10,
+    gap: 12,
+    paddingVertical: 10,
   },
 
   imageCard: {
-    width: 110,
-    height: 110,
-    borderRadius: 14,
+    width: 105,
+    height: 105,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E9EEF2",
+    borderWidth: 3,
+    borderColor: "#E8F0EE",
     marginRight: 10,
   },
 
   image: {
-    width: 86,
-    height: 86,
+    width: 82,
+    height: 82,
     resizeMode: "contain",
   },
 
-  placeholderBox: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 14,
-  },
-
-  placeholderEmoji: {
-    fontSize: 42,
-    marginBottom: 10,
-  },
-
-  placeholderText: {
-    textAlign: "center",
-    fontSize: 15,
-    color: "#5B6470",
-    lineHeight: 22,
-    fontWeight: "500",
-  },
-
-  bottomArea: {
-    backgroundColor: "#F4D52C",
-    marginTop: -6,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    paddingTop: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 18,
-  },
-
-  instrucao: {
-    fontSize: 15,
-    color: "#1C2B38",
-    fontWeight: "700",
-    marginBottom: 12,
+  optionsArea: {
+    gap: 14,
   },
 
   opcao: {
+    height: 78,
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
+    borderRadius: 24,
+    borderWidth: 4,
+    borderColor: "#E8F0EE",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    elevation: 2,
   },
 
   opcaoSelecionada: {
-    borderColor: "#005A63",
-    transform: [{ scale: 1.01 }],
+    borderColor: "#287572",
+    backgroundColor: "#F2FAF8",
   },
 
   opcaoCorreta: {
@@ -298,52 +231,38 @@ const styles = StyleSheet.create({
   },
 
   opcaoErrada: {
-    backgroundColor: "#FCE2E2",
+    backgroundColor: "#FDECEC",
     borderColor: "#C0392B",
   },
 
-  opcaoTexto: {
-    fontSize: 15,
-    color: "#25313C",
-    fontWeight: "700",
-  },
-
-  opcaoTextoDestaque: {
-    color: "#17212B",
-  },
-
-  botao: {
-    marginTop: 8,
-    backgroundColor: "#005A63",
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
+  letterCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#FAF8EF",
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: 18,
   },
 
-  botaoDesabilitado: {
-    opacity: 0.5,
+  letterText: {
+    color: "#287572",
+    fontSize: 17,
+    fontWeight: "900",
   },
 
-  botaoCorreto: {
-    backgroundColor: "#1E8E5A",
-  },
-
-  botaoErrado: {
-    backgroundColor: "#C0392B",
-  },
-
-  botaoTexto: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
+  opcaoTexto: {
+    flex: 1,
+    fontSize: 18,
+    color: "#287572",
+    fontWeight: "900",
   },
 
   feedbackBox: {
-    marginTop: 14,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    marginTop: 18,
+    borderRadius: 22,
+    padding: 16,
+    flexDirection: "row",
     alignItems: "center",
   },
 
@@ -356,21 +275,72 @@ const styles = StyleSheet.create({
   },
 
   feedbackEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
+    fontSize: 30,
+    marginRight: 14,
   },
 
   feedbackTitulo: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#17212B",
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#17264A",
   },
 
   feedbackTexto: {
     fontSize: 14,
-    textAlign: "center",
     color: "#425466",
-    lineHeight: 20,
+    marginTop: 3,
+    fontWeight: "600",
   },
+
+  bottomBar: {
+    marginTop: 28,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+
+  // botao: {
+  //   height: 68,
+  //   borderRadius: 24,
+  //   backgroundColor: "#A0AD57",
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
+
+
+botao: {
+  height: 62,
+  borderRadius: 22,
+  backgroundColor: "#006d77",
+  justifyContent: "center",
+  alignItems: "center",
+
+  shadowColor: "#000",
+  shadowOpacity: 0.16,
+  shadowRadius: 5,
+  shadowOffset: {
+    width: 0,
+    height: 4,
+  },
+  elevation: 5,
+},
+
+botaoDesabilitado: {
+  backgroundColor: "#97BBB5",
+  opacity: 1,
+},
+
+botaoCorreto: {
+  backgroundColor: "#1E8E5A",
+},
+
+botaoErrado: {
+  backgroundColor: "#C0392B",
+},
+
+botaoTexto: {
+  color: "#FFFFFF",
+  fontSize: 17,
+  fontWeight: "900",
+},
 });

@@ -2,23 +2,16 @@ import { useEffect, useState } from "react";
 import {
   View,
   Text,
-  Dimensions,
-  Image,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
+
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
-
-const { height } = Dimensions.get("window");
 
 type RouteParams = {
   materiaId?: string;
@@ -31,6 +24,7 @@ type Plano = {
   titulo: string;
   descricao: string;
   status: "andamento" | "vencida" | "concluida" | string;
+  materia: string;
 };
 
 type ActivitiesProgressScreenProps = {
@@ -39,81 +33,76 @@ type ActivitiesProgressScreenProps = {
   };
 };
 
+const materias = [
+  {
+    sigla: "LP",
+    nome: "Português",
+    cor: "#006d77",
+  },
+  {
+    sigla: "MAT",
+    nome: "Matemática",
+    cor: "#06156f",
+  },
+  {
+    sigla: "GEO",
+    nome: "Geografia",
+    cor: "#7c2d12",
+  },
+  {
+    sigla: "HIS",
+    nome: "História",
+    cor: "#4b1d0d",
+  },
+];
+
 export default function ActivitiesProgressScreen({
   route,
 }: ActivitiesProgressScreenProps) {
   const navigation = useNavigation<any>();
   const { materiaId, materiaNome, userId } = route?.params || {};
 
+  const materiaInicial =
+    materias.find((m) =>
+      materiaNome
+        ?.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .includes(
+          m.nome
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+        )
+    )?.sigla || "MAT";
+
   const [loading, setLoading] = useState(true);
+  const [materiaSelecionada, setMateriaSelecionada] = useState(materiaInicial);
   const [planos, setPlanos] = useState<Plano[]>([]);
 
-  const logoPosition = useSharedValue(height / 2 - 100);
-  const logoSize = useSharedValue(200);
-  const modalTranslate = useSharedValue(height * 0.7);
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      logoSize.value = withTiming(150, {
-        duration: 600,
-        easing: Easing.out(Easing.exp),
-      });
+    carregarAtividades();
+  }, [materiaSelecionada]);
 
-      logoPosition.value = withTiming(90, {
-        duration: 600,
-        easing: Easing.out(Easing.exp),
-      });
+  function carregarAtividades() {
+    setLoading(true);
 
-      modalTranslate.value = withTiming(0, {
-        duration: 800,
-        easing: Easing.out(Easing.exp),
-      });
-    }, 500);
+    if (materiaSelecionada === "MAT") {
+      const planoAdicao: Plano = {
+        idPlano: "plano-pdf-adicao-simples",
+        titulo: "Adição simples",
+        descricao: "Aprenda a juntar quantidades e resolver somas simples até 10.",
+        status: "andamento",
+        materia: "MAT",
+      };
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  const lunaStyle = useAnimatedStyle(() => ({
-    top: logoPosition.value - 70,
-    width: logoSize.value * 0.5,
-    height: logoSize.value * 0.5,
-  }));
-
-  function ehMatematica(nome?: string) {
-    return (nome || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .includes("matematica");
-  }
-
-  useEffect(() => {
-    function carregarAtividades() {
-      setLoading(true);
-
-      if (ehMatematica(materiaNome)) {
-        const planoAdicao: Plano = {
-          idPlano: "plano-pdf-adicao-simples",
-          titulo: "Adição simples",
-          descricao:
-            "Aprenda a juntar quantidades e resolver somas simples até 10.",
-          status: "andamento",
-        };
-
-        setPlanos([planoAdicao]);
-      } else {
-        setPlanos([]);
-      }
-
-      setLoading(false);
+      setPlanos([planoAdicao]);
+    } else {
+      setPlanos([]);
     }
 
-    carregarAtividades();
-  }, [materiaId, materiaNome, userId]);
-
-  const emAndamento = planos.filter((p) => p.status === "andamento");
-  const vencidas = planos.filter((p) => p.status === "vencida");
-  const concluidas = planos.filter((p) => p.status === "concluida");
+    setLoading(false);
+  }
 
   function abrirAtividadeAdaptada(plano: Plano) {
     navigation.navigate("AdaptedActivity", {
@@ -126,90 +115,110 @@ export default function ActivitiesProgressScreen({
     });
   }
 
-  function renderLista(lista: Plano[], mensagemVazia: string) {
-    if (lista.length === 0) {
-      return <Text style={{ marginLeft: 16 }}>{mensagemVazia}</Text>;
-    }
-
-    return lista.map((p) => (
-      <TouchableOpacity
-        key={p.idPlano}
-        activeOpacity={0.8}
-        onPress={() => abrirAtividadeAdaptada(p)}
-      >
-        <ProgressCard
-          title={p.titulo}
-          description={p.descricao}
-          image={require("../../../assets/img1-atividade-andamento.png")}
-        />
-      </TouchableOpacity>
-    ));
-  }
-
-  const temAtividade = planos.length > 0;
-
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.container}>
-        <View style={styles.viewBorderRadius}>
-          <Animated.Image
-            source={require("../../../assets/luna-positivo.png")}
-            style={[styles.luna, lunaStyle]}
+    <View style={styles.container}>
+      <View style={styles.phoneContent}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <MaterialIcons name="chevron-left" size={32} color="#006d77" />
+          </TouchableOpacity>
+
+          <Image
+            source={require("../../../assets/luna.png")}
+            style={styles.logo}
             resizeMode="contain"
           />
 
           <Image
-            source={require("../../../assets/logo mobile-positivo.png")}
-            style={styles.logo}
+            source={require("../../../assets/logo mobile.png")}
+            style={styles.logoBorboleta}
+            resizeMode="contain"
           />
-
-          <Text style={styles.titleActivitie}>
-            Atividades {materiaNome ? `- ${materiaNome}` : ""}
-          </Text>
-
-          <Text style={styles.titleData}>Hoje</Text>
         </View>
 
+        <View style={styles.materiasContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.materiasScroll}
+          >
+            {materias.map((materia) => {
+              const selecionada = materiaSelecionada === materia.sigla;
+
+              return (
+                <TouchableOpacity
+                  key={materia.sigla}
+                  activeOpacity={0.8}
+                  onPress={() => setMateriaSelecionada(materia.sigla)}
+                  style={[
+                    styles.materiaButton,
+                    {
+                      backgroundColor: materia.cor,
+                      opacity: selecionada ? 1 : 0.55,
+                      transform: [{ scale: selecionada ? 1.08 : 1 }],
+                      borderWidth: selecionada ? 3 : 0,
+                      borderColor: selecionada ? "#ffffff" : "transparent",
+
+                      shadowColor: selecionada ? materia.cor : "transparent",
+                      shadowOffset: {
+                        width: 0,
+                        height: 4,
+                      },
+                      shadowOpacity: selecionada ? 0.35 : 0,
+                      shadowRadius: 6,
+
+                      elevation: selecionada ? 8 : 0,
+                    },
+                  ]}
+                >
+                  <Text style={styles.materiaText}>{materia.sigla}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        <Text style={styles.titleSection}>Atividades lançadas</Text>
+
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 20 }} />
-        ) : !temAtividade ? (
-          <View style={{ marginTop: 40, paddingHorizontal: 24 }}>
-            <Text
-              style={{
-                textAlign: "center",
-                fontSize: 18,
-                fontWeight: "bold",
-                color: "#333",
-              }}
-            >
-              Sem aulas adaptadas no momento
-            </Text>
-
-            <Text
-              style={{
-                textAlign: "center",
-                marginTop: 8,
-                fontSize: 14,
-                color: "#666",
-              }}
-            >
-              Ainda não existem atividades adaptadas disponíveis para essa
-              matéria.
-            </Text>
-          </View>
+          <ActivityIndicator style={{ marginTop: 30 }} color="#006d77" />
         ) : (
-          <>
-            <Text style={styles.textAndamento}>Atividades em Andamento</Text>
-            {renderLista(emAndamento, "Nenhuma atividade em andamento")}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.activitiesList}
+          >
+            {planos.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>
+                  Nenhuma atividade lançada
+                </Text>
 
-            <Text style={styles.textAndamento}>Atividades Vencidas</Text>
-            {renderLista(vencidas, "Nenhuma atividade vencida")}
-
-            <Text style={styles.textAndamento}>Atividades Concluídas</Text>
-            {renderLista(concluidas, "Nenhuma atividade concluída")}
-          </>
+                <Text style={styles.emptyText}>
+                  Ainda não existem atividades disponíveis para essa matéria.
+                </Text>
+              </View>
+            ) : (
+              planos.map((plano) => (
+                <TouchableOpacity
+                  key={plano.idPlano}
+                  activeOpacity={0.85}
+                  onPress={() => abrirAtividadeAdaptada(plano)}
+                >
+                  <ProgressCard
+                    materiaSigla={materiaSelecionada}
+                    title={plano.titulo}
+                    description={plano.descricao}
+                  />
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
