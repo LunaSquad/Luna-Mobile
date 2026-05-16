@@ -1,74 +1,131 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { theme } from "../../styles/theme";
 
 type ProgressCardProps = {
   title: string;
   description: string;
-  image: any;
+  materiaSigla: string;
 };
 
-export function ProgressCard({ title, description, image }: ProgressCardProps) {
+export function ProgressCard({
+  title,
+  description,
+  materiaSigla,
+}: ProgressCardProps) {
   return (
-    <View style={styles.progressMatter}>
-      <View style={styles.centerProgressMatter}>
-      <Image source={image} style={styles.imgProgress} />
+    <View style={styles.card}>
+      <View style={styles.leftBorder} />
+
+      <View style={styles.content}>
+        <View style={styles.topArea}>
+          <View style={styles.materiaBox}>
+            <Text style={styles.materiaText}>{materiaSigla}</Text>
+          </View>
+
+          <View style={styles.iconsArea}>
+            <MaterialIcons name="arrow-forward" size={25} color="#006d77" />
+          </View>
+        </View>
+
+        <Text style={styles.title}>{title}</Text>
+
+        <Text style={styles.description}>{description}</Text>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Visualizar atividade</Text>
+          <MaterialIcons name="article" size={18} color="#006d77" />
+        </View>
       </View>
-
-      <MaterialIcons
-        name="arrow-forward"
-        size={30}
-        style={styles.arrowLesson}
-      />
-
-      <Text style={styles.titleLesson}>{title}</Text>
-      <Text style={styles.textLesson}>{description}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  progressMatter: {
-    backgroundColor: theme.colors.firstMatter,
-    width: 350,
-    height: 140,
+  card: {
+    width: "86%",
+    minHeight: 155,
+    backgroundColor: "#ffffff",
     alignSelf: "center",
-    top: 10,
-    borderRadius: theme.radius.md,
-    boxShadow: theme.colors.shadowColor,
-    elevation: 6,
-    margin: 20,
+    borderRadius: 10,
+    marginBottom: 28,
+    flexDirection: "row",
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  centerProgressMatter: {
-    height: 140,
-    width: 100,
-    backgroundColor: theme.colors.borderFirstMatter,
-    borderTopLeftRadius: theme.radius.md,
-    borderStartEndRadius: theme.radius.md,
+
+  leftBorder: {
+    width: 5,
+    backgroundColor: "#006d77",
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
   },
-  imgProgress: {
-    width: "80%",
-    height: "60%",
-    alignSelf: "center",
-    top: 25,
+
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 12,
   },
-  titleLesson: {
-    fontFamily: "Inter_700Bold",
-    color: theme.colors.borderFirstMatter,
-    bottom: 150,
-    marginLeft: 110,
-    fontSize: theme.fontSize.normal,
+
+  topArea: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
-  textLesson: {
-    fontFamily: "Inter_300Light",
-    fontSize: theme.fontSize.normal,
-    bottom: 135,
-    marginLeft: 110,
+
+  materiaBox: {
+    width: 43,
+    height: 43,
+    backgroundColor: "#eefaff",
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  arrowLesson: {
-    color: theme.colors.borderFirstMatter,
-    bottom: 135,
-    marginLeft: 315,
+
+  materiaText: {
+    color: "#006d77",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+
+  iconsArea: {
+    flexDirection: "row",
+    gap: 14,
+    alignItems: "center",
+  },
+
+  title: {
+    marginTop: 20,
+    color: "#006d77",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  description: {
+    marginTop: 7,
+    color: "#333333",
+    fontSize: 11,
+  },
+
+  footer: {
+    marginTop: 18,
+    alignSelf: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  footerText: {
+    color: "#006d77",
+    fontSize: 11,
+    fontWeight: "700",
   },
 });

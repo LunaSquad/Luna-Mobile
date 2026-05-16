@@ -11,6 +11,7 @@ import { theme } from "../../../styles/theme";
 import CustomInput  from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
 const { height } = Dimensions.get("window");
@@ -23,17 +24,27 @@ type LoginResponse = {
 };
 
 type NavigationType = {
-  replace: (
+  navigate: (
     screen: string,
     params?: {
+      materiaId?: string;
+      materiaNome?: string;
       userId?: string;
-      tipoUser?: string;
+      hiperfocoAtual?: string;
     }
   ) => void;
+
+  reset: (state: {
+    index: number;
+    routes: {
+      name: string;
+      params?: any;
+    }[];
+  }) => void;
 };
 
 export default function LoginScreen() {
-  const navigation = useNavigation<NavigationType>();
+  const navigation = useNavigation<any>();
   const [email, setEmail] = useState<string>("");
   const [senha, setSenha] = useState<string>("");
 
@@ -82,7 +93,7 @@ export default function LoginScreen() {
 
   async function handleLogin(): Promise<void> {
     try {
-      const response = await fetch("http://192.168.1.73:8000/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),

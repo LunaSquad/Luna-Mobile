@@ -65,3 +65,14 @@ ios/*.xcodeproj/xcuserdata/
 
 # Windows system files
 Thumbs.db
+
+
+#backend
+backend/.env
+__pycache__/
+*.pyc
+backend/data/outputs/
+backend/.env
+__pycache__/
+*.pyc
+backend/data/outputs/

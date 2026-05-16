@@ -1,8 +1,23 @@
 from fastapi import APIRouter
-from app.services.subjectService import get_subjects_by_escola_id
+from app.core.database import db
 
 router = APIRouter()
 
-@router.get("/materias/{escola_id}")
-def get_subjects(escola_id: str):
-    return get_subjects_by_escola_id(escola_id)
+@router.get("/materias")
+def get_subjects():
+    try:
+        materias = list(db.materias.find())
+
+        for materia in materias:
+            materia["_id"] = str(materia["_id"])
+
+        return {
+            "ok": True,
+            "materias": materias
+        }
+
+    except Exception as e:
+        return {
+            "ok": False,
+            "message": str(e)
+        }

@@ -9,7 +9,7 @@ vectorizer = joblib.load(MODELS_DIR / "vetorizador.pkl")
 
 
 def escolher_molde(plano: str, hiperfoco: str) -> str:
-    entrada = f"{plano} {hiperfoco}"
+    entrada = f"plano: {plano} | hiperfoco: {hiperfoco}"
     X = vectorizer.transform([entrada])
     molde_previsto = modelo.predict(X)[0]
     return molde_previsto
