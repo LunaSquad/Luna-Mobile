@@ -105,7 +105,7 @@ src/
 ## 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seuusuario/luna-mobile.git
+git clone https://github.com/LunaSquad/Luna-Mobile.git
 ```
 
 ---
