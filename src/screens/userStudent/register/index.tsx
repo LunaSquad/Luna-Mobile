@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Animated, {
@@ -15,6 +17,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   MaterialIcons,
   Octicons,
@@ -24,6 +27,7 @@ import {
 import { theme } from "../../../styles/theme";
 import CustomInput from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
+import API_BASE_URL from "../../../services/ip";
 import { styles } from "./style/style";
 
 const { height } = Dimensions.get("window");
@@ -31,30 +35,32 @@ const { height } = Dimensions.get("window");
 export default function RegisterScreen() {
   const navigation = useNavigation<any>();
 
-  // Controle da Etapa Atual (1, 2, 3 ou 4)
+  // Etapas: 1 (Dados Pessoais), 2 (Contato/Nasc), 3 (Fotos), 4 (Senha)
   const [step, setStep] = useState<number>(1);
+  const [loading, setLoading] = useState(false);
 
-  // Dados da Etapa 1
+  // Etapa 1
   const [nome, setNome] = useState("");
   const [nomeResponsavel, setNomeResponsavel] = useState("");
   const [cpf, setCpf] = useState("");
   const [cpfResponsavel, setCpfResponsavel] = useState("");
 
-  // Dados da Etapa 2
-  const [dataNascimento, setDataNascimento] = useState("");
+  // Etapa 2
+  const [dataNascimento, setDataNascimento] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
   const [hiperfoco, setHiperfoco] = useState("");
 
-  // Dados da Etapa 3 (Imagens)
+  // Etapa 3
   const [laudos, setLaudos] = useState<string[]>([]);
   const [fotoRosto, setFotoRosto] = useState<string | null>(null);
 
-  // Dados da Etapa 4 (Senhas)
+  // Etapa 4
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
-  // Animação de subida do card
+  // Animação
   const modalTranslate = useSharedValue(height * 0.88);
 
   useEffect(() => {
@@ -68,38 +74,72 @@ export default function RegisterScreen() {
     transform: [{ translateY: modalTranslate.value }],
   }));
 
-  function handleBack() {
-    if (step > 1) {
-      setStep(step - 1);
-    } else {
-      navigation.goBack();
-    }
+  // Formatador e Validador de CPF
+  function maskCPF(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+      .replace(/(-\d{2})\d+?$/, "$1");
   }
 
-  // Funções de captura de imagem
+  function validateCPF(cpfString: string): boolean {
+    const clean = cpfString.replace(/\D/g, "");
+    if (clean.length !== 11 || !!clean.match(/(\d)\1{10}/)) return false;
+
+    let soma = 0;
+    for (let i = 1; i <= 9; i++) soma += parseInt(clean.substring(i - 1, i)) * (11 - i);
+    let resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(clean.substring(9, 10))) return false;
+
+    soma = 0;
+    for (let i = 1; i <= 10; i++) soma += parseInt(clean.substring(i - 1, i)) * (12 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    return resto === parseInt(clean.substring(10, 11));
+  }
+
+  // Formatador e Validador de Telefone (celular brasileiro: 11 dígitos)
+  function maskPhone(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .replace(/(-\d{4})\d+?$/, "$1");
+  }
+
+  function validatePhone(phone: string): boolean {
+    const clean = phone.replace(/\D/g, "");
+    return clean.length === 10 || clean.length === 11;
+  }
+
+  function validateEmail(emailStr: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr.trim());
+  }
+
+  // Captura de Imagens
   async function pickImageFromGallery(tipo: "laudo" | "rosto") {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Permissão necessária", "Precisamos de acesso à galeria.");
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
       if (tipo === "laudo") {
         if (laudos.length >= 2) {
           Alert.alert("Limite atingido", "Você já adicionou 2 fotos do laudo.");
           return;
         }
-        setLaudos((prev) => [...prev, uri]);
+        setLaudos((prev) => [...prev, result.assets[0].uri]);
       } else {
-        setFotoRosto(uri);
+        setFotoRosto(result.assets[0].uri);
       }
     }
   }
@@ -110,35 +150,121 @@ export default function RegisterScreen() {
       Alert.alert("Permissão necessária", "Precisamos de acesso à câmera.");
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
       if (tipo === "laudo") {
         if (laudos.length >= 2) {
           Alert.alert("Limite atingido", "Você já adicionou 2 fotos do laudo.");
           return;
         }
-        setLaudos((prev) => [...prev, uri]);
+        setLaudos((prev) => [...prev, result.assets[0].uri]);
       } else {
-        setFotoRosto(uri);
+        setFotoRosto(result.assets[0].uri);
       }
+    }
+  }
+
+  function handleBack() {
+    if (step > 1) {
+      setStep(step - 1);
+    } else {
+      navigation.goBack();
+    }
+  }
+
+  // Submissão Final para a API
+  async function handleRegister() {
+    if (!senha.trim() || !confirmarSenha.trim()) {
+      Alert.alert("Atenção", "Preencha a senha e a confirmação.");
+      return;
+    }
+    if (senha.length < 6) {
+      Alert.alert("Senha fraca", "A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    if (senha !== confirmarSenha) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append("nome", nome);
+      formData.append("nomeResponsavel", nomeResponsavel);
+      formData.append("cpf", cpf);
+      formData.append("cpfResponsavel", cpfResponsavel);
+      formData.append(
+        "dataNascimento",
+        dataNascimento ? dataNascimento.toISOString().split("T")[0] : ""
+      );
+      formData.append("email", email);
+      formData.append("telefone", telefone);
+      if (hiperfoco) formData.append("hiperfoco", hiperfoco);
+      formData.append("senha", senha);
+
+      // Foto do Rosto
+      if (fotoRosto) {
+        const filename = fotoRosto.split("/").pop() || "foto_aluno.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+        formData.append("fotoRosto", {
+          uri: fotoRosto,
+          name: filename,
+          type,
+        } as any);
+      }
+
+      // Laudos
+      laudos.forEach((uri, index) => {
+        const filename = uri.split("/").pop() || `laudo_${index}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+        formData.append("laudos", {
+          uri,
+          name: filename,
+          type,
+        } as any);
+      });
+
+      const response = await fetch(`${API_BASE_URL}/register/student`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.ok) {
+        Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+          { text: "OK", onPress: () => navigation.navigate("Login") },
+        ]);
+      } else {
+        Alert.alert("Erro no Cadastro", data.detail || data.message || "Falha ao cadastrar.");
+      }
+    } catch (error) {
+      console.log("ERRO CADASTRO:", error);
+      Alert.alert("Erro", "Não foi possível conectar ao servidor.");
+    } finally {
+      setLoading(false);
     }
   }
 
   function handleNext() {
     if (step === 1) {
-      if (
-        !nome.trim() ||
-        !nomeResponsavel.trim() ||
-        !cpf.trim() ||
-        !cpfResponsavel.trim()
-      ) {
-        Alert.alert("Atenção", "Preencha todos os campos da etapa 1.");
+      if (!nome.trim() || !nomeResponsavel.trim() || !cpf.trim() || !cpfResponsavel.trim()) {
+        Alert.alert("Atenção", "Preencha todos os campos.");
+        return;
+      }
+      if (!validateCPF(cpf)) {
+        Alert.alert("CPF Inválido", "O CPF do aluno informado não é válido.");
+        return;
+      }
+      if (!validateCPF(cpfResponsavel)) {
+        Alert.alert("CPF Inválido", "O CPF do responsável informado não é válido.");
         return;
       }
       setStep(2);
@@ -146,13 +272,16 @@ export default function RegisterScreen() {
     }
 
     if (step === 2) {
-      if (
-        !dataNascimento.trim() ||
-        !email.trim() ||
-        !telefone.trim() ||
-        !hiperfoco.trim()
-      ) {
-        Alert.alert("Atenção", "Preencha todos os campos da etapa 2.");
+      if (!dataNascimento || !email.trim() || !telefone.trim()) {
+        Alert.alert("Atenção", "Preencha data de nascimento, e-mail e telefone.");
+        return;
+      }
+      if (!validateEmail(email)) {
+        Alert.alert("E-mail Inválido", "Por favor, insira um e-mail válido.");
+        return;
+      }
+      if (!validatePhone(telefone)) {
+        Alert.alert("Telefone Inválido", "Informe um número de telefone válido com DDD.");
         return;
       }
       setStep(3);
@@ -161,11 +290,11 @@ export default function RegisterScreen() {
 
     if (step === 3) {
       if (laudos.length === 0) {
-        Alert.alert("Atenção", "Por favor, adicione pelo menos 1 foto do laudo.");
+        Alert.alert("Atenção", "Adicione pelo menos 1 foto do laudo.");
         return;
       }
       if (!fotoRosto) {
-        Alert.alert("Atenção", "Por favor, adicione a foto do rosto do aluno.");
+        Alert.alert("Atenção", "Adicione a foto do rosto do aluno.");
         return;
       }
       setStep(4);
@@ -173,33 +302,7 @@ export default function RegisterScreen() {
     }
 
     if (step === 4) {
-      if (!senha.trim() || !confirmarSenha.trim()) {
-        Alert.alert("Atenção", "Por favor, preencha a senha e a confirmação.");
-        return;
-      }
-
-      if (senha !== confirmarSenha) {
-        Alert.alert("Erro", "As senhas informadas não coincidem.");
-        return;
-      }
-
-      const payload = {
-        nome,
-        nomeResponsavel,
-        cpf,
-        cpfResponsavel,
-        dataNascimento,
-        email,
-        telefone,
-        hiperfoco,
-        laudos,
-        fotoRosto,
-        senha,
-      };
-
-      console.log("DADOS CONSOLIDADOS DO CADASTRO:", payload);
-      Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      navigation.navigate("Login");
+      handleRegister();
     }
   }
 
@@ -222,7 +325,7 @@ export default function RegisterScreen() {
         />
       </View>
 
-      {/* Card Animado Verde */}
+      {/* Card Animado */}
       <Animated.View style={[styles.card, modalStyle]}>
         <View>
           <Text style={styles.title}>CADASTRO</Text>
@@ -235,7 +338,7 @@ export default function RegisterScreen() {
             <View style={styles.inputsContainer}>
               <CustomInput
                 title="NOME"
-                placeholder="Nome"
+                placeholder="Nome completo do aluno"
                 value={nome}
                 onChangeText={setNome}
                 style={styles.input}
@@ -250,7 +353,7 @@ export default function RegisterScreen() {
 
               <CustomInput
                 title="NOME DO RESPONSÁVEL"
-                placeholder="Nome do responsável"
+                placeholder="Nome completo do responsável"
                 value={nomeResponsavel}
                 onChangeText={setNomeResponsavel}
                 style={styles.input}
@@ -265,9 +368,11 @@ export default function RegisterScreen() {
 
               <CustomInput
                 title="CPF"
-                placeholder="CPF"
+                placeholder="000.000.000-00"
+                keyboardType="numeric"
+                maxLength={14}
                 value={cpf}
-                onChangeText={setCpf}
+                onChangeText={(text) => setCpf(maskCPF(text))}
                 style={styles.input}
                 icon={
                   <MaterialIcons
@@ -280,9 +385,11 @@ export default function RegisterScreen() {
 
               <CustomInput
                 title="CPF DO RESPONSÁVEL"
-                placeholder="CPF do responsável"
+                placeholder="000.000.000-00"
+                keyboardType="numeric"
+                maxLength={14}
                 value={cpfResponsavel}
-                onChangeText={setCpfResponsavel}
+                onChangeText={(text) => setCpfResponsavel(maskCPF(text))}
                 style={styles.input}
                 icon={
                   <MaterialIcons
@@ -298,24 +405,49 @@ export default function RegisterScreen() {
           {/* ETAPA 2 */}
           {step === 2 && (
             <View style={styles.inputsContainer}>
-              <CustomInput
-                title="DATA DE NASCIMENTO"
-                placeholder="Data de nascimento"
-                value={dataNascimento}
-                onChangeText={setDataNascimento}
-                style={styles.input}
-                icon={
-                  <MaterialCommunityIcons
-                    name="calendar-month-outline"
-                    size={20}
-                    color={theme.colors.secondary}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <View pointerEvents="none">
+                  <CustomInput
+                    title="DATA DE NASCIMENTO"
+                    placeholder="Selecione no calendário"
+                    value={
+                      dataNascimento
+                        ? dataNascimento.toLocaleDateString("pt-BR")
+                        : ""
+                    }
+                    style={styles.input}
+                    icon={
+                      <MaterialCommunityIcons
+                        name="calendar-month-outline"
+                        size={20}
+                        color={theme.colors.secondary}
+                      />
+                    }
                   />
-                }
-              />
+                </View>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={dataNascimento || new Date(2012, 0, 1)}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  maximumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) setDataNascimento(selectedDate);
+                  }}
+                />
+              )}
 
               <CustomInput
                 title="E-MAIL"
-                placeholder="E-mail"
+                placeholder="exemplo@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
@@ -330,9 +462,11 @@ export default function RegisterScreen() {
 
               <CustomInput
                 title="TELEFONE"
-                placeholder="Telefone"
+                placeholder="(00) 00000-0000"
+                keyboardType="phone-pad"
+                maxLength={15}
                 value={telefone}
-                onChangeText={setTelefone}
+                onChangeText={(text) => setTelefone(maskPhone(text))}
                 style={styles.input}
                 icon={
                   <Feather
@@ -360,10 +494,9 @@ export default function RegisterScreen() {
             </View>
           )}
 
-          {/* ETAPA 3: LAUDO E FOTO DO ROSTO */}
+          {/* ETAPA 3 */}
           {step === 3 && (
             <View style={styles.uploadSection}>
-              {/* LAUDO DE TDAH */}
               <Text style={styles.uploadSectionTitle}>
                 LAUDO DE TDAH DO ALUNO ({laudos.length}/2)
               </Text>
@@ -400,7 +533,6 @@ export default function RegisterScreen() {
                 </View>
               </TouchableOpacity>
 
-              {/* IMAGEM DO ROSTO */}
               <View style={{ marginTop: 24 }}>
                 <Text style={styles.uploadSectionTitle}>
                   IMAGEM DO ROSTO DO ALUNO {fotoRosto ? "(Selecionada)" : ""}
@@ -441,10 +573,10 @@ export default function RegisterScreen() {
             </View>
           )}
 
-            {/* ETAPA 4: SENHA E CONFIRMAR SENHA */}
-            {step === 4 && (
+          {/* ETAPA 4 */}
+          {step === 4 && (
             <View style={styles.inputsContainer}>
-                <CustomInput
+              <CustomInput
                 title="SENHA"
                 placeholder="Digite sua senha"
                 secureTextEntry={true}
@@ -452,15 +584,15 @@ export default function RegisterScreen() {
                 onChangeText={setSenha}
                 style={[styles.input, { marginTop: 28 }]}
                 icon={
-                    <MaterialIcons
+                  <MaterialIcons
                     name="lock"
                     size={20}
                     color={theme.colors.secondary}
-                    />
+                  />
                 }
-                />
+              />
 
-                <CustomInput
+              <CustomInput
                 title="CONFIRMAR SENHA"
                 placeholder="Confirme sua senha"
                 secureTextEntry={true}
@@ -468,24 +600,28 @@ export default function RegisterScreen() {
                 onChangeText={setConfirmarSenha}
                 style={[styles.input, { marginTop: 58 }]}
                 icon={
-                    <MaterialIcons
+                  <MaterialIcons
                     name="lock-outline"
                     size={20}
                     color={theme.colors.secondary}
-                    />
+                  />
                 }
-                />
+              />
             </View>
-            )}
+          )}
         </View>
 
-        {/* Botão Inferior */}
+        {/* Botão Inferior com Spinner durante carregamento */}
         <View style={styles.buttonContainer}>
-          <CustomButton
-            title={step === 4 ? "Cadastrar" : "Continuar"}
-            onPress={handleNext}
-            style={styles.customButton}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color={theme.colors.secondary} />
+          ) : (
+            <CustomButton
+              title={step === 4 ? "Cadastrar" : "Continuar"}
+              onPress={handleNext}
+              style={styles.customButton}
+            />
+          )}
         </View>
       </Animated.View>
     </View>

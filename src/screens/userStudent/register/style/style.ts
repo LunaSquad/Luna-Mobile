@@ -68,6 +68,7 @@ export const styles = StyleSheet.create({
   },
   customButton: {
     width: 180,
+    marginTop: -30
   },
 
   // Estilos dos Cards de Upload (Etapa 3)
