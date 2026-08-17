@@ -32,16 +32,35 @@ export const styles = StyleSheet.create({
     color: theme.colors.secondary,
     marginBottom: theme.spacing.lg,
   },
+  // AJUSTADO: removeu o margin excessivo entre eles
   inputEmail: {
-    marginBottom: theme.spacing.xx,
+    marginBottom: theme.spacing.sm || 12,
   },
   inputSenha: {
-    marginTop: theme.spacing.xx,
+    marginTop: 0,
   },
   CustomButton: {
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
     alignSelf: "center",
     marginBottom: theme.spacing.sm,
+  },
+  // NOVO: estilos do link de cadastro
+  signUpContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: theme.spacing.sm || 10,
+  },
+  signUpText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: theme.fonts.light || "Inter_300Light",
+  },
+  signUpLink: {
+    color: theme.colors.secondary,
+    fontSize: 14,
+    fontFamily: theme.fonts.bold || "Inter_700Bold",
+    marginLeft: 4,
   },
   row: {
     width: 262,

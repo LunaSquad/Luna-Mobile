@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: "#fff",
+    color: theme.colors.primary,
     fontFamily: "Inter_700Bold",
     fontSize: theme.fontSize.normal,
   },

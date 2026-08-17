@@ -1,7 +1,9 @@
 from app.repositories.userRepository import find_user_by_email_and_password
 
+
 def login_user(email: str, senha: str):
     user = find_user_by_email_and_password(email, senha)
+    print(f"Usuário retornado do banco: {user}")
 
     if not user:
         return {"ok": False, "message": "Email ou senha inválidos"}
