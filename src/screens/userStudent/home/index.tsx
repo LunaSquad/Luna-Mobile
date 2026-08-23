@@ -228,10 +228,7 @@ export default function Home({ route }: HomeProps) {
     }, 260);
   }
 
-
   useEffect(() => {
-
-
     async function carregarTudo() {
       try {
         console.log("HOME userId:", userId);
@@ -242,7 +239,8 @@ export default function Home({ route }: HomeProps) {
           return;
         }
 
-        const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
+        // 1. Busca os dados do Aluno
+        const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
         console.log("STATUS ALUNO:", respAluno.status);
 
         const dataAluno: AlunoResponse = await respAluno.json();
@@ -250,21 +248,12 @@ export default function Home({ route }: HomeProps) {
 
         if (!dataAluno.ok) {
           console.log("❌ ERRO ALUNO:", dataAluno.message);
-          return;
+        } else {
+          setAluno(dataAluno.aluno || null);
         }
 
-        const alunoData = dataAluno.aluno || null;
-        setAluno(alunoData);
-
-        const escolaID = alunoData?.escolaID;
-        console.log("ESCOLA ID:", escolaID);
-
-        if (!escolaID) {
-          console.log("❌ aluno sem escolaID");
-          return;
-        }
-
-        const respMat = await fetch(`${API_BASE_URL}/materias`);
+        // 2. Busca as Matérias (agora não trava mais na falta do escolaID)
+        const respMat = await fetch(`${API_BASE_URL}/subjects/materias`);
         console.log("STATUS MATERIAS:", respMat.status);
 
         const dataMat: MateriasResponse = await respMat.json();
@@ -276,8 +265,8 @@ export default function Home({ route }: HomeProps) {
         }
 
         const listaMaterias = dataMat.materias || dataMat.detail || [];
-
         transformarMateriasEmCards(listaMaterias);
+
       } catch (e) {
         console.log("ERRO GERAL HOME:", e);
       } finally {
@@ -408,10 +397,10 @@ export default function Home({ route }: HomeProps) {
           {!loading && aluno && (
             <View style={{ paddingBottom: 30 }}>
               {/* <Text>RA: {aluno.RA}</Text> */}
-              <Text>Turma: {aluno.turmaID}</Text>
-              <Text>Escola: {aluno.escolaID}</Text>
+              {aluno.turmaID && <Text>Turma: {aluno.turmaID}</Text>}
+              {aluno.escolaID && <Text>Escola: {aluno.escolaID}</Text>}
               <Text>
-                Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome}
+                Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não cadastrado"}
               </Text>
             </View>
           )}
@@ -440,7 +429,7 @@ export default function Home({ route }: HomeProps) {
 
             <View>
               <Text style={styles.drawerName}>{aluno?.nome || "Usuário"}</Text>
-              <Text style={styles.drawerSchool}>E.M.E.I</Text>
+              <Text style={styles.drawerSchool}>Luna App</Text>
             </View>
           </View>
 

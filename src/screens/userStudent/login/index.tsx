@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Dimensions, Alert } from "react-native";
+import { View, Text, Dimensions, Alert, TouchableOpacity, TextStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Animated, {
   useSharedValue,
@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { theme } from "../../../styles/theme";
-import CustomInput  from "../../../components/input/customInput";
+import CustomInput from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import API_BASE_URL from "../../../services/ip";
@@ -21,26 +21,6 @@ type LoginResponse = {
   userId?: string;
   tipoUser?: string;
   message?: string;
-};
-
-type NavigationType = {
-  navigate: (
-    screen: string,
-    params?: {
-      materiaId?: string;
-      materiaNome?: string;
-      userId?: string;
-      hiperfocoAtual?: string;
-    }
-  ) => void;
-
-  reset: (state: {
-    index: number;
-    routes: {
-      name: string;
-      params?: any;
-    }[];
-  }) => void;
 };
 
 export default function LoginScreen() {
@@ -70,8 +50,6 @@ export default function LoginScreen() {
       });
     }, 500);
 
-    
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -93,7 +71,7 @@ export default function LoginScreen() {
 
   async function handleLogin(): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
@@ -107,8 +85,6 @@ export default function LoginScreen() {
           navigation.replace("StudentTabs", {
             userId: data.userId,
             tipoUser: data.tipoUser,
-
-            
           });
           return;
         }
@@ -118,8 +94,6 @@ export default function LoginScreen() {
           return;
         }
       }
-
-      
 
       Alert.alert("Erro", data.message || "Email ou senha inválidos");
     } catch (err) {
@@ -146,7 +120,7 @@ export default function LoginScreen() {
         <Text style={styles.titleModal}>LOGIN</Text>
 
         <CustomInput
-          title="E-MAIL INSTITUCIONAL"
+          title="E-MAIL"
           placeholder="Digite seu e-mail"
           icon={
             <MaterialIcons
@@ -161,7 +135,7 @@ export default function LoginScreen() {
         />
 
         <CustomInput
-          title="RA"
+          title="SENHA"
           placeholder="Digite sua senha"
           secureTextEntry={true}
           icon={
@@ -180,7 +154,17 @@ export default function LoginScreen() {
           title="Entrar"
           onPress={handleLogin}
           style={styles.CustomButton}
+          
+          
         />
+
+        {/* CADASTRO ADICIONADO AQUI */}
+        <View style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Novo por aqui? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+            <Text style={styles.signUpLink}>Cadastre-se!</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.row} />
 

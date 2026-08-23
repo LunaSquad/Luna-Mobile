@@ -6,6 +6,7 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  KeyboardTypeOptions,
 } from "react-native";
 import { theme } from "../../styles/theme";
 
@@ -17,6 +18,10 @@ type Props = {
   onChangeText?: (text: string) => void;
   secureTextEntry?: boolean;
   style?: StyleProp<ViewStyle>;
+  // Propriedades que estavam faltando:
+  keyboardType?: KeyboardTypeOptions;
+  maxLength?: number;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 };
 
 export default function CustomInput({
@@ -27,6 +32,9 @@ export default function CustomInput({
   onChangeText,
   secureTextEntry = false,
   style,
+  keyboardType = "default",
+  maxLength,
+  autoCapitalize = "sentences",
 }: Props) {
   return (
     <View style={[styles.container, style]}>
@@ -40,6 +48,9 @@ export default function CustomInput({
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          maxLength={maxLength}
+          autoCapitalize={autoCapitalize}
         />
 
         {icon && <View style={styles.icon}>{icon}</View>}
@@ -53,14 +64,12 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
   },
-
   label: {
     fontSize: theme.fontSize.normal,
     color: theme.colors.textPrimary,
     fontFamily: "Inter_700Bold",
     marginBottom: 24,
   },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -68,14 +77,12 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.textPrimary,
     marginBottom: 30,
   },
-
   input: {
     flex: 1,
     paddingVertical: 8,
     fontSize: theme.fontSize.small,
     color: theme.colors.textDark,
   },
-
   icon: {
     marginLeft: 8,
   },
