@@ -13,6 +13,7 @@ import {
   Pressable,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons"; // <-- Adicionado para os ícones
 import API_BASE_URL from "../../../services/ip";
 
 import styles from "./style/style";
@@ -92,18 +93,6 @@ type MateriasResponse = {
   message?: string;
 };
 
-type NavigationType = {
-  navigate: (
-    screen: string,
-    params?: {
-      materiaId?: string;
-      materiaNome?: string;
-      userId?: string;
-      hiperfocoAtual?: string;
-    }
-  ) => void;
-};
-
 export default function Home({ route }: HomeProps) {
   const navigation = useNavigation<any>();
 
@@ -112,6 +101,9 @@ export default function Home({ route }: HomeProps) {
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [materias, setMaterias] = useState<MateriaCardData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  // Novo estado para controlar se as opções de Ingressar na Turma estão visíveis
+  const [mostrarOpcoesTurma, setMostrarOpcoesTurma] = useState<boolean>(false);
 
   const [menuAberto, setMenuAberto] = useState(false);
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
@@ -213,7 +205,6 @@ export default function Home({ route }: HomeProps) {
       };
     });
 
-    console.log("CARDS GERADOS:", cards);
     setMaterias(cards);
   }
 
@@ -231,20 +222,11 @@ export default function Home({ route }: HomeProps) {
   useEffect(() => {
     async function carregarTudo() {
       try {
-        console.log("HOME userId:", userId);
-        console.log("HOME tipoUser:", tipoUser);
-
-        if (!userId) {
-          console.log("❌ Sem userId vindo do login");
-          return;
-        }
+        if (!userId) return;
 
         // 1. Busca os dados do Aluno
         const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
-        console.log("STATUS ALUNO:", respAluno.status);
-
         const dataAluno: AlunoResponse = await respAluno.json();
-        console.log("DADOS ALUNO:", dataAluno);
 
         if (!dataAluno.ok) {
           console.log("❌ ERRO ALUNO:", dataAluno.message);
@@ -252,12 +234,9 @@ export default function Home({ route }: HomeProps) {
           setAluno(dataAluno.aluno || null);
         }
 
-        // 2. Busca as Matérias (agora não trava mais na falta do escolaID)
+        // 2. Busca as Matérias independentemente de escola
         const respMat = await fetch(`${API_BASE_URL}/subjects/materias`);
-        console.log("STATUS MATERIAS:", respMat.status);
-
         const dataMat: MateriasResponse = await respMat.json();
-        console.log("MATERIAS:", dataMat);
 
         if (!dataMat.ok) {
           console.log("❌ ERRO MATERIAS:", dataMat.message);
@@ -279,11 +258,6 @@ export default function Home({ route }: HomeProps) {
 
   const hiperfocoNome =
     aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
-
-  const hiperfocoDescricao =
-    aluno?.hiperfoco?.descricao ||
-    aluno?.hyperfoco?.descricao ||
-    "Nenhum hiperfoco cadastrado.";
 
   return (
     <View style={styles.screen}>
@@ -357,51 +331,90 @@ export default function Home({ route }: HomeProps) {
             </View>
           </View>
 
-          <View style={styles.spaceMaterias}>
-            <View style={styles.spaceTituloMaterias}>
-              <Text style={styles.textMaterias}>Matérias</Text>
-              <Text style={styles.textVejamais}>Veja mais →</Text>
+          {/* LÓGICA DE CONDICIONAL DAS MATÉRIAS OU TURMA */}
+          {loading ? (
+             <ActivityIndicator size="large" color="#0F766E" style={{ marginTop: 50 }} />
+          ) : !aluno?.turmaID ? (
+            // VISUAL PARA ALUNO SEM TURMA
+            <View style={styles.noClassContainer}>
+              <Text style={styles.noClassText}>Você ainda não está em uma turma.</Text>
+              
+              {!mostrarOpcoesTurma ? (
+                // Botão de + Inicial
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity 
+                    style={styles.joinClassButton} 
+                    onPress={() => setMostrarOpcoesTurma(true)}
+                  >
+                    <MaterialIcons name="add" size={40} color="#fff" />
+                  </TouchableOpacity>
+                  <Text style={styles.joinClassButtonText}>Ingressar em{'\n'}uma turma</Text>
+                </View>
+              ) : (
+                // Opções de Inserir Link ou QRCode
+                <View style={styles.joinOptionsContainer}>
+                  <TouchableOpacity style={styles.joinOptionCard}>
+                    <MaterialIcons name="link" size={24} color="#0F766E" />
+                    <Text style={styles.joinOptionText}>Inserir Link da Turma</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.joinOptionCard}>
+                    <MaterialIcons name="qr-code-scanner" size={24} color="#0F766E" />
+                    <Text style={styles.joinOptionText}>Ler QR Code</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.cancelJoinButton} 
+                    onPress={() => setMostrarOpcoesTurma(false)}
+                  >
+                    <Text style={styles.cancelJoinText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
+          ) : (
+            // VISUAL PARA ALUNO COM TURMA (LISTA DE MATÉRIAS)
+            <View style={styles.spaceMaterias}>
+              <View style={styles.spaceTituloMaterias}>
+                <Text style={styles.textMaterias}>Matérias</Text>
+                <Text style={styles.textVejamais}>Veja mais →</Text>
+              </View>
 
-            {loading ? (
-              <ActivityIndicator />
-            ) : materias.length === 0 ? (
-              <Text style={{ marginTop: 16 }}>Nenhuma matéria encontrada.</Text>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingVertical: 16 }}
-              >
-                {materias.map((materia) => (
-                  <MateriaCard
-                    key={materia.id}
-                    title={materia.title}
-                    image={materia.image}
-                    backgroundColor={materia.backgroundColor}
-                    buttonColor={materia.buttonColor}
-                    number={materia.number}
-                    onPress={() =>
-                      navigation.navigate("Atividades", {
-                        materiaId: materia.id,
-                        materiaNome: materia.nome,
-                        userId,
-                      })
-                    }
-                  />
-                ))}
-              </ScrollView>
-            )}
-          </View>
+              {materias.length === 0 ? (
+                <Text style={{ marginTop: 16 }}>Nenhuma matéria encontrada.</Text>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 16 }}
+                >
+                  {materias.map((materia) => (
+                    <MateriaCard
+                      key={materia.id}
+                      title={materia.title}
+                      image={materia.image}
+                      backgroundColor={materia.backgroundColor}
+                      buttonColor={materia.buttonColor}
+                      number={materia.number}
+                      onPress={() =>
+                        navigation.navigate("Atividades", {
+                          materiaId: materia.id,
+                          materiaNome: materia.nome,
+                          userId,
+                        })
+                      }
+                    />
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
 
           {!loading && aluno && (
-            <View style={{ paddingBottom: 30 }}>
+            <View style={{ paddingBottom: 30, paddingTop: 10 }}>
               {/* <Text>RA: {aluno.RA}</Text> */}
               {aluno.turmaID && <Text>Turma: {aluno.turmaID}</Text>}
               {aluno.escolaID && <Text>Escola: {aluno.escolaID}</Text>}
-              <Text>
-                Hiperfoco: {aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não cadastrado"}
-              </Text>
             </View>
           )}
         </View>
