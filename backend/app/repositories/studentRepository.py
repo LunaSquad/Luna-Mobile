@@ -1,25 +1,44 @@
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 from app.core.database import alunos_collection
+
+
+def serialize_mongo(doc):
+    """Converte recursivamente todos os ObjectIds e tipos especiais para string."""
+    if isinstance(doc, list):
+        return [serialize_mongo(item) for item in doc]
+    if isinstance(doc, dict):
+        return {
+            key: str(value) if isinstance(value, ObjectId) else serialize_mongo(value)
+            for key, value in doc.items()
+        }
+    return doc
 
 
 def find_student_by_user_id(user_id: str):
     try:
-        # AQUI FOI CORRIGIDO: de "userID" para "usuarioId" e adicionado o ObjectId()
-        aluno = alunos_collection.find_one({"usuarioId": ObjectId(user_id)})
+        # Remove eventuais aspas ou parênteses extras vindos da requisição
+        clean_id = user_id.strip(' "\'()')
+
+        try:
+            oid = ObjectId(clean_id)
+        except InvalidId:
+            print(f"ERRO studentRepository: '{clean_id}' não é um ObjectId válido.")
+            return None
+
+        # Busca pelo usuarioId vinculado ao login
+        aluno = alunos_collection.find_one({"usuarioId": oid})
+
+        # Fallback caso o ID passado seja o próprio _id do aluno
+        if not aluno:
+            aluno = alunos_collection.find_one({"_id": oid})
 
         if not aluno:
             return None
 
-        # Convertendo os ObjectIds para string para o FastAPI conseguir enviar para o React Native
-        aluno["_id"] = str(aluno["_id"])
-
-        if "usuarioId" in aluno:
-            aluno["usuarioId"] = str(aluno["usuarioId"])
-
-        # Se houver outros ObjectIds dentro do aluno (como hiperfoco), você pode convertê-los aqui futuramente
-
-        return aluno
+        # Serializa todos os campos do tipo ObjectId para string de forma segura
+        return serialize_mongo(aluno)
 
     except Exception as e:
-        print("ERRO studentRepository:", e)
+        print("ERRO EXCEÇÃO studentRepository:", e)
         return None
