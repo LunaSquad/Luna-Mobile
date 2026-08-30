@@ -1,8 +1,10 @@
 import { StyleSheet } from "react-native";
+import { theme } from "../../../../styles/theme";
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#006d77",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 28,
   },
 
@@ -11,6 +13,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     paddingBottom: 16,
+  },
+
+  topSection: {
+    backgroundColor: '#006d77',
+    width: 415,
+    marginLeft: -28,
+    paddingHorizontal: 28,
+    height: 300,
+    borderBottomEndRadius: 50
+  },
+
+  profileSummary: {
+    justifyContent: "flex-end",
+    paddingBottom: 5,
+  },
+
+  userName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+    color: '#ffffff',
+    marginTop: 30,
+    marginLeft: 20
   },
 
   logo: {
@@ -26,13 +50,22 @@ const styles = StyleSheet.create({
     height: 24,
   },
 
+  profilePhoto: {
+      width: 80,
+      height: 80,
+      borderRadius: theme.radius.full,
+      marginLeft: 260,
+      marginTop: -55,
+      borderColor: "#FFDDD2",
+      borderWidth: 1
+  },
+
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 14,
     paddingHorizontal: 24,
     paddingVertical: 36,
-    alignItems: "center",
-    marginTop: 35,
+    marginTop: -70,
 
     shadowColor: "#000",
     shadowOffset: {
@@ -41,59 +74,61 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.18,
     shadowRadius: 8,
-    elevation: 7,
+    elevation: 6,
   },
 
-  iconBox: {
-    width: 95,
-    height: 95,
-    borderRadius: 48,
-    backgroundColor: "#e9f7f6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
+  titleInfo: {
+    fontFamily: theme.fonts.bold,
   },
 
-  title: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#006d77",
-    textAlign: "center",
-    marginBottom: 14,
+  infoItem: {
+    fontFamily: theme.fonts.light,
   },
 
-  description: {
-    fontSize: 15,
-    color: "#333333",
-    textAlign: "center",
-    lineHeight: 22,
+  infoContainer: {
+    gap: 15
   },
 
-  descriptionSmall: {
-    fontSize: 13,
-    color: "#666666",
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 14,
+  divider: {
+    height: 1,
+    backgroundColor: "#D9D9D9",
+    width: "100%",
+    marginVertical: 20,
   },
 
-  button: {
-    marginTop: 32,
-    backgroundColor: "#006d77",
-    height: 48,
-    paddingHorizontal: 28,
-    borderRadius: 8,
+  actionText: {
+    fontFamily: theme.fonts.light,
+    marginLeft: 14,
+    flex: 1,
+  },
+
+  actionItem: {
     flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    height: 25,
   },
 
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
+  infoItemContainer: {
+  backgroundColor: '#e0f2f3', 
+  borderRadius: 8,
+  width: 100,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 6,
+  paddingHorizontal: 4,
+  gap: 4,
   },
+
+  infoItemLaudo: {
+    fontFamily: theme.fonts.bold,
+    color: '#006d77',
+    fontSize: 13,
+  },
+
+  editButtons: {
+    marginTop: 20
+  }
+
 });
 
 export default styles;
