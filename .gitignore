@@ -76,3 +76,7 @@ backend/.env
 __pycache__/
 *.pyc
 backend/data/outputs/
+
+
+backend/app/ai/models/
+
