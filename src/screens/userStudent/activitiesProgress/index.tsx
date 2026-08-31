@@ -12,11 +12,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
+import API_BASE_URL from "../../../services/ip";
 
 type RouteParams = {
   materiaId?: string;
   materiaNome?: string;
   userId?: string;
+  turmaId?: string;
 };
 
 type Plano = {
@@ -25,6 +27,7 @@ type Plano = {
   descricao: string;
   status: "andamento" | "vencida" | "concluida" | string;
   materia: string;
+  urlPlanoDeAula?: string;
 };
 
 type ActivitiesProgressScreenProps = {
@@ -34,33 +37,17 @@ type ActivitiesProgressScreenProps = {
 };
 
 const materias = [
-  {
-    sigla: "LP",
-    nome: "Português",
-    cor: "#006d77",
-  },
-  {
-    sigla: "MAT",
-    nome: "Matemática",
-    cor: "#06156f",
-  },
-  {
-    sigla: "GEO",
-    nome: "Geografia",
-    cor: "#7c2d12",
-  },
-  {
-    sigla: "HIS",
-    nome: "História",
-    cor: "#4b1d0d",
-  },
+  { sigla: "LP", nome: "Português", cor: "#006d77" },
+  { sigla: "MAT", nome: "Matemática", cor: "#06156f" },
+  { sigla: "GEO", nome: "Geografia", cor: "#7c2d12" },
+  { sigla: "HIS", nome: "História", cor: "#4b1d0d" },
 ];
 
 export default function ActivitiesProgressScreen({
   route,
 }: ActivitiesProgressScreenProps) {
   const navigation = useNavigation<any>();
-  const { materiaId, materiaNome, userId } = route?.params || {};
+  const { materiaId, materiaNome, userId, turmaId } = route?.params || {};
 
   const materiaInicial =
     materias.find((m) =>
@@ -82,36 +69,53 @@ export default function ActivitiesProgressScreen({
 
   useEffect(() => {
     carregarAtividades();
-  }, [materiaSelecionada]);
+  }, [materiaSelecionada, turmaId]);
 
-  function carregarAtividades() {
-    setLoading(true);
+  async function carregarAtividades() {
+      setLoading(true);
 
-    if (materiaSelecionada === "MAT") {
-      const planoAdicao: Plano = {
-        idPlano: "plano-pdf-adicao-simples",
-        titulo: "Adição simples",
-        descricao: "Aprenda a juntar quantidades e resolver somas simples até 10.",
-        status: "andamento",
-        materia: "MAT",
-      };
+      try {
+        if (!turmaId || !materiaId) {
+          setPlanos([]);
+          return;
+        }
 
-      setPlanos([planoAdicao]);
-    } else {
-      setPlanos([]);
+        // Agora bate na rota correta de lesson-plans enviando turma e matéria
+        const response = await fetch(`${API_BASE_URL}/lesson-plans/turma/${turmaId}/materia/${materiaId}`);
+        const data = await response.json();
+
+        if (response.ok && data.planos) {
+          const planosMapeados = data.planos.map((plano: any) => ({
+            idPlano: plano._id || plano.id,
+            titulo: plano.titulo,
+            descricao: plano.descricao,
+            status: plano.status || "andamento",
+            materia: materiaSelecionada,
+            urlPlanoDeAula: plano.urlPlanoDeAula // Capturando o link do Cloudinary
+          }));
+          
+          setPlanos(planosMapeados);
+        } else {
+          setPlanos([]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar atividades reais:", error);
+        setPlanos([]);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    setLoading(false);
-  }
-
-  function abrirAtividadeAdaptada(plano: Plano) {
+  // ATUALIZADO: Agora enviando todos os parâmetros necessários para a IA
+  function abrirAtividadeAdaptada(plano: any) {
     navigation.navigate("AdaptedActivity", {
       planoId: plano.idPlano,
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
-      materiaId,
-      materiaNome,
+      urlPlanoDeAula: plano.urlPlanoDeAula, 
       userId,
+      turmaId,     // Faltava enviar isso
+      materiaId,   // Faltava enviar isso
     });
   }
 
@@ -162,15 +166,6 @@ export default function ActivitiesProgressScreen({
                       transform: [{ scale: selecionada ? 1.08 : 1 }],
                       borderWidth: selecionada ? 3 : 0,
                       borderColor: selecionada ? "#ffffff" : "transparent",
-
-                      shadowColor: selecionada ? materia.cor : "transparent",
-                      shadowOffset: {
-                        width: 0,
-                        height: 4,
-                      },
-                      shadowOpacity: selecionada ? 0.35 : 0,
-                      shadowRadius: 6,
-
                       elevation: selecionada ? 8 : 0,
                     },
                   ]}
@@ -185,7 +180,7 @@ export default function ActivitiesProgressScreen({
         <Text style={styles.titleSection}>Atividades lançadas</Text>
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color="#006d77" />
+          <ActivityIndicator style={{ marginTop: 30 }} color="#006d77" size="large" />
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -196,7 +191,6 @@ export default function ActivitiesProgressScreen({
                 <Text style={styles.emptyTitle}>
                   Nenhuma atividade lançada
                 </Text>
-
                 <Text style={styles.emptyText}>
                   Ainda não existem atividades disponíveis para essa matéria.
                 </Text>

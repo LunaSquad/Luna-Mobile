@@ -64,55 +64,60 @@ export function MateriaCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: 250,
-    height: 400,
-    borderRadius: 16,
-    padding: theme.spacing.lg,
-    marginRight: 16,
-    elevation: 5,
+    width: 190,
+    height: 310,
+    borderRadius: 14,
+    padding: theme.spacing.md || 12,
+    marginRight: 14,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   numberContainer: {
     alignSelf: "flex-end",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderBottomLeftRadius: 12,
-    borderTopRightRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderBottomLeftRadius: 10,
+    borderTopRightRadius: 12,
+    marginTop: -4,
+    marginRight: -4,
   },
-
   numberText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 12,
   },
-
   title: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "bold",
-    marginTop: 8,
+    textAlign: "center",
+    marginTop: 2,
   },
-
   image: {
     width: "100%",
-    height: 120,
+    height: 85,
     alignSelf: "center",
   },
-
   description: {
-    fontSize: theme.fontSize.small,
+    fontSize: 11,
+    lineHeight: 15,
     textAlign: "center",
+    color: "#4B5563",
+    paddingHorizontal: 4,
   },
-
   button: {
-    paddingVertical: 10,
-    width: 120,
-    borderRadius: 8,
+    paddingVertical: 7,
+    width: 105,
+    borderRadius: 6,
     alignItems: "center",
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 13,
   },
 });
