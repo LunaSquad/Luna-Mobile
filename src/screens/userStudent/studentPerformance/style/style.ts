@@ -30,36 +30,34 @@ export const styles = StyleSheet.create({
   titleScreen: {
     color: "#006d77",
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "700",
     textAlign: "center",
     marginTop: 8,
-    marginBottom: 45,
+    marginBottom: 24,
   },
 
   chartCard: {
-    width: "86%",
-    height: 280,
+    width: "88%",
+    height: 270,
     backgroundColor: "#ffffff",
-    borderRadius: 8,
+    borderRadius: 20,
     alignSelf: "center",
-    paddingTop: 42,
-    paddingHorizontal: 28,
+    paddingTop: 30,
+    paddingHorizontal: 24,
+    paddingBottom: 18,
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.16,
-    shadowRadius: 7,
-    elevation: 6,
+    shadowColor: "#006d77",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 2,
   },
 
   chartContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
   },
 
   barItem: {
@@ -68,107 +66,79 @@ export const styles = StyleSheet.create({
   },
 
   barText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#000000",
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#8a8a8a",
     marginBottom: 8,
   },
 
   bar: {
-    width: 28,
+    width: 24,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderBottomWidth: 2,
   },
 
   barLabel: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "700",
     marginTop: 10,
-  },
-
-  chartLine: {
-    height: 1.5,
-    backgroundColor: "#006d77",
-    width: "100%",
-    marginBottom: 32,
+    letterSpacing: 0.2,
   },
 
   infoCard: {
-    width: "86%",
-    backgroundColor: "#006d77",
-    borderRadius: 8,
+    width: "88%",
+    backgroundColor: "#FAFAF8",
+    borderRadius: 20,
     alignSelf: "center",
-    marginTop: 55,
-    paddingVertical: 28,
-    paddingHorizontal: 26,
+    marginTop: 20,
+    paddingVertical: 22,
+    paddingHorizontal: 22,
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 7,
-    elevation: 7,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
   },
 
-  infoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 18,
-  },
-
-  infoTitle: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  infoContent: {
-    flexDirection: "row",
-  },
-
-  leftColumn: {
-    flex: 1.4,
+  infoHeaderLabel: {
+    color: "#a3a3a3",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 14,
   },
 
   subjectRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    justifyContent: "space-between",
+    paddingVertical: 12,
   },
 
-  subjectColor: {
-    width: 15,
-    height: 15,
-    borderRadius: 3,
-    marginRight: 10,
+  subjectLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  subjectDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    borderWidth: 1.5,
+    marginRight: 12,
   },
 
   subjectText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  divider: {
-    width: 1,
-    backgroundColor: "#ffffff",
-    opacity: 0.9,
-    marginHorizontal: 18,
-  },
-
-  rightColumn: {
-    justifyContent: "space-between",
-    paddingVertical: 1,
+    color: "#2c2c2c",
+    fontSize: 13.5,
+    fontWeight: "500",
   },
 
   timeText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "800",
-    marginBottom: 14,
-    textAlign: "right",
+    color: "#006d77",
+    fontSize: 13.5,
+    fontWeight: "600",  
   },
 });
