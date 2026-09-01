@@ -147,7 +147,7 @@ def gerar_assets_endpoint(request: GerarAssetsRequest):
         # 3. Importa e gera os stickers com a IA
         from app.services.image_service import gerar_assets_visuais_ia
 
-        novas_urls = gerar_assets_visuais_ia(request.hiperfoco, quantidade=4)
+        novas_urls = gerar_assets_visuais_ia(request.hiperfoco)
 
         if novas_urls:
             alunos_collection.update_one(
