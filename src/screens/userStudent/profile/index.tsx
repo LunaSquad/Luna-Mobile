@@ -194,7 +194,7 @@ export default function Perfil({ route }: any) {
               style={styles.actionItem}
               activeOpacity={0.6}
               onPress={() => {
-                // aqui vai a função de ir pra tela de edição de dados do aluno
+                navigation.navigate('EditProfile'); 
               }}
             >
               <MaterialIcons
