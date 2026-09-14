@@ -12,6 +12,8 @@ import { theme } from "../../styles/theme";
 
 type Props = {
   title?: string;
+  titleColor?: string;
+  borderColor?: string;
   placeholder?: string;
   icon?: ReactNode;
   value?: string;
@@ -26,6 +28,8 @@ type Props = {
 
 export default function CustomInput({
   title,
+  titleColor,
+  borderColor,
   placeholder,
   icon,
   value,
@@ -38,9 +42,16 @@ export default function CustomInput({
 }: Props) {
   return (
     <View style={[styles.container, style]}>
-      {title && <Text style={styles.label}>{title}</Text>}
+      {title && (
+        <Text style={[styles.label, titleColor && { color: titleColor }]}>
+          {title}
+        </Text>
+      )}
 
-      <View style={styles.inputContainer}>
+      <View style={[
+          styles.inputContainer,
+          borderColor && { borderColor },
+        ]}>
         <TextInput
           style={styles.input}
           placeholder={placeholder}
@@ -62,20 +73,20 @@ export default function CustomInput({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    marginBottom: 16,
+    marginBottom: 35, 
   },
   label: {
     fontSize: theme.fontSize.normal,
     color: theme.colors.textPrimary,
     fontFamily: "Inter_700Bold",
-    marginBottom: 24,
+    marginBottom: 6, 
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
     borderColor: theme.colors.textPrimary,
-    marginBottom: 30,
+    marginBottom: 10, 
   },
   input: {
     flex: 1,
