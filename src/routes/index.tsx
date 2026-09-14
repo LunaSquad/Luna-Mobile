@@ -8,6 +8,7 @@ import AdaptedActivity from "../screens/userStudent/adaptedActivity/index";
 import EditHyperfocus from "../screens/userStudent/hyperfocus/index";
 import Feedback from "../screens/userStudent/feedback/index";
 import Register from "../screens/userStudent/register/index";
+import EditProfileScreen from "../screens/userStudent/EditProfileScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -45,6 +46,12 @@ export type RootStackParamList = {
   Feedback: undefined;
 
   Register: undefined;
+
+  EditProfile:
+    | {
+        userId?: string;
+      }
+    | undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -62,6 +69,7 @@ export default function Routes() {
       <Stack.Screen name="EditHyperfocus" component={EditHyperfocus} />
       <Stack.Screen name="Feedback" component={Feedback} />
       <Stack.Screen name="Register" component={Register} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }
