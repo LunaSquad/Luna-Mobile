@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
@@ -28,12 +29,8 @@ type Plano = {
   status: "andamento" | "vencida" | "concluida" | string;
   materia: string;
   urlPlanoDeAula?: string;
-};
-
-type ActivitiesProgressScreenProps = {
-  route?: {
-    params?: RouteParams;
-  };
+  turmaId?: string;
+  materiaId?: string;
 };
 
 const materias = [
@@ -43,79 +40,126 @@ const materias = [
   { sigla: "HIS", nome: "História", cor: "#4b1d0d" },
 ];
 
-export default function ActivitiesProgressScreen({
-  route,
-}: ActivitiesProgressScreenProps) {
-  const navigation = useNavigation<any>();
-  const { materiaId, materiaNome, userId, turmaId } = route?.params || {};
+function identificarSiglaPorNome(nome?: string): string {
+  if (!nome) return "MAT";
+  const limpo = nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-  const materiaInicial =
-    materias.find((m) =>
-      materiaNome
-        ?.toLowerCase()
+  const encontrada = materias.find((m) =>
+    limpo.includes(
+      m.nome
+        .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .includes(
-          m.nome
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-        )
-    )?.sigla || "MAT";
+    )
+  );
+
+  return encontrada ? encontrada.sigla : "MAT";
+}
+
+export default function ActivitiesProgressScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { materiaId, materiaNome, userId, turmaId } = (route?.params || {}) as RouteParams;
+
+  const siglaRota = identificarSiglaPorNome(materiaNome);
 
   const [loading, setLoading] = useState(true);
-  const [materiaSelecionada, setMateriaSelecionada] = useState(materiaInicial);
+  const [materiaSelecionada, setMateriaSelecionada] = useState(siglaRota);
   const [planos, setPlanos] = useState<Plano[]>([]);
+  const [userIdAtivo, setUserIdAtivo] = useState<string | undefined>(userId);
+  const [turmaIdAtiva, setTurmaIdAtiva] = useState<string | undefined>(turmaId);
 
   useEffect(() => {
-    carregarAtividades();
-  }, [materiaSelecionada, turmaId]);
+    if (materiaNome) {
+      setMateriaSelecionada(identificarSiglaPorNome(materiaNome));
+    }
+  }, [materiaNome, materiaId]);
 
-  async function carregarAtividades() {
-      setLoading(true);
+  useEffect(() => {
+    async function sincronizarDadosLocais() {
+      if (userId) {
+        setUserIdAtivo(userId);
+        await AsyncStorage.setItem("@luna_user_id", String(userId));
+      } else {
+        const salvoUser = await AsyncStorage.getItem("@luna_user_id");
+        if (salvoUser) setUserIdAtivo(salvoUser);
+      }
 
-      try {
-        if (!turmaId || !materiaId) {
-          setPlanos([]);
-          return;
-        }
-
-        // Agora bate na rota correta de lesson-plans enviando turma e matéria
-        const response = await fetch(`${API_BASE_URL}/lesson-plans/turma/${turmaId}/materia/${materiaId}`);
-        const data = await response.json();
-
-        if (response.ok && data.planos) {
-          const planosMapeados = data.planos.map((plano: any) => ({
-            idPlano: plano._id || plano.id,
-            titulo: plano.titulo,
-            descricao: plano.descricao,
-            status: plano.status || "andamento",
-            materia: materiaSelecionada,
-            urlPlanoDeAula: plano.urlPlanoDeAula // Capturando o link do Cloudinary
-          }));
-          
-          setPlanos(planosMapeados);
-        } else {
-          setPlanos([]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar atividades reais:", error);
-        setPlanos([]);
-      } finally {
-        setLoading(false);
+      if (turmaId) {
+        setTurmaIdAtiva(turmaId);
+        await AsyncStorage.setItem("@luna_turma_id", String(turmaId));
+      } else {
+        const salvoTurma = await AsyncStorage.getItem("@luna_turma_id");
+        if (salvoTurma) setTurmaIdAtiva(salvoTurma);
       }
     }
+    sincronizarDadosLocais();
+  }, [userId, turmaId]);
 
-  // ATUALIZADO: Agora enviando todos os parâmetros necessários para a IA
-  function abrirAtividadeAdaptada(plano: any) {
+  const carregarAtividades = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const idUsuario = userId || userIdAtivo || (await AsyncStorage.getItem("@luna_user_id")) || "";
+      const idTurma = turmaId || turmaIdAtiva || (await AsyncStorage.getItem("@luna_turma_id")) || "auto";
+
+      const usarMateriaIdDaRota =
+        Boolean(materiaId) &&
+        Boolean(materiaNome) &&
+        materiaSelecionada === identificarSiglaPorNome(materiaNome);
+
+      const parametroMateria = usarMateriaIdDaRota ? materiaId : materiaSelecionada;
+
+      const url = `${API_BASE_URL}/lesson-plans/turma/${idTurma}/materia/${parametroMateria}?sigla=${materiaSelecionada}&userId=${idUsuario}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data.planos)) {
+        const planosMapeados: Plano[] = data.planos.map((plano: any) => ({
+          idPlano: String(plano._id || plano.id),
+          titulo: plano.titulo,
+          descricao: plano.descricao,
+          status: plano.status || "andamento",
+          materia: materiaSelecionada,
+          urlPlanoDeAula: plano.urlPlanoDeAula,
+          turmaId: plano.turmaID ? String(plano.turmaID) : idTurma !== "auto" ? idTurma : undefined,
+          materiaId: plano.materiaID ? String(plano.materiaID) : usarMateriaIdDaRota ? materiaId : undefined,
+        }));
+
+        if (planosMapeados.length > 0 && planosMapeados[0].turmaId) {
+          await AsyncStorage.setItem("@luna_turma_id", planosMapeados[0].turmaId);
+        }
+
+        setPlanos(planosMapeados);
+      } else {
+        setPlanos([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar atividades reais:", error);
+      setPlanos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [materiaSelecionada, turmaId, turmaIdAtiva, userId, userIdAtivo, materiaId, materiaNome]);
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarAtividades();
+    }, [carregarAtividades])
+  );
+
+  function abrirAtividadeAdaptada(plano: Plano) {
     navigation.navigate("AdaptedActivity", {
       planoId: plano.idPlano,
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
-      urlPlanoDeAula: plano.urlPlanoDeAula, 
-      userId,
-      turmaId,     // Faltava enviar isso
-      materiaId,   // Faltava enviar isso
+      urlPlanoDeAula: plano.urlPlanoDeAula,
+      userId: userId || userIdAtivo,
+      turmaId: plano.turmaId || turmaId || turmaIdAtiva,
+      materiaId: plano.materiaId || materiaId,
     });
   }
 

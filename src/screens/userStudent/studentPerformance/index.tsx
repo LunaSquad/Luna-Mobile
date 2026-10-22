@@ -11,6 +11,8 @@ type PerformanceItem = {
   borderColor: string;
 };
 
+const CHART_USABLE_HEIGHT = 180;
+
 export default function StudentPerformanceScreen() {
   const dados: PerformanceItem[] = [
     {
@@ -27,7 +29,7 @@ export default function StudentPerformanceScreen() {
       porcent: 20,
       time: "10:40",
       color: "#DCE5FF",
-      borderColor: "#06156f",
+      borderColor: "#3d4fa8",
     },
     {
       matter: "GEO",
@@ -35,15 +37,15 @@ export default function StudentPerformanceScreen() {
       porcent: 80,
       time: "11:35",
       color: "#FFD6C7",
-      borderColor: "#7c2d12",
+      borderColor: "#c2653f",
     },
     {
       matter: "HIS",
       name: "História",
       porcent: 60,
       time: "20:25",
-      color: "#E3845B",
-      borderColor: "#7c2d12",
+      color: "#F5C4AE",
+      borderColor: "#a8542f",
     },
     {
       matter: "CIÊ",
@@ -51,7 +53,7 @@ export default function StudentPerformanceScreen() {
       porcent: 70,
       time: "09:35",
       color: "#C8F7D2",
-      borderColor: "#166534",
+      borderColor: "#2f7a45",
     },
   ];
 
@@ -65,7 +67,7 @@ export default function StudentPerformanceScreen() {
         />
 
         <Image
-          source={require("../../../assets/logo mobile-positivo.png")}
+          source={require("../../../assets/logo mobile.png")}
           style={styles.logoBorboleta}
           resizeMode="contain"
         />
@@ -83,7 +85,7 @@ export default function StudentPerformanceScreen() {
                 style={[
                   styles.bar,
                   {
-                    height: item.porcent * 1.8,
+                    height: (item.porcent / 100) * CHART_USABLE_HEIGHT,
                     backgroundColor: item.color,
                     borderColor: item.borderColor,
                   },
@@ -96,42 +98,29 @@ export default function StudentPerformanceScreen() {
             </View>
           ))}
         </View>
-
-        <View style={styles.chartLine} />
       </View>
 
       <View style={styles.infoCard}>
-        <View style={styles.infoHeader}>
-          <Text style={styles.infoTitle}>Matérias</Text>
-          <Text style={styles.infoTitle}>Tempo médio</Text>
-        </View>
+        <Text style={styles.infoHeaderLabel}>Tempo médio por matéria</Text>
 
-        <View style={styles.infoContent}>
-          <View style={styles.leftColumn}>
-            {dados.map((item, index) => (
-              <View key={index} style={styles.subjectRow}>
-                <View
-                  style={[
-                    styles.subjectColor,
-                    { backgroundColor: item.color },
-                  ]}
-                />
+        {dados.map((item, index) => (
+          <View key={index} style={styles.subjectRow}>
+            <View style={styles.subjectLeft}>
+              <View
+                style={[
+                  styles.subjectDot,
+                  {
+                    backgroundColor: item.color,
+                    borderColor: item.borderColor,
+                  },
+                ]}
+              />
+              <Text style={styles.subjectText}>{item.name}</Text>
+            </View>
 
-                <Text style={styles.subjectText}>{item.name}</Text>
-              </View>
-            ))}
+            <Text style={styles.timeText}>{item.time}</Text>
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.rightColumn}>
-            {dados.map((item, index) => (
-              <Text key={index} style={styles.timeText}>
-                {item.time}
-              </Text>
-            ))}
-          </View>
-        </View>
+        ))}
       </View>
     </View>
   );
