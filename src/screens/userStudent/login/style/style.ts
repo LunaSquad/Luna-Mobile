@@ -1,79 +1,92 @@
 import { StyleSheet, Dimensions } from "react-native";
 import { theme } from "../../../../styles/theme";
 
-const { height, width } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
+  },
+  backButton: {
+    position: "absolute",
+    top: 48,
+    left: 18,
+    zIndex: 30,
+    padding: 4,
   },
   luna: {
     position: "absolute",
     alignSelf: "center",
+    width: 67,
+    height: 51,
   },
   logo: {
     position: "absolute",
     alignSelf: "center",
+    width: 185,
+    height: 185,
   },
   login: {
     width: width,
-    height: "70%",
-    backgroundColor: theme.colors.primary,
+    height: "66%",
+    backgroundColor: theme.colors.primary || "#005A63",
     position: "absolute",
     bottom: 0,
-    borderTopEndRadius: theme.radius.lg,
-    padding: 72,
+    borderTopRightRadius: 48,
+    paddingHorizontal: 46,
+    paddingTop: 42,
+    paddingBottom: 30,
     alignSelf: "center",
   },
   titleModal: {
-    fontSize: theme.fontSize.title,
-    fontFamily: "Inter_700Bold",
-    color: theme.colors.secondary,
-    marginBottom: theme.spacing.lg,
+    fontSize: 26,
+    fontFamily: theme.fonts?.bold || "Inter_700Bold",
+    fontWeight: "700",
+    color: theme.colors.secondary || "#FFDDD2",
+    marginBottom: 28,
   },
-  // AJUSTADO: removeu o margin excessivo entre eles
   inputEmail: {
-    marginBottom: theme.spacing.sm || 12,
+    marginBottom: 22,
   },
   inputSenha: {
-    marginTop: 0,
+    marginBottom: 28,
   },
   CustomButton: {
-    marginTop: theme.spacing.sm,
+    marginTop: 8,
     alignSelf: "center",
-    marginBottom: theme.spacing.sm,
+    marginBottom: 14,
   },
-  // NOVO: estilos do link de cadastro
   signUpContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: theme.spacing.sm || 10,
+    marginTop: 6,
   },
   signUpText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontFamily: theme.fonts.light || "Inter_300Light",
+    fontFamily: theme.fonts?.light || "Inter_300Light",
   },
   signUpLink: {
-    color: theme.colors.secondary,
+    color: theme.colors.secondary || "#FFDDD2",
     fontSize: 14,
-    fontFamily: theme.fonts.bold || "Inter_700Bold",
-    marginLeft: 4,
+    fontFamily: theme.fonts?.bold || "Inter_700Bold",
+    fontWeight: "700",
   },
   row: {
-    width: 262,
+    width: "100%",
     height: 1,
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.secondary || "#FFDDD2",
     alignSelf: "center",
-    marginTop: theme.spacing.xx,
+    marginTop: 18,
+    opacity: 0.7,
   },
   socialIcons: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: 200,
+    justifyContent: "center",
+    gap: 32,
     alignSelf: "center",
-    marginTop: theme.spacing.sm,
+    marginTop: 18,
   },
 });

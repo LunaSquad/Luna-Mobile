@@ -2,8 +2,13 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 import cloudinary.uploader
+import re
 
-from app.core.database import usuarios_collection, alunos_collection
+from app.core.database import (
+    usuarios_collection,
+    alunos_collection,
+    hiperfocos_collection,
+)
 from app.core.security import hash_password
 
 router = APIRouter()
@@ -23,7 +28,6 @@ async def register_student(
     fotoRosto: UploadFile = File(...),
     laudos: List[UploadFile] = File(...),
 ):
-    # 1. Valida se o email já existe
     clean_email = email.lower().strip()
     if usuarios_collection.find_one({"email": clean_email}):
         raise HTTPException(
@@ -31,7 +35,6 @@ async def register_student(
             detail="Este e-mail já está cadastrado.",
         )
 
-    # 2. Valida se o CPF já existe
     clean_cpf = "".join(filter(str.isdigit, cpf))
     if alunos_collection.find_one({"cpf": clean_cpf}):
         raise HTTPException(
@@ -39,7 +42,6 @@ async def register_student(
             detail="Este CPF já está cadastrado.",
         )
 
-    # 3. Upload da Foto do Rosto no Cloudinary (pasta luna_uploads/alunos)
     try:
         rosto_upload = cloudinary.uploader.upload(
             fotoRosto.file,
@@ -53,7 +55,6 @@ async def register_student(
             detail=f"Falha ao enviar foto do aluno ao Cloudinary: {str(e)}",
         )
 
-    # 4. Upload dos Laudos no Cloudinary
     urls_laudos = []
     for laudo in laudos:
         try:
@@ -69,7 +70,6 @@ async def register_student(
                 detail=f"Falha ao enviar arquivo de laudo: {str(e)}",
             )
 
-    # 5. Inserir na tabela 'usuarios'
     now = datetime.utcnow()
     hashed_pwd = hash_password(senha)
 
@@ -84,7 +84,6 @@ async def register_student(
     user_result = usuarios_collection.insert_one(usuario_doc)
     user_id = user_result.inserted_id
 
-    # 6. Formatação da Data de Nascimento
     try:
         data_nasc_dt = datetime.fromisoformat(dataNascimento.replace("Z", "+00:00"))
     except Exception:
@@ -93,7 +92,29 @@ async def register_student(
         except Exception:
             data_nasc_dt = now
 
-    # 7. Inserir na tabela 'alunos'
+    hiperfoco_nome = hiperfoco.strip().lower() if hiperfoco else "dinossauros"
+    hiperfoco_doc = hiperfocos_collection.find_one(
+        {"nome": re.compile(f"^{hiperfoco_nome}$", re.IGNORECASE)}
+    )
+
+    if hiperfoco_doc:
+        hiperfoco_obj = {
+            "id": str(hiperfoco_doc.get("_id")),
+            "nome": hiperfoco_doc.get("nome"),
+        }
+    else:
+        novo_hiperfoco = {
+            "nome": hiperfoco_nome.capitalize(),
+            "createdAt": now,
+            "updatedAt": now,
+            "__v": 0,
+        }
+        h_result = hiperfocos_collection.insert_one(novo_hiperfoco)
+        hiperfoco_obj = {
+            "id": str(h_result.inserted_id),
+            "nome": novo_hiperfoco["nome"],
+        }
+
     aluno_doc = {
         "usuarioId": user_id,
         "turmaId": None,
@@ -107,7 +128,8 @@ async def register_student(
         "urlFotoAluno": url_foto_aluno,
         "urlFotoLaudo": urls_laudos[0] if urls_laudos else None,
         "urlsLaudos": urls_laudos,
-        "hiperfoco": hiperfoco.strip() if hiperfoco else None,
+        "hiperfoco": hiperfoco_obj,
+        "assetsVisuais": [],
         "createdAt": now,
         "updatedAt": now,
         "__v": 0,
