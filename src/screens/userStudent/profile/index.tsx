@@ -214,6 +214,56 @@ export default function Perfil({ route }: any) {
             />
           </TouchableOpacity>
         </View>
+        <View style={styles.editButtons}>
+          <View style={styles.divider} />
+          <TouchableOpacity
+              style={styles.actionItem}
+              activeOpacity={0.6}
+              onPress={() => {
+                navigation.navigate('EditHyperfocus'); 
+              }}
+            >
+              <MaterialIcons
+                name="edit"
+                size={22}
+                color="#006d77"
+              />
+
+              <Text style={styles.actionText}>
+                Editar hiperfoco
+              </Text>
+
+              <MaterialIcons
+                name="arrow-forward"
+                size={24}
+                color="#006d77"
+              />
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity
+              style={styles.actionItem}
+              activeOpacity={0.6}
+              onPress={() => {
+                navigation.navigate('EditProfile'); 
+              }}
+            >
+              <MaterialIcons
+                name="edit-square"
+                size={22}
+                color="#006d77"
+              />
+
+              <Text style={styles.actionText}>
+                Editar dados
+              </Text>
+
+              <MaterialIcons
+                name="arrow-forward"
+                size={24}
+                color="#006d77"
+              />
+            </TouchableOpacity>
+          </View>
 
       </View>
 
