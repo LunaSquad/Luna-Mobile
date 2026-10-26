@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,19 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { styles } from "./style/style";
 import { ProgressCard } from "../../../components/activities/index";
+import API_BASE_URL from "../../../services/ip";
 
 type RouteParams = {
   materiaId?: string;
   materiaNome?: string;
   userId?: string;
+  turmaId?: string;
 };
 
 type Plano = {
@@ -25,93 +28,138 @@ type Plano = {
   descricao: string;
   status: "andamento" | "vencida" | "concluida" | string;
   materia: string;
-};
-
-type ActivitiesProgressScreenProps = {
-  route?: {
-    params?: RouteParams;
-  };
+  urlPlanoDeAula?: string;
+  turmaId?: string;
+  materiaId?: string;
 };
 
 const materias = [
-  {
-    sigla: "LP",
-    nome: "Português",
-    cor: "#006d77",
-  },
-  {
-    sigla: "MAT",
-    nome: "Matemática",
-    cor: "#06156f",
-  },
-  {
-    sigla: "GEO",
-    nome: "Geografia",
-    cor: "#7c2d12",
-  },
-  {
-    sigla: "HIS",
-    nome: "História",
-    cor: "#4b1d0d",
-  },
+  { sigla: "LP", nome: "Português", cor: "#006d77" },
+  { sigla: "MAT", nome: "Matemática", cor: "#06156f" },
+  { sigla: "GEO", nome: "Geografia", cor: "#7c2d12" },
+  { sigla: "HIS", nome: "História", cor: "#4b1d0d" },
 ];
 
-export default function ActivitiesProgressScreen({
-  route,
-}: ActivitiesProgressScreenProps) {
-  const navigation = useNavigation<any>();
-  const { materiaId, materiaNome, userId } = route?.params || {};
+function identificarSiglaPorNome(nome?: string): string {
+  if (!nome) return "MAT";
+  const limpo = nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-  const materiaInicial =
-    materias.find((m) =>
-      materiaNome
-        ?.toLowerCase()
+  const encontrada = materias.find((m) =>
+    limpo.includes(
+      m.nome
+        .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .includes(
-          m.nome
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-        )
-    )?.sigla || "MAT";
+    )
+  );
+
+  return encontrada ? encontrada.sigla : "MAT";
+}
+
+export default function ActivitiesProgressScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { materiaId, materiaNome, userId, turmaId } = (route?.params || {}) as RouteParams;
+
+  const siglaRota = identificarSiglaPorNome(materiaNome);
 
   const [loading, setLoading] = useState(true);
-  const [materiaSelecionada, setMateriaSelecionada] = useState(materiaInicial);
+  const [materiaSelecionada, setMateriaSelecionada] = useState(siglaRota);
   const [planos, setPlanos] = useState<Plano[]>([]);
+  const [userIdAtivo, setUserIdAtivo] = useState<string | undefined>(userId);
+  const [turmaIdAtiva, setTurmaIdAtiva] = useState<string | undefined>(turmaId);
 
   useEffect(() => {
-    carregarAtividades();
-  }, [materiaSelecionada]);
+    if (materiaNome) {
+      setMateriaSelecionada(identificarSiglaPorNome(materiaNome));
+    }
+  }, [materiaNome, materiaId]);
 
-  function carregarAtividades() {
+  useEffect(() => {
+    async function sincronizarDadosLocais() {
+      if (userId) {
+        setUserIdAtivo(userId);
+        await AsyncStorage.setItem("@luna_user_id", String(userId));
+      } else {
+        const salvoUser = await AsyncStorage.getItem("@luna_user_id");
+        if (salvoUser) setUserIdAtivo(salvoUser);
+      }
+
+      if (turmaId) {
+        setTurmaIdAtiva(turmaId);
+        await AsyncStorage.setItem("@luna_turma_id", String(turmaId));
+      } else {
+        const salvoTurma = await AsyncStorage.getItem("@luna_turma_id");
+        if (salvoTurma) setTurmaIdAtiva(salvoTurma);
+      }
+    }
+    sincronizarDadosLocais();
+  }, [userId, turmaId]);
+
+  const carregarAtividades = useCallback(async () => {
     setLoading(true);
 
-    if (materiaSelecionada === "MAT") {
-      const planoAdicao: Plano = {
-        idPlano: "plano-pdf-adicao-simples",
-        titulo: "Adição simples",
-        descricao: "Aprenda a juntar quantidades e resolver somas simples até 10.",
-        status: "andamento",
-        materia: "MAT",
-      };
+    try {
+      const idUsuario = userId || userIdAtivo || (await AsyncStorage.getItem("@luna_user_id")) || "";
+      const idTurma = turmaId || turmaIdAtiva || (await AsyncStorage.getItem("@luna_turma_id")) || "auto";
 
-      setPlanos([planoAdicao]);
-    } else {
+      const usarMateriaIdDaRota =
+        Boolean(materiaId) &&
+        Boolean(materiaNome) &&
+        materiaSelecionada === identificarSiglaPorNome(materiaNome);
+
+      const parametroMateria = usarMateriaIdDaRota ? materiaId : materiaSelecionada;
+
+      const url = `${API_BASE_URL}/lesson-plans/turma/${idTurma}/materia/${parametroMateria}?sigla=${materiaSelecionada}&userId=${idUsuario}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data.planos)) {
+        const planosMapeados: Plano[] = data.planos.map((plano: any) => ({
+          idPlano: String(plano._id || plano.id),
+          titulo: plano.titulo,
+          descricao: plano.descricao,
+          status: plano.status || "andamento",
+          materia: materiaSelecionada,
+          urlPlanoDeAula: plano.urlPlanoDeAula,
+          turmaId: plano.turmaID ? String(plano.turmaID) : idTurma !== "auto" ? idTurma : undefined,
+          materiaId: plano.materiaID ? String(plano.materiaID) : usarMateriaIdDaRota ? materiaId : undefined,
+        }));
+
+        if (planosMapeados.length > 0 && planosMapeados[0].turmaId) {
+          await AsyncStorage.setItem("@luna_turma_id", planosMapeados[0].turmaId);
+        }
+
+        setPlanos(planosMapeados);
+      } else {
+        setPlanos([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar atividades reais:", error);
       setPlanos([]);
+    } finally {
+      setLoading(false);
     }
+  }, [materiaSelecionada, turmaId, turmaIdAtiva, userId, userIdAtivo, materiaId, materiaNome]);
 
-    setLoading(false);
-  }
+  useFocusEffect(
+    useCallback(() => {
+      carregarAtividades();
+    }, [carregarAtividades])
+  );
 
   function abrirAtividadeAdaptada(plano: Plano) {
     navigation.navigate("AdaptedActivity", {
       planoId: plano.idPlano,
       planoTitulo: plano.titulo,
       planoDescricao: plano.descricao,
-      materiaId,
-      materiaNome,
-      userId,
+      urlPlanoDeAula: plano.urlPlanoDeAula,
+      userId: userId || userIdAtivo,
+      turmaId: plano.turmaId || turmaId || turmaIdAtiva,
+      materiaId: plano.materiaId || materiaId,
     });
   }
 
@@ -162,15 +210,6 @@ export default function ActivitiesProgressScreen({
                       transform: [{ scale: selecionada ? 1.08 : 1 }],
                       borderWidth: selecionada ? 3 : 0,
                       borderColor: selecionada ? "#ffffff" : "transparent",
-
-                      shadowColor: selecionada ? materia.cor : "transparent",
-                      shadowOffset: {
-                        width: 0,
-                        height: 4,
-                      },
-                      shadowOpacity: selecionada ? 0.35 : 0,
-                      shadowRadius: 6,
-
                       elevation: selecionada ? 8 : 0,
                     },
                   ]}
@@ -185,7 +224,7 @@ export default function ActivitiesProgressScreen({
         <Text style={styles.titleSection}>Atividades lançadas</Text>
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color="#006d77" />
+          <ActivityIndicator style={{ marginTop: 30 }} color="#006d77" size="large" />
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -196,7 +235,6 @@ export default function ActivitiesProgressScreen({
                 <Text style={styles.emptyTitle}>
                   Nenhuma atividade lançada
                 </Text>
-
                 <Text style={styles.emptyText}>
                   Ainda não existem atividades disponíveis para essa matéria.
                 </Text>

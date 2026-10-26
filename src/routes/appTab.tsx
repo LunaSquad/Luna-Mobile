@@ -11,10 +11,16 @@ import Profile from "../screens/userStudent/profile";
 import { RootStackParamList } from "./index";
 
 type StudentTabsParamList = {
-  Início: { userId?: string; tipoUser?: string };
-  Desempenho: { userId?: string; tipoUser?: string };
-  "Em andamento": { userId?: string; tipoUser?: string };
-  Perfil: { userId?: string; tipoUser?: string };
+  Início: { userId?: string; tipoUser?: string; turmaId?: string };
+  Desempenho: { userId?: string; tipoUser?: string; turmaId?: string };
+  "Em andamento": {
+    userId?: string;
+    tipoUser?: string;
+    turmaId?: string;
+    materiaId?: string;
+    materiaNome?: string;
+  };
+  Perfil: { userId?: string; tipoUser?: string; turmaId?: string };
 };
 
 const Tab = createBottomTabNavigator<StudentTabsParamList>();
@@ -87,7 +93,7 @@ export default function StudentTabs({ route }: Props) {
       <Tab.Screen
         name="Em andamento"
         component={ActivitiesProgress}
-        initialParams={{ userId, tipoUser }}
+        initialParams={{ userId, tipoUser, materiaNome: "Matemática" }}
       />
 
       <Tab.Screen

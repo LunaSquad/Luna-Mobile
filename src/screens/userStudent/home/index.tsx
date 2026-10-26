@@ -13,7 +13,7 @@ import {
   Pressable,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { MaterialIcons } from "@expo/vector-icons"; // <-- Adicionado para os ícones
+import { MaterialIcons } from "@expo/vector-icons";
 import API_BASE_URL from "../../../services/ip";
 
 import styles from "./style/style";
@@ -56,6 +56,9 @@ type Aluno = {
   nome?: string;
   RA?: string;
   turmaID?: string;
+  turmaId?: string;
+  codTurma?: string;
+  idTurma?: string;
   escolaID?: string;
   urlFotoAluno?: string;
   hyperfoco?: Hiperfoco;
@@ -95,14 +98,12 @@ type MateriasResponse = {
 
 export default function Home({ route }: HomeProps) {
   const navigation = useNavigation<any>();
-
   const { userId, tipoUser } = route.params || {};
 
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [materias, setMaterias] = useState<MateriaCardData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
-  // Novo estado para controlar se as opções de Ingressar na Turma estão visíveis
   const [mostrarOpcoesTurma, setMostrarOpcoesTurma] = useState<boolean>(false);
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -110,7 +111,6 @@ export default function Home({ route }: HomeProps) {
 
   function abrirMenu() {
     setMenuAberto(true);
-
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 250,
@@ -210,7 +210,6 @@ export default function Home({ route }: HomeProps) {
 
   function sair() {
     fecharMenu();
-
     setTimeout(() => {
       navigation.reset({
         index: 0,
@@ -224,7 +223,6 @@ export default function Home({ route }: HomeProps) {
       try {
         if (!userId) return;
 
-        // 1. Busca os dados do Aluno
         const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
         const dataAluno: AlunoResponse = await respAluno.json();
 
@@ -234,7 +232,6 @@ export default function Home({ route }: HomeProps) {
           setAluno(dataAluno.aluno || null);
         }
 
-        // 2. Busca as Matérias independentemente de escola
         const respMat = await fetch(`${API_BASE_URL}/subjects/materias`);
         const dataMat: MateriasResponse = await respMat.json();
 
@@ -256,8 +253,10 @@ export default function Home({ route }: HomeProps) {
     carregarTudo();
   }, [userId]);
 
-  const hiperfocoNome =
-    aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
+  const hiperfocoNome = aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
+  
+  // Constante flexível para identificar qualquer formato de turma que esteja no MongoDB
+  const codigoTurmaAluno = aluno?.turmaID || aluno?.turmaId || aluno?.codTurma || aluno?.idTurma;
 
   return (
     <View style={styles.screen}>
@@ -271,17 +270,11 @@ export default function Home({ route }: HomeProps) {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() =>
-              navigation.navigate("Perfil", {
-                userId,
-              })
-            }
+            onPress={() => navigation.navigate("Perfil", { userId })}
           >
             <Image
               style={styles.profilePhoto}
-              source={
-                aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
-              }
+              source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil}
             />
           </TouchableOpacity>
         </View>
@@ -295,9 +288,7 @@ export default function Home({ route }: HomeProps) {
             {loading ? (
               <ActivityIndicator />
             ) : (
-              <Text style={styles.nameUsuario}>
-                Olá, {aluno?.nome || "Usuário"}
-              </Text>
+              <Text style={styles.nameUsuario}>Olá, {aluno?.nome || "Usuário"}</Text>
             )}
           </View>
 
@@ -305,9 +296,7 @@ export default function Home({ route }: HomeProps) {
             <View style={styles.spaceHiperfoco}>
               <View style={styles.hiperfocoContent}>
                 <Text style={styles.textoHiperfoco}>
-                  {loading
-                    ? "Carregando..."
-                    : "Indique o hiperfoco\nda criança aqui!"}
+                  {loading ? "Carregando..." : "Indique o hiperfoco\nda criança aqui!"}
                 </Text>
 
                 <View style={styles.hiperfocoActionArea}>
@@ -331,16 +320,13 @@ export default function Home({ route }: HomeProps) {
             </View>
           </View>
 
-          {/* LÓGICA DE CONDICIONAL DAS MATÉRIAS OU TURMA */}
           {loading ? (
              <ActivityIndicator size="large" color="#0F766E" style={{ marginTop: 50 }} />
-          ) : !aluno?.turmaID ? (
-            // VISUAL PARA ALUNO SEM TURMA
+          ) : !codigoTurmaAluno ? (
             <View style={styles.noClassContainer}>
               <Text style={styles.noClassText}>Você ainda não está em uma turma.</Text>
               
               {!mostrarOpcoesTurma ? (
-                // Botão de + Inicial
                 <View style={{ alignItems: "center" }}>
                   <TouchableOpacity 
                     style={styles.joinClassButton} 
@@ -351,7 +337,6 @@ export default function Home({ route }: HomeProps) {
                   <Text style={styles.joinClassButtonText}>Ingressar em{'\n'}uma turma</Text>
                 </View>
               ) : (
-                // Opções de Inserir Link ou QRCode
                 <View style={styles.joinOptionsContainer}>
                   <TouchableOpacity style={styles.joinOptionCard}>
                     <MaterialIcons name="link" size={24} color="#0F766E" />
@@ -373,7 +358,6 @@ export default function Home({ route }: HomeProps) {
               )}
             </View>
           ) : (
-            // VISUAL PARA ALUNO COM TURMA (LISTA DE MATÉRIAS)
             <View style={styles.spaceMaterias}>
               <View style={styles.spaceTituloMaterias}>
                 <Text style={styles.textMaterias}>Matérias</Text>
@@ -401,6 +385,7 @@ export default function Home({ route }: HomeProps) {
                           materiaId: materia.id,
                           materiaNome: materia.nome,
                           userId,
+                          turmaId: codigoTurmaAluno // <-- O parâmetro vital está aqui agora
                         })
                       }
                     />
@@ -412,8 +397,7 @@ export default function Home({ route }: HomeProps) {
 
           {!loading && aluno && (
             <View style={{ paddingBottom: 30, paddingTop: 10 }}>
-              {/* <Text>RA: {aluno.RA}</Text> */}
-              {aluno.turmaID && <Text>Turma: {aluno.turmaID}</Text>}
+              {codigoTurmaAluno && <Text>Turma: {codigoTurmaAluno}</Text>}
               {aluno.escolaID && <Text>Escola: {aluno.escolaID}</Text>}
             </View>
           )}
@@ -435,11 +419,8 @@ export default function Home({ route }: HomeProps) {
           <View style={styles.drawerProfile}>
             <Image
               style={styles.drawerPhoto}
-              source={
-                aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil
-              }
+              source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil}
             />
-
             <View>
               <Text style={styles.drawerName}>{aluno?.nome || "Usuário"}</Text>
               <Text style={styles.drawerSchool}>Luna App</Text>
@@ -477,7 +458,7 @@ export default function Home({ route }: HomeProps) {
             style={styles.drawerItem}
             onPress={() => {
               fecharMenu();
-              navigation.navigate("Atividades", {
+              navigation.navigate("ActivitiesProgress", {
                 userId,
                 materiaNome: "Matemática",
               });
@@ -490,7 +471,6 @@ export default function Home({ route }: HomeProps) {
 
         <View>
           <View style={styles.drawerLineBottom} />
-
           <TouchableOpacity style={styles.drawerItem} onPress={sair}>
             <Text style={styles.drawerIcon}>⊙</Text>
             <Text style={styles.drawerText}>Sair</Text>

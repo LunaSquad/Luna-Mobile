@@ -1,884 +1,718 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import {
   View,
   Text,
-  ScrollView,
   ActivityIndicator,
   TouchableOpacity,
   StyleSheet,
+  Image,
+  ImageBackground,
+  ScrollView,
+  Alert,
+  BackHandler,
 } from "react-native";
-import { RouteProp } from "@react-navigation/native";
-import QuizMolde from "../../../components/moldes/quizMolde";
-import FasesMolde from "../../../components/moldes/fasesMolde";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import API_BASE_URL from "../../../services/ip";
 
-type RootStackParamList = {
-  AdaptedActivity: {
-    planoId?: string;
-    planoTitulo: string;
-    planoDescricao: string;
-    userId: string;
+const TEMPO_ATIVIDADE_SEGUNDOS = 5 * 60 + 30;
+const TEMPO_BLOQUEIO_MS = 5 * 60 * 1000;
+
+function obterCoresDoTema(hiperfoco: string) {
+  const tema = hiperfoco.toLowerCase().trim();
+  const paletas: Record<string, { accent: string; lightAccent: string; fallbackBg: string }> = {
+    dinossauros: { accent: "#2E7D32", lightAccent: "#E8F5E9", fallbackBg: "#A5D6A7" },
+    espaço: { accent: "#283593", lightAccent: "#E8EAF6", fallbackBg: "#9FA8DA" },
+    carros: { accent: "#C62828", lightAccent: "#FFEBEE", fallbackBg: "#EF9A9A" },
+    princesas: { accent: "#AD1457", lightAccent: "#FCE4EC", fallbackBg: "#F48FB1" },
+    minions: { accent: "#F57F17", lightAccent: "#FFFDE7", fallbackBg: "#FFF59D" },
+    "video game": { accent: "#4527A0", lightAccent: "#EDE7F6", fallbackBg: "#B39DDB" },
+    default: { accent: "#006d77", lightAccent: "#E0F2F1", fallbackBg: "#80CBC4" },
   };
-};
+  return paletas[tema] || paletas.default;
+}
 
-type AdaptedActivityRouteProp = RouteProp<
-  RootStackParamList,
-  "AdaptedActivity"
->;
+function formatarTempo(totalSegundos: number) {
+  const minutos = Math.floor(totalSegundos / 60);
+  const segundos = totalSegundos % 60;
+  return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+}
 
-type Props = {
-  route: AdaptedActivityRouteProp;
-  navigation: any;
-};
+export default function AdaptedActivityScreen() {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const { userId, planoId, turmaId, materiaId, urlPlanoDeAula } = route.params || {};
 
-type Hiperfoco = {
-  hiperfocoID?: string;
-  nome?: string;
-  descricao?: string;
-  urlFotoHiperfoco?: string;
-};
-
-type Aluno = {
-  nome?: string;
-  RA?: string;
-  turmaID?: string;
-  escolaID?: string;
-  urlFotoAluno?: string;
-  hiperfoco?: Hiperfoco;
-  hyperfoco?: Hiperfoco;
-};
-
-type AlunoResponse = {
-  ok: boolean;
-  aluno?: Aluno;
-  message?: string;
-};
-
-type QuestaoAdaptada = {
-  pergunta: string;
-  respostaCorreta: string;
-  alternativas?: string[];
-};
-
-type AtividadePlanoAdaptado = {
-  titulo: string;
-  conteudoAdaptado: string;
-  questoes: QuestaoAdaptada[];
-};
-
-type PlanoAdaptado = {
-  tituloAdaptado: string;
-  temaOriginal: string;
-  hiperfoco: string;
-  explicacaoAdaptada: string;
-  atividades: AtividadePlanoAdaptado[];
-};
-
-type AdaptarPlanoResponse = {
-  ok: boolean;
-  hiperfoco: string;
-  json_path?: string;
-  pdf_path?: string;
-  plano_adaptado: PlanoAdaptado;
-};
-
-export default function AdaptedActivityScreen({ route, navigation }: Props) {
-  const { userId } = route.params;
+  const idUnicoAtividade = `${userId || "aluno"}_${planoId || materiaId || "geral"}`;
+  const chaveBloqueio = `@luna_cooldown_${idUnicoAtividade}`;
+  const chaveFimAtividade = `@luna_timer_end_${idUnicoAtividade}`;
+  const chavePaginaSalva = `@luna_pagina_${idUnicoAtividade}`;
 
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState("");
-  const [hiperfocoAluno, setHiperfocoAluno] = useState("");
-  const [planoAdaptado, setPlanoAdaptado] = useState<PlanoAdaptado | null>(
-    null
-  );
-
+  const [loadingText, setLoadingText] = useState("Preparando ambiente...");
+  const [planoAdaptado, setPlanoAdaptado] = useState<any>(null);
+  const [assetsVisuais, setAssetsVisuais] = useState<string[]>([]);
+  const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
+  const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
   const [paginaAtual, setPaginaAtual] = useState(0);
 
+  const [segundosRestantes, setSegundosRestantes] = useState(TEMPO_ATIVIDADE_SEGUNDOS);
+  const [segundosBloqueio, setSegundosBloqueio] = useState(0);
+  const [bloqueado, setBloqueado] = useState(false);
+
+  const avisoUmMinutoExibido = useRef(false);
+  const tempoEsgotadoAcionado = useRef(false);
+
+  const totalAtividades = planoAdaptado?.atividades?.length || 0;
+  const atividadeEmAndamento = paginaAtual >= 1 && (totalAtividades === 0 || paginaAtual <= totalAtividades);
+  const atividadeConcluida = totalAtividades > 0 && paginaAtual > totalAtividades;
+
+  const ativarBloqueioCincoMinutos = useCallback(async () => {
+    const expiraEm = Date.now() + TEMPO_BLOQUEIO_MS;
+    await AsyncStorage.setItem(chaveBloqueio, String(expiraEm));
+    await AsyncStorage.removeItem(chaveFimAtividade);
+    await AsyncStorage.removeItem(chavePaginaSalva);
+  }, [chaveBloqueio, chaveFimAtividade, chavePaginaSalva]);
+
+  const limparSessaoAoConcluir = useCallback(async () => {
+    await AsyncStorage.removeItem(chaveFimAtividade);
+    await AsyncStorage.removeItem(chavePaginaSalva);
+  }, [chaveFimAtividade, chavePaginaSalva]);
+
+  const tentarSairDaAtividade = useCallback(() => {
+    if (bloqueado || atividadeConcluida || paginaAtual === 0) {
+      navigation.goBack();
+      return;
+    }
+
+    Alert.alert(
+      "Sair da atividade?",
+      "Se você sair agora, perderá todo o seu progresso e precisará aguardar 5 minutos para tentar novamente. Deseja realmente sair?",
+      [
+        { text: "Continuar fazendo", style: "cancel" },
+        {
+          text: "Sair e perder progresso",
+          style: "destructive",
+          onPress: async () => {
+            await ativarBloqueioCincoMinutos();
+            navigation.goBack();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [bloqueado, atividadeConcluida, paginaAtual, navigation, ativarBloqueioCincoMinutos]);
+
   useEffect(() => {
-    async function carregarPlanoAdaptado() {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (atividadeEmAndamento && !bloqueado) {
+        tentarSairDaAtividade();
+        return true;
+      }
+      return false;
+    });
+
+    return () => sub.remove();
+  }, [atividadeEmAndamento, bloqueado, tentarSairDaAtividade]);
+
+  useEffect(() => {
+    async function inicializarTela() {
       try {
         setLoading(true);
-        setErro("");
 
-        if (!userId) {
-          throw new Error("userId não foi enviado para a atividade adaptada");
+        const bloqueioSalvo = await AsyncStorage.getItem(chaveBloqueio);
+        if (bloqueioSalvo) {
+          const expiraEm = parseInt(bloqueioSalvo, 10);
+          const agora = Date.now();
+
+          if (agora < expiraEm) {
+            const faltamSegundos = Math.max(1, Math.ceil((expiraEm - agora) / 1000));
+            setSegundosBloqueio(faltamSegundos);
+            setBloqueado(true);
+            setLoading(false);
+            return;
+          } else {
+            await AsyncStorage.removeItem(chaveBloqueio);
+          }
         }
 
-        const respAluno = await fetch(`${API_BASE_URL}/aluno/${userId}`);
-        const dataAluno: AlunoResponse = await respAluno.json();
+        const fimSalvo = await AsyncStorage.getItem(chaveFimAtividade);
+        const paginaSalva = await AsyncStorage.getItem(chavePaginaSalva);
 
-        if (!respAluno.ok || !dataAluno.ok) {
-          throw new Error(dataAluno.message || "Não foi possível buscar aluno");
+        if (fimSalvo) {
+          const timestampFim = parseInt(fimSalvo, 10);
+          const agora = Date.now();
+
+          if (agora < timestampFim) {
+            const restante = Math.max(1, Math.ceil((timestampFim - agora) / 1000));
+            setSegundosRestantes(restante);
+            setPaginaAtual(paginaSalva ? Math.max(1, parseInt(paginaSalva, 10)) : 1);
+          } else {
+            const expiraBloqueio = timestampFim + TEMPO_BLOQUEIO_MS;
+            await AsyncStorage.removeItem(chaveFimAtividade);
+            await AsyncStorage.removeItem(chavePaginaSalva);
+
+            if (agora < expiraBloqueio) {
+              await AsyncStorage.setItem(chaveBloqueio, String(expiraBloqueio));
+              const faltamSegundos = Math.max(1, Math.ceil((expiraBloqueio - agora) / 1000));
+              setSegundosBloqueio(faltamSegundos);
+              setBloqueado(true);
+              setLoading(false);
+              return;
+            }
+          }
         }
 
-        const hiperfoco =
-          dataAluno.aluno?.hiperfoco?.nome ||
-          dataAluno.aluno?.hyperfoco?.nome ||
-          "";
+        setLoadingText("Conhecendo o aluno...");
+        const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
+        const dataAluno = await respAluno.json();
 
-        if (!hiperfoco) {
-          throw new Error("O aluno não possui hiperfoco cadastrado");
-        }
-
+        let hiperfoco = dataAluno.aluno?.hiperfoco?.nome || dataAluno.aluno?.hiperfoco || "dinossauros";
         setHiperfocoAluno(hiperfoco);
 
-        const resp = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
+        let imagensSalvas = dataAluno.aluno?.assetsVisuais || [];
+
+        if (imagensSalvas.length === 0) {
+          setLoadingText(`Criando universo de ${hiperfoco} com IA...`);
+
+          const respAssets = await fetch(`${API_BASE_URL}/ai/gerar-assets-visuais`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ alunoId: userId, hiperfoco: hiperfoco }),
+          });
+
+          const dataAssets = await respAssets.json();
+          if (dataAssets.ok && dataAssets.assets) {
+            imagensSalvas = dataAssets.assets;
+          }
+        }
+        setAssetsVisuais(imagensSalvas);
+
+        setLoadingText("Ajustando a aula...");
+        const respIA = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            hiperfoco,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planoId, turmaId, materiaId, hiperfoco, urlPlanoDeAula, alunoId: userId }),
         });
 
-        const data: AdaptarPlanoResponse = await resp.json();
-
-        if (!resp.ok || !data.ok) {
-          throw new Error("Erro ao adaptar plano de aula");
-        }
-
-        setPlanoAdaptado(data.plano_adaptado);
-      } catch (e: any) {
-        setErro(e.message || "Erro ao carregar plano adaptado");
+        const dataIA = await respIA.json();
+        setPlanoAdaptado(dataIA.plano_adaptado);
+      } catch (e) {
+        console.log("Erro no carregamento:", e);
       } finally {
         setLoading(false);
       }
     }
 
-    carregarPlanoAdaptado();
-  }, [userId]);
+    if (userId) {
+      inicializarTela();
+    } else {
+      setLoading(false);
+    }
+  }, [userId, chaveBloqueio, chaveFimAtividade, chavePaginaSalva, planoId, turmaId, materiaId, urlPlanoDeAula]);
 
-  function extrairAlternativas(pergunta: string): string[] {
-    const alternativas: string[] = [];
+  useEffect(() => {
+    if (!bloqueado) return;
 
-    const regex = /[a-d]\)\s*([^\n]+)/gi;
-    let match;
+    const intervaloBloqueio = setInterval(async () => {
+      const bloqueioSalvo = await AsyncStorage.getItem(chaveBloqueio);
+      if (!bloqueioSalvo) {
+        setBloqueado(false);
+        setSegundosBloqueio(0);
+        clearInterval(intervaloBloqueio);
+        return;
+      }
 
-    while ((match = regex.exec(pergunta)) !== null) {
-      alternativas.push(match[1].trim());
+      const expiraEm = parseInt(bloqueioSalvo, 10);
+      const restante = Math.max(0, Math.ceil((expiraEm - Date.now()) / 1000));
+      setSegundosBloqueio(restante);
+
+      if (restante <= 0) {
+        clearInterval(intervaloBloqueio);
+        await AsyncStorage.removeItem(chaveBloqueio);
+        setBloqueado(false);
+        setPaginaAtual(0);
+        setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervaloBloqueio);
+  }, [bloqueado, chaveBloqueio]);
+
+  useEffect(() => {
+    if (loading || bloqueado || !atividadeEmAndamento) return;
+
+    const intervalo = setInterval(async () => {
+      const fimSalvo = await AsyncStorage.getItem(chaveFimAtividade);
+      if (!fimSalvo) return;
+
+      const timestampFim = parseInt(fimSalvo, 10);
+      const restante = Math.max(0, Math.ceil((timestampFim - Date.now()) / 1000));
+      setSegundosRestantes(restante);
+
+      if (restante <= 0) {
+        clearInterval(intervalo);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [loading, bloqueado, atividadeEmAndamento, chaveFimAtividade]);
+
+  useEffect(() => {
+    if (loading || bloqueado || !atividadeEmAndamento) return;
+
+    if (segundosRestantes === 60 && !avisoUmMinutoExibido.current) {
+      avisoUmMinutoExibido.current = true;
+      Alert.alert(
+        "Atenção ao Tempo!",
+        "Falta apenas 1 minuto para o tempo da atividade acabar. Vamos finalizar!"
+      );
     }
 
-    return alternativas;
-  }
-
-  function limparPergunta(pergunta: string): string {
-    return pergunta.replace(/[a-d]\)\s*[^\n]+/gi, "").trim();
-  }
-
-  function getImagensGenericasPorHiperfoco() {
-    const h = hiperfocoAluno.toLowerCase();
-
-    if (h.includes("dino")) {
-      return [];
-    }
-
-    return [];
-  }
-
-  function extrairQuestoesDoConteudo(conteudo: string): QuestaoAdaptada[] {
-    if (!conteudo) return [];
-
-    const linhas = conteudo
-      .split("\n")
-      .map((linha) => linha.trim())
-      .filter((linha) => linha.length > 0);
-
-    const questoes = linhas
-      .filter((linha) => {
-        return (
-          linha.includes("=") ||
-          linha.includes("______") ||
-          linha.includes("_____") ||
-          linha.includes("?")
+    if (segundosRestantes === 0 && !tempoEsgotadoAcionado.current) {
+      tempoEsgotadoAcionado.current = true;
+      const finalizarPorTempo = async () => {
+        await ativarBloqueioCincoMinutos();
+        Alert.alert(
+          "Tempo Esgotado!",
+          "O tempo de 05:30 acabou! Você precisará aguardar 5 minutos de pausa antes de tentar novamente.",
+          [{ text: "OK", onPress: () => navigation.goBack() }],
+          { cancelable: false }
         );
-      })
-      .map((linha) => {
-        const numeros = linha.match(/\d+/g) || [];
+      };
+      finalizarPorTempo();
+    }
+  }, [segundosRestantes, loading, bloqueado, atividadeEmAndamento, ativarBloqueioCincoMinutos, navigation]);
 
-        let respostaCorreta = "";
+  useEffect(() => {
+    if (atividadeConcluida) {
+      limparSessaoAoConcluir();
+    }
+  }, [atividadeConcluida, limparSessaoAoConcluir]);
 
-        if (numeros.length >= 2) {
-          const soma = numeros.reduce((total, n) => total + Number(n), 0);
-          respostaCorreta = String(soma);
-        }
+  const handleIniciarExpedicao = async () => {
+    const fimExistente = await AsyncStorage.getItem(chaveFimAtividade);
+    const agora = Date.now();
 
-        return {
-          pergunta: linha.replace("______", "?").replace("_____", "?"),
-          respostaCorreta,
-        };
-      })
-      .filter((q) => q.respostaCorreta !== "");
-
-    return questoes;
-  }
-
-  function renderPageDots(total: number) {
-    return (
-      <View style={localStyles.dotsContainer}>
-        {Array.from({ length: total }).map((_, index) => {
-          const pagina = index + 1;
-          const ativo = paginaAtual === pagina;
-
-          return (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setPaginaAtual(pagina)}
-              activeOpacity={0.8}
-              style={[localStyles.dot, ativo && localStyles.dotActive]}
-            />
-          );
-        })}
-      </View>
-    );
-  }
-
-  function avancarPagina(total: number) {
-    if (paginaAtual >= total) {
-      setPaginaAtual(total + 1);
-      return;
+    if (fimExistente && parseInt(fimExistente, 10) > agora) {
+      const restante = Math.ceil((parseInt(fimExistente, 10) - agora) / 1000);
+      setSegundosRestantes(restante);
+    } else {
+      const novoFim = agora + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
+      await AsyncStorage.setItem(chaveFimAtividade, String(novoFim));
+      setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
     }
 
-    setPaginaAtual(paginaAtual + 1);
-  }
+    avisoUmMinutoExibido.current = false;
+    tempoEsgotadoAcionado.current = false;
+    await AsyncStorage.setItem(chavePaginaSalva, "1");
+    setPaginaAtual(1);
+  };
 
-  function voltarPagina() {
-    if (paginaAtual === 1) {
-      setPaginaAtual(0);
-      return;
+  const handleEnviar = async () => {
+    const proximaPagina = paginaAtual + 1;
+    setOpcaoSelecionada(null);
+    setPaginaAtual(proximaPagina);
+
+    if (proximaPagina <= totalAtividades) {
+      await AsyncStorage.setItem(chavePaginaSalva, String(proximaPagina));
+    } else {
+      await limparSessaoAoConcluir();
     }
+  };
 
-    setPaginaAtual(paginaAtual - 1);
-  }
+  const indexAtividade = Math.max(0, paginaAtual - 1);
+  const atividadeAtual = planoAdaptado?.atividades?.[indexAtividade];
+  const questaoAtual = atividadeAtual?.questoes?.[0];
 
-  function renderExplicacao() {
+  const numeros = questaoAtual?.pergunta?.match(/\d+/g)?.map(Number) || [2, 1];
+  const respostaCorreta =
+    questaoAtual?.respostaCorreta || String(numeros.reduce((a: number, b: number) => a + b, 0));
 
-    if (!planoAdaptado) return null;
-
-    return (
-
-      <View style={localStyles.page}>
-        <TouchableOpacity
-          style={localStyles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={localStyles.backButtonText}>Voltar</Text>
-        </TouchableOpacity>
-        <View style={localStyles.introCard}>
-          <View style={localStyles.kickerRow}>
-            <Text style={localStyles.kicker}>🧩 PLANO ADAPTADO</Text>
-          </View>
-
-          <Text style={localStyles.title}>{planoAdaptado.tituloAdaptado}</Text>
-
-          <View style={localStyles.themeBanner}>
-            <View style={localStyles.themeCircleLeft} />
-            <View style={localStyles.themeCircleRight} />
-
-            <Text style={localStyles.themeDino}>🦖</Text>
-
-            <View>
-              <Text style={localStyles.themeSmall}>TEMA VISUAL</Text>
-              <Text style={localStyles.themeTitle}>{hiperfocoAluno}</Text>
-              <Text style={localStyles.themeSubtitle}>
-                Rugido! Vamos explorar 🦕
-              </Text>
-            </View>
-          </View>
-
-          <View style={localStyles.explanationTitleRow}>
-            <View style={localStyles.bookIconBox}>
-              <Text style={localStyles.explanationIcon}>📖</Text>
-            </View>
-
-            <Text style={localStyles.label}>Explicação</Text>
-          </View>
-
-          <View style={localStyles.textBox}>
-            <Text style={localStyles.text}>
-              {planoAdaptado.explicacaoAdaptada}
-            </Text>
-
-            <View style={localStyles.exampleBox}>
-              <Text style={localStyles.exampleEmoji}>🦕 🦕</Text>
-              <Text style={localStyles.examplePlus}>+</Text>
-              <Text style={localStyles.exampleEmoji}>🦕 🦕 🦕</Text>
-              <Text style={localStyles.examplePlus}>=</Text>
-              <Text style={localStyles.exampleResult}>5</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={localStyles.primaryButton}
-            activeOpacity={0.85}
-            onPress={() => setPaginaAtual(1)}
-          >
-            <Text style={localStyles.primaryButtonText}>
-              Vamos praticar! 🦕
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  function renderAtividade() {
-    if (!planoAdaptado) return null;
-
-    const totalAtividades = planoAdaptado.atividades.length;
-    const indexAtividade = paginaAtual - 1;
-    const atividade = planoAdaptado.atividades[indexAtividade];
-
-    if (!atividade) {
-      return (
-        <View style={localStyles.page}>
-          <Text style={localStyles.logo}>luna</Text>
-
-          <View style={localStyles.explanationCard}>
-            <Text style={localStyles.imageEmoji}>🏆</Text>
-
-            <Text style={localStyles.title}>Parabéns!</Text>
-
-            <Text style={localStyles.text}>
-              Você concluiu todas as atividades de{" "}
-              {planoAdaptado.tituloAdaptado}.
-            </Text>
-
-            <TouchableOpacity
-              style={localStyles.primaryButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={localStyles.primaryButtonText}>Finalizar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
+  const alternativas = useMemo(() => {
+    let alts = questaoAtual?.alternativas || [];
+    if (alts.length === 0) {
+      const ans = parseInt(respostaCorreta, 10);
+      if (!isNaN(ans)) {
+        alts = [ans - 1, ans, ans + 1, ans + 2]
+          .sort(() => Math.random() - 0.5)
+          .map((n) => `${n} ${hiperfocoAluno}`);
+      }
     }
+    return alts;
+  }, [questaoAtual, respostaCorreta, hiperfocoAluno]);
 
-    const questoesDaAtividade =
-      atividade.questoes && atividade.questoes.length > 0
-        ? atividade.questoes
-        : extrairQuestoesDoConteudo(atividade.conteudoAdaptado);
+  const temaCores = obterCoresDoTema(hiperfocoAluno);
+  const corCronometro =
+    atividadeEmAndamento && segundosRestantes <= 60 ? "#D32F2F" : temaCores.accent;
 
-    const primeiraQuestao = questoesDaAtividade[0];
-
-    if (!primeiraQuestao) {
-      return (
-        <View style={localStyles.page}>
-          <Text style={localStyles.title}>{atividade.titulo}</Text>
-          <Text>Nenhuma questão encontrada.</Text>
-        </View>
-      );
-    }
-
-    const alternativasExtraidas = extrairAlternativas(primeiraQuestao.pergunta);
-
-    const alternativas =
-      primeiraQuestao.alternativas?.length
-        ? primeiraQuestao.alternativas
-        : alternativasExtraidas.length
-          ? alternativasExtraidas
-          : [];
-
-    const perguntaLimpa = alternativasExtraidas.length
-      ? limparPergunta(primeiraQuestao.pergunta)
-      : primeiraQuestao.pergunta;
-
-    const usarQuiz = alternativas.length > 0;
-
-    return (
-      <View style={localStyles.page}>
-        <TouchableOpacity style={localStyles.backButton} onPress={voltarPagina}>
-          <Text style={localStyles.backButtonText}>Voltar</Text>
-        </TouchableOpacity>
-
-        <Text style={localStyles.logo}>luna</Text>
-
-        <Text style={localStyles.progress}>
-          Atividade {indexAtividade + 1} de {totalAtividades}
-        </Text>
-
-        {renderPageDots(totalAtividades)}
-
-        <Text style={localStyles.activityTitle}>{atividade.titulo}</Text>
-
-        <Text style={localStyles.activityDescription}>
-          {atividade.conteudoAdaptado}
-        </Text>
-
-        {usarQuiz ? (
-          <QuizMolde
-            key={`quiz-${paginaAtual}-${primeiraQuestao.pergunta}`}
-            pergunta={perguntaLimpa}
-            opcoes={alternativas}
-            respostaCorreta={primeiraQuestao.respostaCorreta}
-            imagens={getImagensGenericasPorHiperfoco()}
-            titulo="luna"
-            subtitulo={atividade.titulo}
-          />
-        ) : (
-          <FasesMolde
-            key={`fases-${paginaAtual}-${atividade.titulo}`}
-            fases={questoesDaAtividade.map((q, index) => ({
-              fase: index + 1,
-              desafio: q.pergunta,
-              resposta: q.respostaCorreta,
-            }))}
-            titulo="luna"
-            subtitulo={atividade.titulo}
-          />
-        )}
-
-        <View style={localStyles.navigationArea}>
-          <TouchableOpacity
-            style={[
-              localStyles.navButton,
-              paginaAtual === 1 && localStyles.navButtonDisabled,
-            ]}
-            disabled={paginaAtual === 1}
-            onPress={() => setPaginaAtual(paginaAtual - 1)}
-          >
-            <Text style={localStyles.navButtonText}>Anterior</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={localStyles.navButton}
-            onPress={() => avancarPagina(totalAtividades)}
-          >
-            <Text style={localStyles.navButtonText}>
-              {indexAtividade + 1 >= totalAtividades ? "Finalizar" : "Avançar"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const bgImage = assetsVisuais[0];
+  const mascotImage = assetsVisuais[1];
+  const itemImage1 = assetsVisuais[2];
+  const itemImage2 = assetsVisuais[3] || assetsVisuais[2];
 
   if (loading) {
     return (
-      <View style={localStyles.center}>
-        <ActivityIndicator size="large" color="#006d77" />
-        <Text style={localStyles.loadingText}>Adaptando plano de aula...</Text>
+      <View style={[styles.center, { backgroundColor: temaCores.fallbackBg }]}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text style={[styles.loadingText, { color: "#FFFFFF" }]}>{loadingText}</Text>
       </View>
     );
   }
 
-  if (erro) {
+  if (bloqueado) {
     return (
-      <View style={localStyles.center}>
-        <Text style={localStyles.errorText}>{erro}</Text>
-
-        <TouchableOpacity
-          style={localStyles.primaryButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={localStyles.primaryButtonText}>Voltar</Text>
-        </TouchableOpacity>
+      <View style={[styles.center, { backgroundColor: temaCores.fallbackBg, paddingHorizontal: 24 }]}>
+        <View style={styles.whiteCardBloqueio}>
+          <Text style={{ fontSize: 64, textAlign: "center", marginBottom: 12 }}>⏳</Text>
+          <Text style={[styles.cardTitle, { color: temaCores.accent, textAlign: "center" }]}>
+            Hora da Pausa!
+          </Text>
+          <Text style={[styles.explanationBody, { textAlign: "center", marginBottom: 12 }]}>
+            Você saiu da atividade ou o tempo esgotou. Respire fundo e aguarde o cronômetro zerar para tentar novamente:
+          </Text>
+          <View style={[styles.cooldownBox, { backgroundColor: temaCores.lightAccent }]}>
+            <MaterialIcons name="timer" size={28} color={temaCores.accent} />
+            <Text style={[styles.cooldownTimerText, { color: temaCores.accent }]}>
+              {formatarTempo(segundosBloqueio)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: temaCores.accent, width: "100%" }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.primaryButtonText}>Voltar às Atividades</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={localStyles.container}>
-      {paginaAtual === 0 ? renderExplicacao() : renderAtividade()}
-    </ScrollView>
+    <ImageBackground
+      source={bgImage ? { uri: bgImage } : undefined}
+      style={[styles.container, !bgImage && { backgroundColor: temaCores.fallbackBg }]}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
+
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={tentarSairDaAtividade}>
+          <MaterialIcons name="chevron-left" size={28} color={temaCores.accent} />
+        </TouchableOpacity>
+
+        <View style={styles.headerTitles}>
+          <Text style={[styles.headerLuna, { color: temaCores.accent }]}>Luna • Matemática</Text>
+          <Text style={[styles.headerHiperfoco, { color: temaCores.accent }]}>
+            Trilha de {hiperfocoAluno}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.timerBadge,
+            atividadeEmAndamento &&
+            segundosRestantes <= 60 && {
+              backgroundColor: "#FFEBEE",
+              borderWidth: 1,
+              borderColor: "#D32F2F",
+            },
+          ]}
+        >
+          <MaterialIcons name="schedule" size={14} color={corCronometro} />
+          <Text style={[styles.timerText, { color: corCronometro }]}>
+            {formatarTempo(segundosRestantes)}
+          </Text>
+        </View>
+      </View>
+
+      {paginaAtual === 0 ? (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {mascotImage ? (
+            <Image source={{ uri: mascotImage }} style={styles.mascotImg} />
+          ) : (
+            <Text style={{ fontSize: 110, textAlign: "center", marginTop: 20 }}>🚀</Text>
+          )}
+
+          <View style={styles.whiteCard}>
+            <Text style={[styles.cardTitle, { color: temaCores.accent }]}>
+              {planoAdaptado?.tituloAdaptado || "Sua Aventura"}
+            </Text>
+
+            <Text style={styles.explanationBody}>{planoAdaptado?.explicacaoAdaptada}</Text>
+
+            <View style={[styles.missionBox, { backgroundColor: temaCores.lightAccent }]}>
+              <FontAwesome5
+                name="star"
+                size={20}
+                color={temaCores.accent}
+                style={{ marginRight: 15 }}
+              />
+              <Text style={[styles.missionText, { color: temaCores.accent }]}>
+                Missão: Complete os desafios para avançar de nível!
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: temaCores.accent }]}
+              onPress={handleIniciarExpedicao}
+            >
+              <Text style={styles.primaryButtonText}>Começar Expedição</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      ) : paginaAtual > totalAtividades ? (
+        <View style={[styles.scrollContent, { justifyContent: "center" }]}>
+          <View style={styles.whiteCard}>
+            <Text style={{ fontSize: 80, textAlign: "center", marginBottom: 20 }}>🏆</Text>
+            <Text style={[styles.cardTitle, { color: temaCores.accent, textAlign: "center" }]}>
+              Vitória!
+            </Text>
+            <Text style={[styles.explanationBody, { textAlign: "center" }]}>
+              Você completou toda a missão com sucesso.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: temaCores.accent }]}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.primaryButtonText}>Voltar ao Menu</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.progressBarContainer}>
+            {Array.from({ length: totalAtividades }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.progressSegment,
+                  { backgroundColor: i < paginaAtual ? temaCores.accent : "rgba(255,255,255,0.6)" },
+                ]}
+              />
+            ))}
+          </View>
+
+          <View style={styles.whiteCard}>
+            <Text style={[styles.perguntaIndicator, { color: temaCores.accent }]}>
+              PERGUNTA {paginaAtual} DE {totalAtividades}
+            </Text>
+            <Text style={styles.questionText}>{atividadeAtual?.conteudoAdaptado}</Text>
+
+            <View style={[styles.mathBox, { backgroundColor: temaCores.lightAccent }]}>
+              <View style={styles.mathSide}>
+                {Array.from({ length: numeros[0] || 2 }).map((_, i) =>
+                  itemImage1 ? (
+                    <Image key={`l-${i}`} source={{ uri: itemImage1 }} style={styles.stickerImg} />
+                  ) : (
+                    <Text key={`le-${i}`} style={{ fontSize: 35 }}>
+                      👾
+                    </Text>
+                  )
+                )}
+              </View>
+
+              <Text style={[styles.plusSign, { color: temaCores.accent }]}>+</Text>
+
+              <View style={styles.mathSide}>
+                {Array.from({ length: numeros[1] || 1 }).map((_, i) =>
+                  itemImage2 ? (
+                    <Image key={`r-${i}`} source={{ uri: itemImage2 }} style={styles.stickerImg} />
+                  ) : (
+                    <Text key={`re-${i}`} style={{ fontSize: 35 }}>
+                      👾
+                    </Text>
+                  )
+                )}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.optionsContainer}>
+            {alternativas.map((alt: string, index: number) => {
+              const isSelected = opcaoSelecionada === alt;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.optionButton,
+                    isSelected && {
+                      borderColor: temaCores.accent,
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                    },
+                  ]}
+                  onPress={() => setOpcaoSelecionada(alt)}
+                >
+                  <View
+                    style={[
+                      styles.radioCircle,
+                      isSelected && {
+                        backgroundColor: temaCores.accent,
+                        borderColor: temaCores.accent,
+                      },
+                    ]}
+                  >
+                    {isSelected && <MaterialIcons name="check" size={14} color="#FFF" />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      isSelected && { color: temaCores.accent, fontWeight: "bold" },
+                    ]}
+                  >
+                    {alt}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              {
+                backgroundColor: temaCores.accent,
+                opacity: opcaoSelecionada ? 1 : 0.5,
+                marginTop: 10,
+              },
+            ]}
+            onPress={handleEnviar}
+            disabled={!opcaoSelecionada}
+          >
+            <Text style={styles.primaryButtonText}>Enviar resposta</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </ImageBackground>
   );
 }
 
-const localStyles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#FFF3DE",
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 22,
-  },
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { marginTop: 14, fontSize: 16, fontWeight: "bold" },
 
-  page: {
-    flex: 1,
-  },
+  container: { flex: 1, width: "100%", height: "100%" },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255, 255, 255, 0.45)" },
 
-  center: {
-    flex: 1,
-    backgroundColor: "#FFF3DE",
-    justifyContent: "center",
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    padding: 24,
+    paddingHorizontal: 15,
+    paddingTop: 50,
+    paddingBottom: 15,
+    zIndex: 10,
   },
-
-  loadingText: {
-    marginTop: 14,
-    fontSize: 16,
-    color: "#006d77",
-    fontWeight: "800",
-  },
-
-  introCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 18,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    elevation: 5,
-  },
-
   backButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
-    marginBottom: 14,
-  },
-
-  backButtonText: {
-    color: "#006d77",
-    fontWeight: "900",
-    fontSize: 13,
-  },
-
-  // backButtonText: {
-  //   color: "#006d77",
-  //   fontWeight: "900",
-  //   fontSize: 13,
-  // },
-
-  logo: {
-    textAlign: "center",
-    fontSize: 34,
-    fontWeight: "300",
-    color: "#8ABFC0",
-    letterSpacing: 1,
-    marginBottom: 22,
-  },
-
-  explanationCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 24,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    elevation: 6,
-  },
-
-  kickerRow: {
-    flexDirection: "row",
-    marginBottom: 14,
-  },
-
-  kicker: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E9F7F6",
-    color: "#006d77",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 18,
-    overflow: "hidden",
-  },
-
-  title: {
-    fontSize: 25,
-    lineHeight: 32,
-    fontWeight: "900",
-    color: "#051B3F",
-    marginBottom: 18,
-  },
-
-  themeBanner: {
-    minHeight: 108,
-    backgroundColor: "#FFD042",
-    borderRadius: 24,
-    marginBottom: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-
-  themeCircleLeft: {
-    position: "absolute",
-    left: -24,
-    top: -20,
-    width: 70,
-    height: 70,
-    borderRadius: 40,
-    backgroundColor: "#FFE58A",
-  },
-
-  themeCircleRight: {
-    position: "absolute",
-    right: -28,
-    bottom: -28,
-    width: 84,
-    height: 84,
-    borderRadius: 50,
-    backgroundColor: "#FFB83D",
-    opacity: 0.55,
-  },
-
-  themeDino: {
-    fontSize: 58,
-    marginRight: 20,
-  },
-
-  themeSmall: {
-    color: "#7A5A00",
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-
-  themeTitle: {
-    color: "#051B3F",
-    fontSize: 21,
-    fontWeight: "900",
-    marginTop: 2,
-  },
-
-  themeSubtitle: {
-    color: "#6B5A2A",
-    fontSize: 11,
-    fontWeight: "700",
-    marginTop: 3,
-  },
-
-  explanationTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  bookIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#DFF4F2",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-
-  explanationIcon: {
-    fontSize: 16,
-  },
-
-  label: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#006d77",
-  },
-
-  textBox: {
-    backgroundColor: "#FFF3DE",
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-  },
-
-  text: {
-    fontSize: 14,
-    lineHeight: 23,
-    color: "#263548",
-    fontWeight: "600",
-  },
-
-  exampleBox: {
-    marginTop: 18,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    minHeight: 74,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 7,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    elevation: 4,
-  },
-
-  exampleEmoji: {
-    fontSize: 21,
-    color: "#006d77",
-    fontWeight: "900",
-  },
-
-  examplePlus: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#91A4AF",
-    marginHorizontal: 10,
-  },
-
-  exampleResult: {
-    fontSize: 27,
-    fontWeight: "900",
-    color: "#FF5C56",
-  },
-
-  primaryButton: {
-    backgroundColor: "#00928D",
-    height: 58,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    padding: 8,
     borderRadius: 20,
-    justifyContent: "center",
+    elevation: 2,
+  },
+  headerTitles: { alignItems: "center" },
+  headerLuna: { fontSize: 15, fontWeight: "900" },
+  headerHiperfoco: { fontSize: 12, fontWeight: "700", opacity: 0.9, marginTop: 2 },
+  timerBadge: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 18,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+    elevation: 2,
+  },
+  timerText: { fontSize: 13, fontWeight: "bold", marginLeft: 4 },
 
-    shadowColor: "#004B4B",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40, flexGrow: 1 },
+
+  mascotImg: { width: 170, height: 170, alignSelf: "center", zIndex: 10, marginTop: 10 },
+  whiteCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 24,
+    padding: 25,
     elevation: 5,
+    marginTop: -30,
+    zIndex: 5,
   },
-
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-
-  imagePlaceholder: {
-    minHeight: 170,
-    borderRadius: 26,
-    backgroundColor: "#FFD827",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-    padding: 18,
-  },
-
-  imageEmoji: {
-    fontSize: 64,
-    marginBottom: 10,
-    textAlign: "center",
-  },
-
-  imageText: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#17264A",
-    textAlign: "center",
-  },
-
-  progress: {
-    alignSelf: "center",
-    backgroundColor: "#EEF4F1",
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+  whiteCardBloqueio: {
+    width: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
     borderRadius: 24,
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#006d77",
-    marginBottom: 12,
-    textAlign: "center",
+    padding: 25,
+    elevation: 5,
+    alignItems: "center",
   },
+  cooldownBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  cooldownTimerText: {
+    fontSize: 28,
+    fontWeight: "900",
+    marginLeft: 10,
+  },
+  cardTitle: { fontSize: 24, fontWeight: "900", marginBottom: 15 },
+  explanationBody: { fontSize: 16, color: "#333", lineHeight: 25, fontWeight: "600", marginBottom: 20 },
+  missionBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 25,
+  },
+  missionText: { flex: 1, fontSize: 13, fontWeight: "bold", lineHeight: 20 },
 
-  dotsContainer: {
+  progressBarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  progressSegment: { flex: 1, height: 6, borderRadius: 3, marginHorizontal: 2 },
+  perguntaIndicator: { fontSize: 12, fontWeight: "900", letterSpacing: 1, marginBottom: 10 },
+  questionText: { fontSize: 18, fontWeight: "bold", color: "#222", lineHeight: 26, marginBottom: 20 },
+
+  mathBox: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 20,
+    paddingVertical: 20,
+    borderRadius: 16,
   },
+  mathSide: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", maxWidth: "40%" },
+  stickerImg: { width: 50, height: 50, margin: 3 },
+  plusSign: { fontSize: 40, fontWeight: "bold", marginHorizontal: 15 },
 
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "#D7E6E3",
-  },
-
-  dotActive: {
-    width: 26,
-    backgroundColor: "#006d77",
-  },
-
-  activityTitle: {
-    fontSize: 26,
-    lineHeight: 34,
-    fontWeight: "900",
-    color: "#17264A",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-
-  activityDescription: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 3,
-    borderColor: "#E8F0EE",
-    borderRadius: 22,
-    padding: 18,
-    fontSize: 15,
-    lineHeight: 23,
-    color: "#49606A",
-    textAlign: "center",
-    marginBottom: 18,
-    fontWeight: "700",
-  },
-
-  navigationArea: {
-    marginTop: 18,
-    marginBottom: 10,
+  optionsContainer: { marginTop: 20 },
+  optionButton: {
     flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#999",
+    marginRight: 15,
     justifyContent: "center",
-    gap: 14,
+    alignItems: "center",
   },
+  optionText: { fontSize: 15, fontWeight: "700", color: "#444" },
 
-  navButton: {
-    backgroundColor: "#EEF4F1",
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-
-  navButtonDisabled: {
-    opacity: 0.4,
-  },
-
-  navButtonText: {
-    color: "#006d77",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-
-  errorText: {
-    color: "#B00020",
-    fontSize: 16,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 18,
-  },
-
-  explanationHeader: {
-    marginBottom: 14,
-  },
+  primaryButton: { paddingVertical: 18, borderRadius: 16, elevation: 4, alignItems: "center" },
+  primaryButtonText: { color: "#FFF", fontSize: 16, fontWeight: "900", textTransform: "uppercase" },
 });

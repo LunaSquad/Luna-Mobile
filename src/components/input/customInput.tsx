@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { theme } from "../../styles/theme";
 
-type Props = {
+export interface Props {
   title?: string;
   titleColor?: string;
   borderColor?: string;
@@ -20,11 +20,10 @@ type Props = {
   onChangeText?: (text: string) => void;
   secureTextEntry?: boolean;
   style?: StyleProp<ViewStyle>;
-  // Propriedades que estavam faltando:
   keyboardType?: KeyboardTypeOptions;
   maxLength?: number;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
-};
+}
 
 export default function CustomInput({
   title,
@@ -43,15 +42,17 @@ export default function CustomInput({
   return (
     <View style={[styles.container, style]}>
       {title && (
-        <Text style={[styles.label, titleColor && { color: titleColor }]}>
+        <Text style={[styles.label, titleColor ? { color: titleColor } : null]}>
           {title}
         </Text>
       )}
 
-      <View style={[
+      <View
+        style={[
           styles.inputContainer,
-          borderColor && { borderColor },
-        ]}>
+          borderColor ? { borderColor: borderColor } : null,
+        ]}
+      >
         <TextInput
           style={styles.input}
           placeholder={placeholder}

@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
 
   spaceMaterias: {
     marginTop: theme.spacing.xx,
-    height: 350,
+    height: 550,
   },
 
   spaceTituloMaterias: {

@@ -4,7 +4,6 @@ from app.core.database import alunos_collection
 
 
 def serialize_mongo(doc):
-    """Converte recursivamente todos os ObjectIds e tipos especiais para string."""
     if isinstance(doc, list):
         return [serialize_mongo(item) for item in doc]
     if isinstance(doc, dict):
@@ -17,8 +16,7 @@ def serialize_mongo(doc):
 
 def find_student_by_user_id(user_id: str):
     try:
-        # Remove eventuais aspas ou parênteses extras vindos da requisição
-        clean_id = user_id.strip(' "\'()')
+        clean_id = user_id.strip(" \"'()")
 
         try:
             oid = ObjectId(clean_id)
@@ -26,17 +24,14 @@ def find_student_by_user_id(user_id: str):
             print(f"ERRO studentRepository: '{clean_id}' não é um ObjectId válido.")
             return None
 
-        # Busca pelo usuarioId vinculado ao login
         aluno = alunos_collection.find_one({"usuarioId": oid})
 
-        # Fallback caso o ID passado seja o próprio _id do aluno
         if not aluno:
             aluno = alunos_collection.find_one({"_id": oid})
 
         if not aluno:
             return None
 
-        # Serializa todos os campos do tipo ObjectId para string de forma segura
         return serialize_mongo(aluno)
 
     except Exception as e:

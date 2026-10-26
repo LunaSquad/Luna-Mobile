@@ -15,14 +15,14 @@ type Fase = {
 
 type Props = {
   fases: Fase[];
+  emojiTema?: string;
   titulo?: string;
   subtitulo?: string;
 };
 
 export default function FasesMolde({
   fases,
-  titulo = "luna",
-  subtitulo = "Missão interativa",
+  emojiTema = "🚀",
 }: Props) {
   const [faseAtual, setFaseAtual] = useState(0);
   const [respostaUsuario, setRespostaUsuario] = useState("");
@@ -31,11 +31,6 @@ export default function FasesMolde({
   const [acertos, setAcertos] = useState(0);
 
   const fase = fases[faseAtual];
-
-  const progresso = useMemo(() => {
-    if (!fases.length) return 0;
-    return Math.round(((faseAtual + 1) / fases.length) * 100);
-  }, [faseAtual, fases.length]);
 
   function normalizarTexto(texto: string) {
     return texto.trim().toLowerCase();
@@ -50,11 +45,10 @@ export default function FasesMolde({
     if (acertou) {
       const novosAcertos = acertos + 1;
       setAcertos(novosAcertos);
-      setFeedback("Ótima resposta! Você acertou.");
+      setFeedback("Incrível! Você conseguiu.");
 
       setTimeout(() => {
         const proximaFase = faseAtual + 1;
-
         if (proximaFase < fases.length) {
           setFaseAtual(proximaFase);
           setRespostaUsuario("");
@@ -63,9 +57,9 @@ export default function FasesMolde({
           setFinalizado(true);
           setFeedback("");
         }
-      }, 900);
+      }, 1200);
     } else {
-      setFeedback("Boa tentativa! Revise sua resposta e tente novamente.");
+      setFeedback("Hum... Tente olhar de outro jeito!");
     }
   }
 
@@ -81,11 +75,8 @@ export default function FasesMolde({
     return (
       <View style={styles.container}>
         <View style={styles.finalCard}>
-          <Text style={styles.finalEmoji}>🦖</Text>
+          <Text style={styles.finalEmoji}>🧐</Text>
           <Text style={styles.finalTitle}>Nenhuma fase encontrada</Text>
-          <Text style={styles.finalText}>
-            Não encontramos perguntas para esta atividade.
-          </Text>
         </View>
       </View>
     );
@@ -96,19 +87,15 @@ export default function FasesMolde({
       <View style={styles.container}>
         <View style={styles.finalCard}>
           <Text style={styles.finalEmoji}>🏆</Text>
-
-          <Text style={styles.finalTitle}>Parabéns!</Text>
-
+          <Text style={styles.finalTitle}>Missão Cumprida!</Text>
           <Text style={styles.finalText}>
-            Você concluiu todas as fases da atividade.
+            Você passou por todas as fases como um verdadeiro campeão.
           </Text>
-
           <Text style={styles.finalScore}>
             Acertos: {acertos} de {fases.length}
           </Text>
-
           <TouchableOpacity style={styles.button} onPress={reiniciarJogo}>
-            <Text style={styles.buttonText}>Jogar novamente</Text>
+            <Text style={styles.buttonText}>Jogar Novamente</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -118,12 +105,13 @@ export default function FasesMolde({
   return (
     <View style={styles.container}>
       <View style={styles.challengeCard}>
-        <Text style={styles.dino}>🦖</Text>
-
+        <View style={styles.faseBadge}>
+          <Text style={styles.faseBadgeText}>FASE {faseAtual + 1}</Text>
+        </View>
+        <Text style={styles.temaEmoji}>{emojiTema}</Text>
         <Text style={styles.challengeText}>{fase.desafio}</Text>
-
         <Text style={styles.challengeDescription}>
-          Escreva sua resposta com calma e explique do seu jeito.
+          Escreva sua resposta abaixo.
         </Text>
       </View>
 
@@ -132,46 +120,38 @@ export default function FasesMolde({
           style={styles.input}
           value={respostaUsuario}
           onChangeText={setRespostaUsuario}
-          placeholder="Comece a escrever aqui..."
-          placeholderTextColor="#C9DBD8"
+          placeholder="Sua resposta aqui..."
+          placeholderTextColor="#A5C5C3"
           multiline
           textAlignVertical="top"
         />
-
-        <Text style={styles.pencil}>✍️</Text>
+        <Text style={styles.pencilIcon}>✍️</Text>
       </View>
-
-      <View style={styles.spacer} />
 
       {feedback ? (
         <View
           style={[
             styles.feedbackBox,
-            feedback.includes("acertou")
+            feedback.includes("Incrível")
               ? styles.feedbackSuccess
               : styles.feedbackError,
           ]}
         >
-          <View style={styles.feedbackIcon}>
-            <Text style={styles.feedbackEmoji}>🦖</Text>
-          </View>
-
+          <Text style={styles.feedbackEmoji}>
+            {feedback.includes("Incrível") ? "✨" : "🤔"}
+          </Text>
           <Text style={styles.feedbackText}>{feedback}</Text>
         </View>
       ) : (
-        <View style={styles.feedbackBox}>
-          <View style={styles.feedbackIcon}>
-            <Text style={styles.feedbackEmoji}>🦖</Text>
-          </View>
-
-          <Text style={styles.feedbackText}>
-            Escreva uma resposta bem caprichada!
-          </Text>
-        </View>
+        <View style={styles.spacer} />
       )}
 
-      <TouchableOpacity style={styles.button} onPress={verificarResposta}>
-        <Text style={styles.buttonText}>Enviar Resposta</Text>
+      <TouchableOpacity 
+        style={[styles.button, !respostaUsuario.trim() && styles.buttonDisabled]} 
+        onPress={verificarResposta}
+        disabled={!respostaUsuario.trim()}
+      >
+        <Text style={styles.buttonText}>Confirmar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -180,171 +160,159 @@ export default function FasesMolde({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    minHeight: 620,
-    marginTop: 22,
-    marginBottom: 24,
+    paddingBottom: 20,
   },
-
   challengeCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
     borderWidth: 4,
     borderColor: "#E8F0EE",
     paddingHorizontal: 24,
-    paddingVertical: 26,
-    marginBottom: 24,
+    paddingVertical: 30,
+    marginBottom: 20,
+    alignItems: "center",
+    elevation: 2,
   },
-
-  dino: {
-    fontSize: 38,
+  faseBadge: {
+    position: "absolute",
+    top: -16,
+    backgroundColor: "#006d77",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  faseBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  temaEmoji: {
+    fontSize: 52,
     marginBottom: 16,
   },
-
   challengeText: {
-    fontSize: 23,
-    lineHeight: 31,
-    color: "#287572",
+    fontSize: 24,
+    lineHeight: 32,
+    color: "#17264A",
     fontWeight: "900",
-    marginBottom: 14,
+    textAlign: "center",
+    marginBottom: 12,
   },
-
   challengeDescription: {
     fontSize: 15,
-    lineHeight: 24,
     color: "#6EA2A0",
-    fontWeight: "600",
+    fontWeight: "700",
+    textAlign: "center",
   },
-
   answerBox: {
-    height: 200,
+    height: 180,
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
-    borderWidth: 4,
-    borderColor: "#E8F0EE",
-    paddingHorizontal: 24,
-    paddingTop: 22,
-    paddingBottom: 20,
+    borderWidth: 3,
+    borderColor: "#006d77",
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#006d77",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
-
   input: {
     flex: 1,
-    fontSize: 16,
-    color: "#287572",
-    fontWeight: "700",
+    fontSize: 18,
+    color: "#006d77",
+    fontWeight: "800",
     padding: 0,
   },
-
-  pencil: {
+  pencilIcon: {
     position: "absolute",
-    right: 24,
-    bottom: 18,
-    fontSize: 26,
+    right: 20,
+    bottom: 20,
+    fontSize: 28,
+    opacity: 0.8,
   },
-
   spacer: {
-    flex: 1,
-    minHeight: 120,
+    height: 64,
+    marginBottom: 18,
   },
-
   feedbackBox: {
     minHeight: 64,
-    backgroundColor: "#F1F4EC",
     borderRadius: 24,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 18,
+    borderWidth: 2,
   },
-
   feedbackSuccess: {
     backgroundColor: "#E6F8EC",
+    borderColor: "#1E8E5A",
   },
-
   feedbackError: {
     backgroundColor: "#FDECEC",
+    borderColor: "#C0392B",
   },
-
-  feedbackIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
-    backgroundColor: "#287572",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
-  },
-
   feedbackEmoji: {
-    fontSize: 21,
+    fontSize: 26,
+    marginRight: 12,
   },
-
   feedbackText: {
     flex: 1,
-    color: "#006d77",
-    fontSize: 13,
-    lineHeight: 19,
+    color: "#17264A",
+    fontSize: 15,
     fontWeight: "900",
   },
-
   button: {
-    height: 66,
-    borderRadius: 24,
+    height: 62,
+    borderRadius: 22,
     backgroundColor: "#006d77",
     alignItems: "center",
     justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    elevation: 5,
+    elevation: 4,
   },
-
+  buttonDisabled: {
+    backgroundColor: "#A5C5C3",
+    elevation: 0,
+  },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "900",
   },
-
   finalCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
-    padding: 28,
+    padding: 30,
     alignItems: "center",
     borderWidth: 4,
     borderColor: "#E8F0EE",
+    marginTop: 40,
   },
-
   finalEmoji: {
-    fontSize: 56,
-    marginBottom: 10,
+    fontSize: 64,
+    marginBottom: 16,
   },
-
   finalTitle: {
-    fontSize: 27,
+    fontSize: 28,
     fontWeight: "900",
     color: "#006d77",
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: "center",
   },
-
   finalText: {
-    fontSize: 15,
-    color: "#425466",
-    textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "700",
-    lineHeight: 22,
-  },
-
-  finalScore: {
     fontSize: 16,
+    color: "#49606A",
+    textAlign: "center",
+    marginBottom: 20,
+    fontWeight: "700",
+    lineHeight: 24,
+  },
+  finalScore: {
+    fontSize: 18,
     fontWeight: "900",
-    color: "#006d77",
-    marginBottom: 18,
+    color: "#FFB83D",
+    marginBottom: 24,
   },
 });

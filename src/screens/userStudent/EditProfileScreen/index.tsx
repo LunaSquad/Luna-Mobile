@@ -24,6 +24,7 @@ import {
   MaterialCommunityIcons,
   Feather,
 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { theme } from "../../../styles/theme";
 import CustomInput from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
@@ -94,29 +95,25 @@ export default function EditProfileScreen() {
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
 
-  // Etapa 1
   const [nome, setNome] = useState("");
   const [nomeResponsavel, setNomeResponsavel] = useState("");
   const [cpf, setCpf] = useState("");
   const [cpfResponsavel, setCpfResponsavel] = useState("");
 
-  // Etapa 2
   const [dataNascimento, setDataNascimento] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
   const [hiperfoco, setHiperfoco] = useState("");
 
-  // Etapa 3
   const [laudos, setLaudos] = useState<string[]>([]);
   const [fotoRosto, setFotoRosto] = useState<string | null>(null);
 
-  // Etapa 4 (Opcional na edição)
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
-  // Animação Modal
   const modalTranslate = useSharedValue(height * 0.88);
 
   useEffect(() => {
@@ -125,21 +122,30 @@ export default function EditProfileScreen() {
       easing: Easing.out(Easing.exp),
     });
 
-    fetchUserProfile();
+    const initialize = async () => {
+      const storedToken = await AsyncStorage.getItem("token");
+      if (storedToken) {
+        setToken(storedToken);
+        await fetchUserProfile(storedToken);
+      } else {
+        setInitialLoading(false);
+      }
+    };
+
+    initialize();
   }, []);
 
   const modalStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: modalTranslate.value }],
   }));
 
-  // 1. Carrega os dados do estudante ao abrir a tela
-  async function fetchUserProfile() {
+  async function fetchUserProfile(authToken: string) {
     try {
       setInitialLoading(true);
       const response = await fetch(`${API_BASE_URL}/student/profile`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${authToken}`,
         },
       });
       console.log("STATUS:", response.status);
@@ -171,7 +177,6 @@ export default function EditProfileScreen() {
     }
   }
 
-  // Máscaras e Validações
   function maskCPF(value: string) {
     return value
       .replace(/\D/g, "")
@@ -217,7 +222,6 @@ export default function EditProfileScreen() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr.trim());
   }
 
-  // Captura de Imagens
   async function pickImageFromGallery(tipo: "laudo" | "rosto") {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -273,7 +277,6 @@ export default function EditProfileScreen() {
     }
   }
 
-  // 2. Submissão da Atualização (PUT/PATCH)
   async function handleUpdateProfile() {
     if (senha.trim()) {
       if (senha.length < 6) {
@@ -329,6 +332,9 @@ export default function EditProfileScreen() {
 
       const response = await fetch(`${API_BASE_URL}/student/profile`, {
         method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -414,10 +420,10 @@ export default function EditProfileScreen() {
       </View>
 
       <Animated.View style={[styles.card, modalStyle]}>
-         <View style={styles.contentContainer}>
+        <View style={styles.contentContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>EDITAR DADOS DA CRIANÇA</Text>
-            
+
             <Image
               source={require("../../../assets/imagem-edit.png")}
               style={styles.titleImage}
@@ -427,7 +433,6 @@ export default function EditProfileScreen() {
 
           <StepDots currentStep={step} totalSteps={4} />
 
-          {/* ETAPA 1 */}
           {step === 1 && (
             <View style={styles.inputsContainer}>
               <CustomInput
@@ -488,7 +493,6 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          {/* ETAPA 2 */}
           {step === 2 && (
             <View style={styles.inputsContainer}>
               <TouchableOpacity
@@ -580,7 +584,6 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          {/* ETAPA 3 */}
           {step === 3 && (
             <View style={styles.uploadSection}>
               <Text style={styles.uploadSectionTitle}>
@@ -659,42 +662,41 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          {/* ETAPA 4 */}
-            {step === 4 && (
-              <View style={styles.passwordStepWrapper}>
-                  <CustomInput
-                    title="NOVA SENHA"
-                    titleColor={theme.colors.primary}
-                    borderColor={theme.colors.primary}
-                    placeholder="Deixe em branco para manter a atual"
-                    secureTextEntry={true}
-                    value={senha}
-                    onChangeText={setSenha}
-                    style={styles.input}
-                    icon={
-                      <MaterialIcons name="lock" size={20} color={theme.colors.primary} />
-                    }
-                  />
+          {step === 4 && (
+            <View style={styles.passwordStepWrapper}>
+              <CustomInput
+                title="NOVA SENHA"
+                titleColor={theme.colors.primary}
+                borderColor={theme.colors.primary}
+                placeholder="Deixe em branco para manter a atual"
+                secureTextEntry={true}
+                value={senha}
+                onChangeText={setSenha}
+                style={styles.input}
+                icon={
+                  <MaterialIcons name="lock" size={20} color={theme.colors.primary} />
+                }
+              />
 
-                  <CustomInput
-                    title="CONFIRMAR NOVA SENHA"
-                    titleColor={theme.colors.primary}
-                    borderColor={theme.colors.primary}
-                    placeholder="Confirme a nova senha"
-                    secureTextEntry={true}
-                    value={confirmarSenha}
-                    onChangeText={setConfirmarSenha}
-                    style={styles.input}
-                    icon={
-                      <MaterialIcons
-                        name="lock-outline"
-                        size={20}
-                        color={theme.colors.primary}
-                      />
-                    }
+              <CustomInput
+                title="CONFIRMAR NOVA SENHA"
+                titleColor={theme.colors.primary}
+                borderColor={theme.colors.primary}
+                placeholder="Confirme a nova senha"
+                secureTextEntry={true}
+                value={confirmarSenha}
+                onChangeText={setConfirmarSenha}
+                style={styles.input}
+                icon={
+                  <MaterialIcons
+                    name="lock-outline"
+                    size={20}
+                    color={theme.colors.primary}
                   />
-              </View>
-            )}
+                }
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.buttonContainer}>

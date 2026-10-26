@@ -1,32 +1,9 @@
 [
-  {
-    "id": "jogo_interativo_basico",
-    "titulo": "Some e Passe de Fase",
-    "tema_visual": "videogame",
-    "palavras_chave": ["matemática", "número", "conta", "somar", "subtração", "adição"]
-  },
-  {
-    "id": "aventura_dos_animais",
-    "titulo": "Descubra o Animal Misterioso",
-    "tema_visual": "animais",
-    "palavras_chave": ["ciências", "biologia", "animais", "natureza", "habitat"]
-  },
-  {
-    "id": "historia_rimada_musical",
-    "titulo": "Rimando com Ritmo",
-    "tema_visual": "música",
-    "palavras_chave": ["português", "poesia", "rima", "leitura", "interpretação"]
-  },
-  {
-    "id": "arte_colorida",
-    "titulo": "Criando com Cores",
-    "tema_visual": "arte",
-    "palavras_chave": ["arte", "desenho", "pintura", "formas", "cores"]
-  },
-  {
-    "id": "jogo_matematico",
-    "titulo": "Missão dos Números",
-    "tema_visual": "tabuleiro",
-    "palavras_chave": ["matemática", "multiplicação", "divisão", "tabuleiro", "desafio"]
-  }
+  {"hiperfoco": "videogame", "perfil": "agitado", "molde": "fases"},
+  {"hiperfoco": "minecraft", "perfil": "agitado", "molde": "fases"},
+  {"hiperfoco": "leitura", "perfil": "calmo", "molde": "quiz"},
+  {"hiperfoco": "dinossauros", "perfil": "curioso", "molde": "fases"},
+  {"hiperfoco": "astronomia", "perfil": "calmo", "molde": "quiz"},
+  {"hiperfoco": "futebol", "perfil": "agitado", "molde": "fases"},
+  {"hiperfoco": "animais", "perfil": "calmo", "molde": "quiz"}
 ]

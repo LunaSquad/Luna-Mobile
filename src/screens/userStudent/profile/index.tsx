@@ -58,10 +58,10 @@ export default function Perfil({ route }: any) {
   function formatarData(dataISO: string) {
     if (!dataISO) return "Usuário";
 
-    const [data] = dataISO.split("T"); 
-    const [ano, mes, dia] = data.split("-"); 
+    const [data] = dataISO.split("T");
+    const [ano, mes, dia] = data.split("-");
 
-    return `${dia}/${mes}/${ano}`; 
+    return `${dia}/${mes}/${ano}`;
   }
 
   function formatarCPF(cpf: string) {
@@ -72,7 +72,7 @@ export default function Perfil({ route }: any) {
     return cpfLimpo.replace(
       /(\d{3})(\d{3})(\d{3})(\d{2})/,
       "$1.$2.$3-$4"
-    );   
+    );
   }
 
   return (
@@ -125,7 +125,7 @@ export default function Perfil({ route }: any) {
           <View>
             <Text style={styles.titleInfo}>NOME</Text>
             <Text style={styles.infoItem}>
-                  {aluno?.nome || "Usuário"}
+              {aluno?.nome || "Usuário"}
             </Text>
           </View>
           <View>
@@ -137,7 +137,7 @@ export default function Perfil({ route }: any) {
           <View>
             <Text style={styles.titleInfo}>E-MAIL</Text>
             <Text style={styles.infoItem}>
-                  {aluno?.email || "Usuário"}
+              {aluno?.email || "Usuário"}
             </Text>
           </View>
           <View>
@@ -162,6 +162,56 @@ export default function Perfil({ route }: any) {
               color="#006d77"
             />
             <Text style={styles.infoItemLaudo}>Ver laudo</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.editButtons}>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.actionItem}
+            activeOpacity={0.6}
+            onPress={() => {
+              navigation.navigate('EditHyperfocus');
+            }}
+          >
+            <MaterialIcons
+              name="edit"
+              size={22}
+              color="#006d77"
+            />
+
+            <Text style={styles.actionText}>
+              Editar hiperfoco
+            </Text>
+
+            <MaterialIcons
+              name="arrow-forward"
+              size={24}
+              color="#006d77"
+            />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.actionItem}
+            activeOpacity={0.6}
+            onPress={() => {
+              navigation.navigate('EditProfileScreen');
+            }}
+          >
+            <MaterialIcons
+              name="edit-square"
+              size={22}
+              color="#006d77"
+            />
+
+            <Text style={styles.actionText}>
+              Editar dados
+            </Text>
+
+            <MaterialIcons
+              name="arrow-forward"
+              size={24}
+              color="#006d77"
+            />
           </TouchableOpacity>
         </View>
         <View style={styles.editButtons}>

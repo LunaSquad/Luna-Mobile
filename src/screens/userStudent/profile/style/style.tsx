@@ -44,20 +44,20 @@ const styles = StyleSheet.create({
 
   logoBorboleta: {
     position: "absolute",
-    right: 0,
+    right: 24,
     top: 52,
     width: 24,
     height: 24,
   },
 
   profilePhoto: {
-      width: 80,
-      height: 80,
-      borderRadius: theme.radius.full,
-      marginLeft: 260,
-      marginTop: -55,
-      borderColor: "#FFDDD2",
-      borderWidth: 1
+    width: 80,
+    height: 80,
+    borderRadius: theme.radius.full,
+    marginLeft: 260,
+    marginTop: -55,
+    borderColor: "#FFDDD2",
+    borderWidth: 1
   },
 
   card: {
@@ -108,15 +108,15 @@ const styles = StyleSheet.create({
   },
 
   infoItemContainer: {
-  backgroundColor: '#e0f2f3', 
-  borderRadius: 8,
-  width: 100,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingVertical: 6,
-  paddingHorizontal: 4,
-  gap: 4,
+    backgroundColor: '#e0f2f3',
+    borderRadius: 8,
+    width: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    gap: 4,
   },
 
   infoItemLaudo: {
@@ -127,7 +127,9 @@ const styles = StyleSheet.create({
 
   editButtons: {
     marginTop: 20
-  }
+  },
+
+
 
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Dimensions, Alert, TouchableOpacity, TextStyle } from "react-native";
+import { View, Text, Dimensions, Alert, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Animated, {
   useSharedValue,
@@ -8,6 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { theme } from "../../../styles/theme";
+import { preAdaptarTudoEmSegundoPlano } from "../../../services/iaBackgroundservice";
 import CustomInput from "../../../components/input/customInput";
 import CustomButton from "../../../components/mainButton/customButton";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
@@ -82,10 +83,18 @@ export default function LoginScreen() {
 
       if (data.ok) {
         if (data.tipoUser === "aluno") {
+          
+          // 1. Dispara a adaptação em segundo plano SEM travar a tela
+          if (data.userId) {
+            preAdaptarTudoEmSegundoPlano(data.userId);
+          }
+
+          // 2. Navega para a tela inicial enviando os parâmetros corretos
           navigation.replace("StudentTabs", {
             userId: data.userId,
             tipoUser: data.tipoUser,
           });
+          
           return;
         }
 
@@ -154,11 +163,8 @@ export default function LoginScreen() {
           title="Entrar"
           onPress={handleLogin}
           style={styles.CustomButton}
-          
-          
         />
 
-        {/* CADASTRO ADICIONADO AQUI */}
         <View style={styles.signUpContainer}>
           <Text style={styles.signUpText}>Novo por aqui? </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Register")}>

@@ -14,44 +14,43 @@ export type RootStackParamList = {
   Login: undefined;
 
   StudentTabs:
-    | {
-        userId?: string;
-        tipoUser?: string;
-      }
-    | undefined;
+  | {
+    userId?: string;
+    tipoUser?: string;
+  }
+  | undefined;
 
   Atividades:
-    | {
-        userId?: string;
-        tipoUser?: string;
-        materiaId?: string;
-        materiaNome?: string;
-      }
-    | undefined;
+  | {
+    userId?: string;
+    tipoUser?: string;
+    materiaId?: string;
+    materiaNome?: string;
+  }
+  | undefined;
 
   AdaptedActivity: {
     planoId?: string;
-    planoTitulo: string;
-    planoDescricao: string;
-    userId: string;
-  };
+    planoTitulo?: string;
+    planoDescricao?: string;
+    userId?: string;
+    turmaId?: string;
+    materiaId?: string;
+    urlPlanoDeAula?: string;
+  } | undefined;
 
   EditHyperfocus:
-    | {
-        userId?: string;
-        hiperfocoAtual?: string;
-      }
-    | undefined;
+  | {
+    userId?: string;
+    hiperfocoAtual?: string;
+  }
+  | undefined;
 
   Feedback: undefined;
 
   Register: undefined;
 
-  EditProfile:
-    | {
-        userId?: string;
-      }
-    | undefined;
+  EditProfileScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -69,7 +68,7 @@ export default function Routes() {
       <Stack.Screen name="EditHyperfocus" component={EditHyperfocus} />
       <Stack.Screen name="Feedback" component={Feedback} />
       <Stack.Screen name="Register" component={Register} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }
