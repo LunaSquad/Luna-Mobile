@@ -4,33 +4,48 @@ import {
   Text,
   ActivityIndicator,
   TouchableOpacity,
-  StyleSheet,
   Image,
   ImageBackground,
   ScrollView,
   Alert,
   BackHandler,
+  TextInput,
+  StyleSheet,
+  Dimensions
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import API_BASE_URL from "../../../services/ip";
 
+const { width } = Dimensions.get("window");
 const TEMPO_ATIVIDADE_SEGUNDOS = 5 * 60 + 30;
 const TEMPO_BLOQUEIO_MS = 5 * 60 * 1000;
 
 function obterCoresDoTema(hiperfoco: string) {
-  const tema = hiperfoco.toLowerCase().trim();
-  const paletas: Record<string, { accent: string; lightAccent: string; fallbackBg: string }> = {
-    dinossauros: { accent: "#2E7D32", lightAccent: "#E8F5E9", fallbackBg: "#A5D6A7" },
-    espaço: { accent: "#283593", lightAccent: "#E8EAF6", fallbackBg: "#9FA8DA" },
-    carros: { accent: "#C62828", lightAccent: "#FFEBEE", fallbackBg: "#EF9A9A" },
-    princesas: { accent: "#AD1457", lightAccent: "#FCE4EC", fallbackBg: "#F48FB1" },
-    minions: { accent: "#F57F17", lightAccent: "#FFFDE7", fallbackBg: "#FFF59D" },
-    "video game": { accent: "#4527A0", lightAccent: "#EDE7F6", fallbackBg: "#B39DDB" },
-    default: { accent: "#006d77", lightAccent: "#E0F2F1", fallbackBg: "#80CBC4" },
+  const tema = (hiperfoco || "dinossauros").toLowerCase().trim();
+  const paletas: Record<string, { primary: string; secondary: string; dark: string; light: string; cardBg: string }> = {
+    dinossauros: { primary: "#4CAF50", secondary: "#FFC107", dark: "#2E7D32", light: "#E8F5E9", cardBg: "#FFF9E6" },
+    dinossauro: { primary: "#4CAF50", secondary: "#FFC107", dark: "#2E7D32", light: "#E8F5E9", cardBg: "#FFF9E6" },
+    espaço: { primary: "#3F51B5", secondary: "#E91E63", dark: "#1A237E", light: "#E8EAF6", cardBg: "#12122b" },
+    carros: { primary: "#F44336", secondary: "#FFEB3B", dark: "#B71C1C", light: "#FFEBEE", cardBg: "#FFFDE7" },
+    princesas: { primary: "#E91E63", secondary: "#9C27B0", dark: "#880E4F", light: "#FCE4EC", cardBg: "#FFF0F5" },
+    futebol: { primary: "#1E88E5", secondary: "#43A047", dark: "#0D47A1", light: "#E3F2FD", cardBg: "#F1F8E9" },
+    minecraft: { primary: "#7CB342", secondary: "#8D6E63", dark: "#33691E", light: "#F1F8E9", cardBg: "#EFEBE9" },
+    "video game": { primary: "#00E5FF", secondary: "#FF1744", dark: "#006064", light: "#E0F7FA", cardBg: "#1a1a2e" },
+    default: { primary: "#00ACC1", secondary: "#FFA000", dark: "#006064", light: "#E0F7FA", cardBg: "#F5F5F5" },
   };
   return paletas[tema] || paletas.default;
+}
+
+function obterAssetsFallback(hiperfoco: string): string[] {
+  const tema = encodeURIComponent((hiperfoco || "dinossauros").trim().toLowerCase());
+  return [
+    `https://image.pollinations.ai/prompt/immersive%20beautiful%202D%20flat%20vector%20mobile%20game%20background%20landscape%20of%20${tema}%20child%20friendly%20empty%20center?width=720&height=1280&nologo=true&seed=777`,
+    `https://image.pollinations.ai/prompt/2D%20flat%20vector%20cute%20baby%20${tema}%20mascot%20isolated%20on%20pure%20solid%20white%20background?width=512&height=512&nologo=true&seed=111`,
+    `https://image.pollinations.ai/prompt/2D%20flat%20vector%20cute%20${tema}%20item%20isolated%20on%20pure%20solid%20white%20background?width=512&height=512&nologo=true&seed=222`,
+    `https://image.pollinations.ai/prompt/2D%20flat%20vector%20cute%20${tema}%20icon%20isolated%20on%20pure%20solid%20white%20background?width=512&height=512&nologo=true&seed=333`,
+  ];
 }
 
 function formatarTempo(totalSegundos: number) {
@@ -38,6 +53,21 @@ function formatarTempo(totalSegundos: number) {
   const segundos = totalSegundos % 60;
   return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
 }
+
+type PassoQuestao = {
+  tituloAtividade: string;
+  comandoAtividade: string;
+  tipo: "dissertativa" | "objetiva";
+  pergunta: string;
+  dicaTDAH: string;
+  respostaCorreta: string;
+  alternativas: string[];
+};
+
+type EtapaFluxo =
+  | { tipoEtapa: "explicacao" }
+  | { tipoEtapa: "exemplo" }
+  | { tipoEtapa: "questao"; questao: PassoQuestao; numeroQuestao: number; totalQuestoes: number };
 
 export default function AdaptedActivityScreen() {
   const route = useRoute<any>();
@@ -50,12 +80,18 @@ export default function AdaptedActivityScreen() {
   const chavePaginaSalva = `@luna_pagina_${idUnicoAtividade}`;
 
   const [loading, setLoading] = useState(true);
-  const [loadingText, setLoadingText] = useState("Preparando ambiente...");
+  const [loadingText, setLoadingText] = useState("Construindo a fase...");
   const [planoAdaptado, setPlanoAdaptado] = useState<any>(null);
   const [assetsVisuais, setAssetsVisuais] = useState<string[]>([]);
   const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
+
+  const [etapaIndex, setEtapaIndex] = useState(0);
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
-  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [respostaDissertativa, setRespostaDissertativa] = useState<string>("");
+  const [feedbackExibido, setFeedbackExibido] = useState(false);
+  const [acertouQuestao, setAcertouQuestao] = useState<boolean | null>(null);
+  const [mostrarDica, setMostrarDica] = useState(false);
+  const [acertosTotais, setAcertosTotais] = useState(0);
 
   const [segundosRestantes, setSegundosRestantes] = useState(TEMPO_ATIVIDADE_SEGUNDOS);
   const [segundosBloqueio, setSegundosBloqueio] = useState(0);
@@ -64,9 +100,102 @@ export default function AdaptedActivityScreen() {
   const avisoUmMinutoExibido = useRef(false);
   const tempoEsgotadoAcionado = useRef(false);
 
-  const totalAtividades = planoAdaptado?.atividades?.length || 0;
-  const atividadeEmAndamento = paginaAtual >= 1 && (totalAtividades === 0 || paginaAtual <= totalAtividades);
-  const atividadeConcluida = totalAtividades > 0 && paginaAtual > totalAtividades;
+  const topicosExplicacao = useMemo(() => {
+    if (Array.isArray(planoAdaptado?.topicosExplicacao) && planoAdaptado.topicosExplicacao.length > 0) {
+      return planoAdaptado.topicosExplicacao;
+    }
+    const textoBruto = String(planoAdaptado?.explicacaoTeorica || planoAdaptado?.explicacaoAdaptada || "").trim();
+    const blocos = textoBruto.split(/\n\n+/).map((b) => b.trim()).filter(Boolean);
+    if (blocos.length === 0) {
+      return [{ subtitulo: "Explicação", textoAdaptado: "Vamos começar!", dicaVisual: "" }];
+    }
+    return blocos.map((bloco, idx) => ({ subtitulo: idx === 0 ? "Conceito" : `Parte ${idx + 1}`, textoAdaptado: bloco, dicaVisual: "" }));
+  }, [planoAdaptado]);
+
+  const topicosExemplo = useMemo(() => {
+    if (Array.isArray(planoAdaptado?.topicosExemplo) && planoAdaptado.topicosExemplo.length > 0) {
+      return planoAdaptado.topicosExemplo;
+    }
+    const exemploTexto = String(planoAdaptado?.exemploPratico || "").trim();
+    if (exemploTexto) {
+      return [{ titulo: "Veja como faz", passoAPasso: exemploTexto, conclusao: "Pronto para tentar?" }];
+    }
+    return [];
+  }, [planoAdaptado]);
+
+  const listaQuestoes = useMemo<PassoQuestao[]>(() => {
+    if (Array.isArray(planoAdaptado?.questoesGerais) && planoAdaptado.questoesGerais.length > 0) {
+      return planoAdaptado.questoesGerais.map((q: any, i: number) => ({
+        tituloAtividade: q.tituloAtividade || `Desafio ${i + 1}`,
+        comandoAtividade: q.comandoAtividade || "",
+        tipo: q.tipo === "dissertativa" ? "dissertativa" : "objetiva",
+        pergunta: String(q.pergunta || ""),
+        dicaTDAH: String(q.dicaTDAH || "Olhe com calma!"),
+        respostaCorreta: String(q.respostaCorreta || ""),
+        alternativas: Array.isArray(q.alternativas) ? q.alternativas.map(String) : [],
+      }));
+    }
+    const todas: PassoQuestao[] = [];
+    const atividades = Array.isArray(planoAdaptado?.atividades) ? planoAdaptado.atividades : [];
+    atividades.forEach((atv: any, idxAtv: number) => {
+      const questoes = Array.isArray(atv?.questoes) ? atv.questoes : [];
+      if (questoes.length > 0) {
+        questoes.forEach((q: any) => {
+          const alts = Array.isArray(q?.alternativas) ? q.alternativas.map(String) : [];
+          const perguntaStr = String(q?.pergunta || atv?.conteudoAdaptado || "").trim();
+          if (!perguntaStr) return;
+          const temOperacao = /\d+\s*[\+\-\*\/x÷]/.test(perguntaStr);
+          let altsFinais = [...alts];
+          let respFinal = String(q?.respostaCorreta || "").trim();
+          if (altsFinais.length === 0 && temOperacao) {
+            const nums = perguntaStr.match(/\d+/g)?.map(Number) || [2, 1];
+            const soma = nums.length >= 2 ? nums[0] + nums[1] : 3;
+            const ans = parseInt(respFinal, 10) || soma;
+            respFinal = String(ans);
+            altsFinais = [String(Math.max(0, ans - 1)), String(ans), String(ans + 1), String(ans + 2)];
+          }
+          const tipoInferido = q?.tipo === "dissertativa" || (altsFinais.length === 0 && !temOperacao) ? "dissertativa" : "objetiva";
+          todas.push({
+            tituloAtividade: atv?.titulo || `Desafio ${idxAtv + 1}`,
+            comandoAtividade: atv?.conteudoAdaptado || "",
+            tipo: tipoInferido,
+            pergunta: perguntaStr,
+            dicaTDAH: String(q?.dicaTDAH || "Você consegue!"),
+            respostaCorreta: respFinal,
+            alternativas: altsFinais,
+          });
+        });
+      }
+    });
+    if (todas.length === 0) {
+      todas.push({
+        tituloAtividade: "Desafio Final",
+        comandoAtividade: "Resuma o que aprendeu:",
+        tipo: "dissertativa",
+        pergunta: "O que você mais gostou de aprender agora?",
+        dicaTDAH: "Escreva algo curto e legal!",
+        respostaCorreta: "Muito bom!",
+        alternativas: [],
+      });
+    }
+    return todas;
+  }, [planoAdaptado]);
+
+  const etapasFluxo = useMemo<EtapaFluxo[]>(() => {
+    const etapas: EtapaFluxo[] = [{ tipoEtapa: "explicacao" }];
+    if (topicosExemplo.length > 0) {
+      etapas.push({ tipoEtapa: "exemplo" });
+    }
+    listaQuestoes.forEach((q, idx) => {
+      etapas.push({ tipoEtapa: "questao", questao: q, numeroQuestao: idx + 1, totalQuestoes: listaQuestoes.length });
+    });
+    return etapas;
+  }, [topicosExemplo, listaQuestoes]);
+
+  const indicePrimeiraQuestao = etapasFluxo.findIndex((e) => e.tipoEtapa === "questao") >= 0 ? etapasFluxo.findIndex((e) => e.tipoEtapa === "questao") : etapasFluxo.length;
+  const etapaAtual = etapasFluxo[etapaIndex];
+  const atividadeEmAndamento = etapaIndex >= indicePrimeiraQuestao && etapaIndex < etapasFluxo.length;
+  const atividadeConcluida = etapasFluxo.length > 0 && etapaIndex >= etapasFluxo.length;
 
   const ativarBloqueioCincoMinutos = useCallback(async () => {
     const expiraEm = Date.now() + TEMPO_BLOQUEIO_MS;
@@ -80,55 +209,16 @@ export default function AdaptedActivityScreen() {
     await AsyncStorage.removeItem(chavePaginaSalva);
   }, [chaveFimAtividade, chavePaginaSalva]);
 
-  const tentarSairDaAtividade = useCallback(() => {
-    if (bloqueado || atividadeConcluida || paginaAtual === 0) {
-      navigation.goBack();
-      return;
-    }
-
-    Alert.alert(
-      "Sair da atividade?",
-      "Se você sair agora, perderá todo o seu progresso e precisará aguardar 5 minutos para tentar novamente. Deseja realmente sair?",
-      [
-        { text: "Continuar fazendo", style: "cancel" },
-        {
-          text: "Sair e perder progresso",
-          style: "destructive",
-          onPress: async () => {
-            await ativarBloqueioCincoMinutos();
-            navigation.goBack();
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  }, [bloqueado, atividadeConcluida, paginaAtual, navigation, ativarBloqueioCincoMinutos]);
-
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (atividadeEmAndamento && !bloqueado) {
-        tentarSairDaAtividade();
-        return true;
-      }
-      return false;
-    });
-
-    return () => sub.remove();
-  }, [atividadeEmAndamento, bloqueado, tentarSairDaAtividade]);
-
-  useEffect(() => {
-    async function inicializarTela() {
-      try {
-        setLoading(true);
-
+  const carregarDadosDaAula = useCallback(async (forcarRegeneracao = false) => {
+    try {
+      setLoading(true);
+      if (!forcarRegeneracao) {
         const bloqueioSalvo = await AsyncStorage.getItem(chaveBloqueio);
         if (bloqueioSalvo) {
           const expiraEm = parseInt(bloqueioSalvo, 10);
           const agora = Date.now();
-
           if (agora < expiraEm) {
-            const faltamSegundos = Math.max(1, Math.ceil((expiraEm - agora) / 1000));
-            setSegundosBloqueio(faltamSegundos);
+            setSegundosBloqueio(Math.max(1, Math.ceil((expiraEm - agora) / 1000)));
             setBloqueado(true);
             setLoading(false);
             return;
@@ -136,583 +226,477 @@ export default function AdaptedActivityScreen() {
             await AsyncStorage.removeItem(chaveBloqueio);
           }
         }
+      }
 
-        const fimSalvo = await AsyncStorage.getItem(chaveFimAtividade);
-        const paginaSalva = await AsyncStorage.getItem(chavePaginaSalva);
+      let hiperfoco = "dinossauros";
+      let imagensSalvas: string[] = [];
 
-        if (fimSalvo) {
-          const timestampFim = parseInt(fimSalvo, 10);
-          const agora = Date.now();
-
-          if (agora < timestampFim) {
-            const restante = Math.max(1, Math.ceil((timestampFim - agora) / 1000));
-            setSegundosRestantes(restante);
-            setPaginaAtual(paginaSalva ? Math.max(1, parseInt(paginaSalva, 10)) : 1);
-          } else {
-            const expiraBloqueio = timestampFim + TEMPO_BLOQUEIO_MS;
-            await AsyncStorage.removeItem(chaveFimAtividade);
-            await AsyncStorage.removeItem(chavePaginaSalva);
-
-            if (agora < expiraBloqueio) {
-              await AsyncStorage.setItem(chaveBloqueio, String(expiraBloqueio));
-              const faltamSegundos = Math.max(1, Math.ceil((expiraBloqueio - agora) / 1000));
-              setSegundosBloqueio(faltamSegundos);
-              setBloqueado(true);
-              setLoading(false);
-              return;
-            }
-          }
-        }
-
-        setLoadingText("Conhecendo o aluno...");
+      try {
         const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
         const dataAluno = await respAluno.json();
+        hiperfoco = dataAluno.aluno?.hiperfoco?.nome || dataAluno.aluno?.hiperfoco || "dinossauros";
+        imagensSalvas = (dataAluno.aluno?.assetsVisuais || []).filter((u: any) => typeof u === "string" && u.startsWith("http"));
+      } catch (err) { }
+      setHiperfocoAluno(hiperfoco);
 
-        let hiperfoco = dataAluno.aluno?.hiperfoco?.nome || dataAluno.aluno?.hiperfoco || "dinossauros";
-        setHiperfocoAluno(hiperfoco);
-
-        let imagensSalvas = dataAluno.aluno?.assetsVisuais || [];
-
-        if (imagensSalvas.length === 0) {
-          setLoadingText(`Criando universo de ${hiperfoco} com IA...`);
-
+      if (imagensSalvas.length < 4 || forcarRegeneracao) {
+        setLoadingText(`Criando cenários de ${hiperfoco}...`);
+        try {
           const respAssets = await fetch(`${API_BASE_URL}/ai/gerar-assets-visuais`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ alunoId: userId, hiperfoco: hiperfoco }),
+            body: JSON.stringify({ alunoId: userId, hiperfoco: hiperfoco, forcarRegeneracao: true }),
           });
-
           const dataAssets = await respAssets.json();
-          if (dataAssets.ok && dataAssets.assets) {
-            imagensSalvas = dataAssets.assets;
+          if (Array.isArray(dataAssets.assets) && dataAssets.assets.length > 0) {
+            imagensSalvas = dataAssets.assets.filter(Boolean);
           }
-        }
-        setAssetsVisuais(imagensSalvas);
-
-        setLoadingText("Ajustando a aula...");
-        const respIA = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planoId, turmaId, materiaId, hiperfoco, urlPlanoDeAula, alunoId: userId }),
-        });
-
-        const dataIA = await respIA.json();
-        setPlanoAdaptado(dataIA.plano_adaptado);
-      } catch (e) {
-        console.log("Erro no carregamento:", e);
-      } finally {
-        setLoading(false);
+        } catch (err) { }
       }
-    }
 
-    if (userId) {
-      inicializarTela();
-    } else {
+      setLoadingText("Gerando as missões...");
+      const respIA = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planoId, turmaId, materiaId, hiperfoco, urlPlanoDeAula, alunoId: userId, forcarRegeneracao: forcarRegeneracao }),
+      });
+      const dataIA = await respIA.json();
+      setPlanoAdaptado(dataIA.plano_adaptado);
+
+      if (imagensSalvas.length < 4) {
+        const fallbackUrls = obterAssetsFallback(hiperfoco);
+        imagensSalvas = [imagensSalvas[0] || fallbackUrls[0], imagensSalvas[1] || fallbackUrls[1], imagensSalvas[2] || fallbackUrls[2], imagensSalvas[3] || fallbackUrls[3]];
+      }
+      setAssetsVisuais(imagensSalvas);
+
+      if (forcarRegeneracao) {
+        await limparSessaoAoConcluir();
+        setEtapaIndex(0);
+        setAcertosTotais(0);
+        setOpcaoSelecionada(null);
+        setRespostaDissertativa("");
+        setFeedbackExibido(false);
+      }
+    } catch (e) {
+    } finally {
       setLoading(false);
     }
-  }, [userId, chaveBloqueio, chaveFimAtividade, chavePaginaSalva, planoId, turmaId, materiaId, urlPlanoDeAula]);
+  }, [userId, chaveBloqueio, planoId, turmaId, materiaId, urlPlanoDeAula, limparSessaoAoConcluir]);
+
+  useEffect(() => {
+    if (userId) carregarDadosDaAula(false);
+    else setLoading(false);
+  }, [userId, carregarDadosDaAula]);
 
   useEffect(() => {
     if (!bloqueado) return;
-
-    const intervaloBloqueio = setInterval(async () => {
+    const int = setInterval(async () => {
       const bloqueioSalvo = await AsyncStorage.getItem(chaveBloqueio);
       if (!bloqueioSalvo) {
         setBloqueado(false);
         setSegundosBloqueio(0);
-        clearInterval(intervaloBloqueio);
+        clearInterval(int);
         return;
       }
-
       const expiraEm = parseInt(bloqueioSalvo, 10);
       const restante = Math.max(0, Math.ceil((expiraEm - Date.now()) / 1000));
       setSegundosBloqueio(restante);
-
       if (restante <= 0) {
-        clearInterval(intervaloBloqueio);
+        clearInterval(int);
         await AsyncStorage.removeItem(chaveBloqueio);
         setBloqueado(false);
-        setPaginaAtual(0);
+        setEtapaIndex(0);
         setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
       }
     }, 1000);
-
-    return () => clearInterval(intervaloBloqueio);
+    return () => clearInterval(int);
   }, [bloqueado, chaveBloqueio]);
 
   useEffect(() => {
     if (loading || bloqueado || !atividadeEmAndamento) return;
-
-    const intervalo = setInterval(async () => {
+    const int = setInterval(async () => {
       const fimSalvo = await AsyncStorage.getItem(chaveFimAtividade);
       if (!fimSalvo) return;
-
       const timestampFim = parseInt(fimSalvo, 10);
       const restante = Math.max(0, Math.ceil((timestampFim - Date.now()) / 1000));
       setSegundosRestantes(restante);
-
-      if (restante <= 0) {
-        clearInterval(intervalo);
-      }
+      if (restante <= 0) clearInterval(int);
     }, 1000);
-
-    return () => clearInterval(intervalo);
+    return () => clearInterval(int);
   }, [loading, bloqueado, atividadeEmAndamento, chaveFimAtividade]);
 
   useEffect(() => {
     if (loading || bloqueado || !atividadeEmAndamento) return;
-
-    if (segundosRestantes === 60 && !avisoUmMinutoExibido.current) {
-      avisoUmMinutoExibido.current = true;
-      Alert.alert(
-        "Atenção ao Tempo!",
-        "Falta apenas 1 minuto para o tempo da atividade acabar. Vamos finalizar!"
-      );
-    }
-
     if (segundosRestantes === 0 && !tempoEsgotadoAcionado.current) {
       tempoEsgotadoAcionado.current = true;
-      const finalizarPorTempo = async () => {
+      const finalizar = async () => {
         await ativarBloqueioCincoMinutos();
-        Alert.alert(
-          "Tempo Esgotado!",
-          "O tempo de 05:30 acabou! Você precisará aguardar 5 minutos de pausa antes de tentar novamente.",
-          [{ text: "OK", onPress: () => navigation.goBack() }],
-          { cancelable: false }
-        );
+        navigation.goBack();
       };
-      finalizarPorTempo();
+      finalizar();
     }
   }, [segundosRestantes, loading, bloqueado, atividadeEmAndamento, ativarBloqueioCincoMinutos, navigation]);
 
-  useEffect(() => {
-    if (atividadeConcluida) {
-      limparSessaoAoConcluir();
-    }
-  }, [atividadeConcluida, limparSessaoAoConcluir]);
-
-  const handleIniciarExpedicao = async () => {
-    const fimExistente = await AsyncStorage.getItem(chaveFimAtividade);
-    const agora = Date.now();
-
-    if (fimExistente && parseInt(fimExistente, 10) > agora) {
-      const restante = Math.ceil((parseInt(fimExistente, 10) - agora) / 1000);
-      setSegundosRestantes(restante);
-    } else {
-      const novoFim = agora + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
-      await AsyncStorage.setItem(chaveFimAtividade, String(novoFim));
-      setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
-    }
-
-    avisoUmMinutoExibido.current = false;
-    tempoEsgotadoAcionado.current = false;
-    await AsyncStorage.setItem(chavePaginaSalva, "1");
-    setPaginaAtual(1);
-  };
-
-  const handleEnviar = async () => {
-    const proximaPagina = paginaAtual + 1;
+  const iniciarCronometroEIrParaQuestoes = async () => {
+    const novoFim = Date.now() + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
+    await AsyncStorage.setItem(chaveFimAtividade, String(novoFim));
+    setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
+    await AsyncStorage.setItem(chavePaginaSalva, String(indicePrimeiraQuestao));
     setOpcaoSelecionada(null);
-    setPaginaAtual(proximaPagina);
-
-    if (proximaPagina <= totalAtividades) {
-      await AsyncStorage.setItem(chavePaginaSalva, String(proximaPagina));
-    } else {
-      await limparSessaoAoConcluir();
-    }
+    setRespostaDissertativa("");
+    setFeedbackExibido(false);
+    setAcertouQuestao(null);
+    setMostrarDica(false);
+    setEtapaIndex(indicePrimeiraQuestao);
   };
 
-  const indexAtividade = Math.max(0, paginaAtual - 1);
-  const atividadeAtual = planoAdaptado?.atividades?.[indexAtividade];
-  const questaoAtual = atividadeAtual?.questoes?.[0];
-
-  const numeros = questaoAtual?.pergunta?.match(/\d+/g)?.map(Number) || [2, 1];
-  const respostaCorreta =
-    questaoAtual?.respostaCorreta || String(numeros.reduce((a: number, b: number) => a + b, 0));
-
-  const alternativas = useMemo(() => {
-    let alts = questaoAtual?.alternativas || [];
-    if (alts.length === 0) {
-      const ans = parseInt(respostaCorreta, 10);
-      if (!isNaN(ans)) {
-        alts = [ans - 1, ans, ans + 1, ans + 2]
-          .sort(() => Math.random() - 0.5)
-          .map((n) => `${n} ${hiperfocoAluno}`);
-      }
+  const handleVerificarResposta = () => {
+    if (etapaAtual?.tipoEtapa !== "questao") return;
+    const q = etapaAtual.questao;
+    if (q.tipo === "dissertativa") {
+      setAcertouQuestao(true);
+      setAcertosTotais((p) => p + 1);
+      setFeedbackExibido(true);
+      return;
     }
-    return alts;
-  }, [questaoAtual, respostaCorreta, hiperfocoAluno]);
+    const sl = (opcaoSelecionada || "").trim().toLowerCase();
+    const cl = (q.respostaCorreta || "").trim().toLowerCase();
+    const acertou = sl === cl || sl.startsWith(`${cl})`) || cl.includes(sl);
+    setAcertouQuestao(acertou);
+    if (acertou) setAcertosTotais((p) => p + 1);
+    setFeedbackExibido(true);
+  };
+
+  const handleProximaQuestao = async () => {
+    const nx = etapaIndex + 1;
+    setOpcaoSelecionada(null);
+    setRespostaDissertativa("");
+    setFeedbackExibido(false);
+    setAcertouQuestao(null);
+    setMostrarDica(false);
+    setEtapaIndex(nx);
+    if (nx < etapasFluxo.length) await AsyncStorage.setItem(chavePaginaSalva, String(nx));
+    else await limparSessaoAoConcluir();
+  };
 
   const temaCores = obterCoresDoTema(hiperfocoAluno);
-  const corCronometro =
-    atividadeEmAndamento && segundosRestantes <= 60 ? "#D32F2F" : temaCores.accent;
+  const isDark = hiperfocoAluno.toLowerCase() === "video game" || hiperfocoAluno.toLowerCase() === "espaço";
+  const textColor = isDark ? "#FFFFFF" : "#1A1A1A";
 
-  const bgImage = assetsVisuais[0];
-  const mascotImage = assetsVisuais[1];
-  const itemImage1 = assetsVisuais[2];
-  const itemImage2 = assetsVisuais[3] || assetsVisuais[2];
+  const fallback = useMemo(() => obterAssetsFallback(hiperfocoAluno), [hiperfocoAluno]);
+  const bgImage = assetsVisuais[0] || fallback[0];
+  const mascotImage = assetsVisuais[1] || fallback[1];
+  const itemImage1 = assetsVisuais[2] || assetsVisuais[1] || fallback[2];
+  const itemImage2 = assetsVisuais[3] || assetsVisuais[2] || fallback[3];
+
+  const questaoAtual = etapaAtual?.tipoEtapa === "questao" ? etapaAtual.questao : null;
+  const ehDissertativa = questaoAtual?.tipo === "dissertativa";
+  const ehContaMatematica = useMemo(() => {
+    if (!questaoAtual || ehDissertativa) return false;
+    const p = questaoAtual.pergunta.toLowerCase();
+    const temSinal = p.includes("+") || p.includes("soma") || p.includes("juntar");
+    const nums = p.match(/\d+/g)?.map(Number) || [];
+    return temSinal && nums.length >= 2 && nums[0] <= 9 && nums[1] <= 9;
+  }, [questaoAtual, ehDissertativa]);
+  const numerosConta = useMemo(() => {
+    const nums = questaoAtual?.pergunta?.match(/\d+/g)?.map(Number) || [];
+    return nums.length >= 2 ? [nums[0], nums[1]] : [2, 1];
+  }, [questaoAtual]);
+
+  const podeConfirmar = ehDissertativa ? respostaDissertativa.trim().length >= 2 : Boolean(opcaoSelecionada);
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: temaCores.fallbackBg }]}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text style={[styles.loadingText, { color: "#FFFFFF" }]}>{loadingText}</Text>
-      </View>
-    );
-  }
-
-  if (bloqueado) {
-    return (
-      <View style={[styles.center, { backgroundColor: temaCores.fallbackBg, paddingHorizontal: 24 }]}>
-        <View style={styles.whiteCardBloqueio}>
-          <Text style={{ fontSize: 64, textAlign: "center", marginBottom: 12 }}>⏳</Text>
-          <Text style={[styles.cardTitle, { color: temaCores.accent, textAlign: "center" }]}>
-            Hora da Pausa!
-          </Text>
-          <Text style={[styles.explanationBody, { textAlign: "center", marginBottom: 12 }]}>
-            Você saiu da atividade ou o tempo esgotou. Respire fundo e aguarde o cronômetro zerar para tentar novamente:
-          </Text>
-          <View style={[styles.cooldownBox, { backgroundColor: temaCores.lightAccent }]}>
-            <MaterialIcons name="timer" size={28} color={temaCores.accent} />
-            <Text style={[styles.cooldownTimerText, { color: temaCores.accent }]}>
-              {formatarTempo(segundosBloqueio)}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: temaCores.accent, width: "100%" }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.primaryButtonText}>Voltar às Atividades</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.center, { backgroundColor: temaCores.dark }]}>
+        <ActivityIndicator size="large" color="#FFF" />
+        <Text style={{ color: "#FFF", marginTop: 10, fontWeight: "bold" }}>{loadingText}</Text>
       </View>
     );
   }
 
   return (
-    <ImageBackground
-      source={bgImage ? { uri: bgImage } : undefined}
-      style={[styles.container, !bgImage && { backgroundColor: temaCores.fallbackBg }]}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay} />
-
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={tentarSairDaAtividade}>
-          <MaterialIcons name="chevron-left" size={28} color={temaCores.accent} />
+    <ImageBackground source={{ uri: bgImage }} style={styles.container} resizeMode="cover">
+      {/* HUD Superior */}
+      <View style={styles.hudHeader}>
+        <TouchableOpacity style={styles.btnVoltar} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back-ios" size={18} color="#FFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
 
-        <View style={styles.headerTitles}>
-          <Text style={[styles.headerLuna, { color: temaCores.accent }]}>Luna • Matemática</Text>
-          <Text style={[styles.headerHiperfoco, { color: temaCores.accent }]}>
-            Trilha de {hiperfocoAluno}
+        <View style={styles.faseContainer}>
+          <Text style={styles.faseText}>
+            {etapaAtual?.tipoEtapa === "questao"
+              ? `FASE ${etapaAtual.numeroQuestao} DE ${etapaAtual.totalQuestoes}`
+              : "PREPARAÇÃO"}
           </Text>
+          <View style={styles.faseBarBg}>
+            <View style={[styles.faseBarFill, { backgroundColor: temaCores.primary, width: etapaAtual?.tipoEtapa === "questao" ? `${(etapaAtual.numeroQuestao / etapaAtual.totalQuestoes) * 100}%` : "10%" }]} />
+          </View>
         </View>
 
-        <View
-          style={[
-            styles.timerBadge,
-            atividadeEmAndamento &&
-            segundosRestantes <= 60 && {
-              backgroundColor: "#FFEBEE",
-              borderWidth: 1,
-              borderColor: "#D32F2F",
-            },
-          ]}
-        >
-          <MaterialIcons name="schedule" size={14} color={corCronometro} />
-          <Text style={[styles.timerText, { color: corCronometro }]}>
-            {formatarTempo(segundosRestantes)}
+        <View style={styles.moedasContainer}>
+          <FontAwesome5 name="coins" size={14} color="#FFD700" />
+          <Text style={styles.moedasText}>{acertosTotais * 10}</Text>
+        </View>
+      </View>
+
+      {/* Mascote flutuante com balão */}
+      <View style={styles.mascoteArea}>
+        <Image source={{ uri: mascotImage }} style={styles.mascoteImg} resizeMode="contain" />
+        <View style={styles.balaoFala}>
+          <Text style={styles.balaoText}>
+            {etapaAtual?.tipoEtapa === "explicacao" ? "Chegou a hora de aprender!" :
+              etapaAtual?.tipoEtapa === "exemplo" ? "Veja como é fácil!" :
+                feedbackExibido ? (acertouQuestao ? "Você é incrível!" : "Quase! Veja a dica.") :
+                  questaoAtual?.dicaTDAH || "Consegue resolver essa?"}
           </Text>
         </View>
       </View>
 
-      {paginaAtual === 0 ? (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {mascotImage ? (
-            <Image source={{ uri: mascotImage }} style={styles.mascotImg} />
+      {/* Cartão Central Gamificado */}
+      <ScrollView contentContainerStyle={styles.scrollArea} showsVerticalScrollIndicator={false}>
+        <View style={[styles.cardCentral, { backgroundColor: temaCores.cardBg }]}>
+
+          {etapaAtual?.tipoEtapa === "explicacao" ? (
+            <View>
+              <Text style={[styles.tituloEtapa, { color: temaCores.dark }]}>{planoAdaptado?.tituloAdaptado || "Nova Missão!"}</Text>
+              {topicosExplicacao.map((t: any, i: number) => (
+                <View key={i} style={[styles.topicoBox, { backgroundColor: temaCores.light }]}>
+                  <Text style={[styles.topicoTitulo, { color: temaCores.dark }]}>{t.subtitulo}</Text>
+                  <Text style={[styles.topicoTexto, { color: textColor }]}>{t.textoAdaptado}</Text>
+                </View>
+              ))}
+              <TouchableOpacity style={[styles.btnStart, { backgroundColor: temaCores.primary }]} onPress={() => topicosExemplo.length > 0 ? setEtapaIndex(1) : iniciarCronometroEIrParaQuestoes()}>
+                <Text style={styles.btnStartText}>Continuar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : etapaAtual?.tipoEtapa === "exemplo" ? (
+            <View>
+              <Text style={[styles.tituloEtapa, { color: temaCores.dark }]}>Como funciona?</Text>
+              {topicosExemplo.map((e: any, i: number) => (
+                <View key={i} style={[styles.topicoBox, { backgroundColor: temaCores.light }]}>
+                  <Text style={[styles.topicoTitulo, { color: temaCores.dark }]}>{e.titulo || "Exemplo"}</Text>
+                  <Text style={[styles.topicoTexto, { color: textColor }]}>{e.passoAPasso}</Text>
+                </View>
+              ))}
+              <TouchableOpacity style={[styles.btnStart, { backgroundColor: temaCores.primary }]} onPress={iniciarCronometroEIrParaQuestoes}>
+                <Text style={styles.btnStartText}>Iniciar Desafios</Text>
+              </TouchableOpacity>
+            </View>
+          ) : atividadeConcluida ? (
+            <View style={{ alignItems: "center", paddingVertical: 20 }}>
+              <Text style={{ fontSize: 60 }}>🏆</Text>
+              <Text style={[styles.tituloEtapa, { color: temaCores.dark }]}>Missão Concluída!</Text>
+              <Text style={[styles.topicoTexto, { color: textColor, textAlign: "center", marginBottom: 20 }]}>
+                Você arrasou! Acertou {acertosTotais} perguntas e ganhou {acertosTotais * 10} moedas!
+              </Text>
+              <TouchableOpacity style={[styles.btnStart, { backgroundColor: temaCores.primary, width: "100%" }]} onPress={() => navigation.goBack()}>
+                <Text style={styles.btnStartText}>Finalizar</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
-            <Text style={{ fontSize: 110, textAlign: "center", marginTop: 20 }}>🚀</Text>
+            <View>
+              <Text style={[styles.perguntaTexto, { color: textColor }]}>{questaoAtual?.pergunta}</Text>
+
+              {ehContaMatematica ? (
+                <View style={[styles.gameMathBox, { backgroundColor: temaCores.dark }]}>
+                  <View style={styles.mathGrupo}>
+                    {Array.from({ length: numerosConta[0] }).map((_, i) => (
+                      <View key={`m1-${i}`} style={styles.mathItemCircle}>
+                        <Image source={{ uri: itemImage1 }} style={styles.mathItemImg} />
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={styles.mathSinal}>+</Text>
+                  <View style={styles.mathGrupo}>
+                    {Array.from({ length: numerosConta[1] }).map((_, i) => (
+                      <View key={`m2-${i}`} style={styles.mathItemCircle}>
+                        <Image source={{ uri: itemImage2 }} style={styles.mathItemImg} />
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.mathResultRow}>
+                    <Text style={[styles.mathNumber, { color: "#FFF" }]}>{numerosConta[0]}</Text>
+                    <Text style={[styles.mathSinal, { fontSize: 24, marginHorizontal: 8 }]}>+</Text>
+                    <Text style={[styles.mathNumber, { color: "#FFF" }]}>{numerosConta[1]}</Text>
+                    <Text style={[styles.mathSinal, { fontSize: 24, marginHorizontal: 8 }]}>=</Text>
+                    <Text style={[styles.mathNumber, { color: temaCores.secondary }]}>?</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              {ehDissertativa ? (
+                <TextInput
+                  style={[styles.inputDissertativo, { borderColor: temaCores.primary, color: textColor }]}
+                  multiline
+                  editable={!feedbackExibido}
+                  placeholder="Sua resposta aqui..."
+                  placeholderTextColor="#999"
+                  value={respostaDissertativa}
+                  onChangeText={setRespostaDissertativa}
+                />
+              ) : (
+                <View style={styles.alternativasGrid}>
+                  {questaoAtual?.alternativas.map((alt, i) => {
+                    const coresAlt = ["#FF5252", "#00E5FF", "#7E57C2", "#FF9800"];
+                    const corFundo = coresAlt[i % 4];
+                    const isSelected = opcaoSelecionada === alt;
+                    const ehCerta = feedbackExibido && alt.trim() === questaoAtual?.respostaCorreta?.trim();
+
+                    let bgFinal = corFundo;
+                    if (feedbackExibido) {
+                      bgFinal = ehCerta ? "#4CAF50" : (isSelected ? "#9E9E9E" : corFundo);
+                    }
+
+                    return (
+                      <TouchableOpacity
+                        key={i}
+                        disabled={feedbackExibido}
+                        onPress={() => setOpcaoSelecionada(alt)}
+                        style={[
+                          styles.btnAlternativa,
+                          { backgroundColor: bgFinal },
+                          isSelected && !feedbackExibido && styles.btnAlternativaSelecionada
+                        ]}
+                      >
+                        <Text style={styles.textoAlternativa}>{alt}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {feedbackExibido && !acertouQuestao && !ehDissertativa && (
+                <Text style={{ color: "#D32F2F", fontWeight: "bold", textAlign: "center", marginVertical: 10 }}>
+                  A correta era: {questaoAtual?.respostaCorreta}
+                </Text>
+              )}
+
+              {!feedbackExibido ? (
+                <TouchableOpacity
+                  disabled={!podeConfirmar}
+                  style={[styles.btnAcao, { backgroundColor: temaCores.primary, opacity: podeConfirmar ? 1 : 0.5 }]}
+                  onPress={handleVerificarResposta}
+                >
+                  <Text style={styles.btnAcaoText}>Confirmar</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.btnAcao, { backgroundColor: temaCores.secondary }]}
+                  onPress={handleProximaQuestao}
+                >
+                  <Text style={[styles.btnAcaoText, { color: "#000" }]}>Próximo ➜</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
 
-          <View style={styles.whiteCard}>
-            <Text style={[styles.cardTitle, { color: temaCores.accent }]}>
-              {planoAdaptado?.tituloAdaptado || "Sua Aventura"}
-            </Text>
-
-            <Text style={styles.explanationBody}>{planoAdaptado?.explicacaoAdaptada}</Text>
-
-            <View style={[styles.missionBox, { backgroundColor: temaCores.lightAccent }]}>
-              <FontAwesome5
-                name="star"
-                size={20}
-                color={temaCores.accent}
-                style={{ marginRight: 15 }}
-              />
-              <Text style={[styles.missionText, { color: temaCores.accent }]}>
-                Missão: Complete os desafios para avançar de nível!
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: temaCores.accent }]}
-              onPress={handleIniciarExpedicao}
-            >
-              <Text style={styles.primaryButtonText}>Começar Expedição</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      ) : paginaAtual > totalAtividades ? (
-        <View style={[styles.scrollContent, { justifyContent: "center" }]}>
-          <View style={styles.whiteCard}>
-            <Text style={{ fontSize: 80, textAlign: "center", marginBottom: 20 }}>🏆</Text>
-            <Text style={[styles.cardTitle, { color: temaCores.accent, textAlign: "center" }]}>
-              Vitória!
-            </Text>
-            <Text style={[styles.explanationBody, { textAlign: "center" }]}>
-              Você completou toda a missão com sucesso.
-            </Text>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: temaCores.accent }]}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.primaryButtonText}>Voltar ao Menu</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.progressBarContainer}>
-            {Array.from({ length: totalAtividades }).map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.progressSegment,
-                  { backgroundColor: i < paginaAtual ? temaCores.accent : "rgba(255,255,255,0.6)" },
-                ]}
-              />
-            ))}
-          </View>
-
-          <View style={styles.whiteCard}>
-            <Text style={[styles.perguntaIndicator, { color: temaCores.accent }]}>
-              PERGUNTA {paginaAtual} DE {totalAtividades}
-            </Text>
-            <Text style={styles.questionText}>{atividadeAtual?.conteudoAdaptado}</Text>
-
-            <View style={[styles.mathBox, { backgroundColor: temaCores.lightAccent }]}>
-              <View style={styles.mathSide}>
-                {Array.from({ length: numeros[0] || 2 }).map((_, i) =>
-                  itemImage1 ? (
-                    <Image key={`l-${i}`} source={{ uri: itemImage1 }} style={styles.stickerImg} />
-                  ) : (
-                    <Text key={`le-${i}`} style={{ fontSize: 35 }}>
-                      👾
-                    </Text>
-                  )
-                )}
-              </View>
-
-              <Text style={[styles.plusSign, { color: temaCores.accent }]}>+</Text>
-
-              <View style={styles.mathSide}>
-                {Array.from({ length: numeros[1] || 1 }).map((_, i) =>
-                  itemImage2 ? (
-                    <Image key={`r-${i}`} source={{ uri: itemImage2 }} style={styles.stickerImg} />
-                  ) : (
-                    <Text key={`re-${i}`} style={{ fontSize: 35 }}>
-                      👾
-                    </Text>
-                  )
-                )}
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.optionsContainer}>
-            {alternativas.map((alt: string, index: number) => {
-              const isSelected = opcaoSelecionada === alt;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.optionButton,
-                    isSelected && {
-                      borderColor: temaCores.accent,
-                      backgroundColor: "rgba(255,255,255,0.95)",
-                    },
-                  ]}
-                  onPress={() => setOpcaoSelecionada(alt)}
-                >
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      isSelected && {
-                        backgroundColor: temaCores.accent,
-                        borderColor: temaCores.accent,
-                      },
-                    ]}
-                  >
-                    {isSelected && <MaterialIcons name="check" size={14} color="#FFF" />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      isSelected && { color: temaCores.accent, fontWeight: "bold" },
-                    ]}
-                  >
-                    {alt}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              {
-                backgroundColor: temaCores.accent,
-                opacity: opcaoSelecionada ? 1 : 0.5,
-                marginTop: 10,
-              },
-            ]}
-            onPress={handleEnviar}
-            disabled={!opcaoSelecionada}
-          >
-            <Text style={styles.primaryButtonText}>Enviar resposta</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
+      </ScrollView>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 14, fontSize: 16, fontWeight: "bold" },
-
   container: { flex: 1, width: "100%", height: "100%" },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255, 255, 255, 0.45)" },
 
-  header: {
+  hudHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 15,
     paddingTop: 50,
-    paddingBottom: 15,
-    zIndex: 10,
+    paddingBottom: 10,
+    backgroundColor: "rgba(0,0,0,0.4)"
   },
-  backButton: {
-    backgroundColor: "rgba(255,255,255,0.9)",
-    padding: 8,
-    borderRadius: 20,
-    elevation: 2,
+  btnVoltar: {
+    width: 38, height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center", alignItems: "center"
   },
-  headerTitles: { alignItems: "center" },
-  headerLuna: { fontSize: 15, fontWeight: "900" },
-  headerHiperfoco: { fontSize: 12, fontWeight: "700", opacity: 0.9, marginTop: 2 },
-  timerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 15,
-    elevation: 2,
+  faseContainer: { flex: 1, marginHorizontal: 15 },
+  faseText: { color: "#FFF", fontSize: 11, fontWeight: "900", letterSpacing: 1, marginBottom: 4 },
+  faseBarBg: { height: 8, backgroundColor: "rgba(255,255,255,0.3)", borderRadius: 4, overflow: "hidden" },
+  faseBarFill: { height: "100%", borderRadius: 4 },
+  moedasContainer: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20
   },
-  timerText: { fontSize: 13, fontWeight: "bold", marginLeft: 4 },
+  moedasText: { color: "#FFD700", fontWeight: "900", fontSize: 14, marginLeft: 6 },
 
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40, flexGrow: 1 },
-
-  mascotImg: { width: 170, height: 170, alignSelf: "center", zIndex: 10, marginTop: 10 },
-  whiteCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 24,
-    padding: 25,
-    elevation: 5,
-    marginTop: -30,
-    zIndex: 5,
-  },
-  whiteCardBloqueio: {
-    width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.97)",
-    borderRadius: 24,
-    padding: 25,
-    elevation: 5,
-    alignItems: "center",
-  },
-  cooldownBox: {
+  mascoteArea: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 28,
+    alignItems: "flex-start",
+    paddingHorizontal: 15,
+    marginTop: 15,
+    zIndex: 10
+  },
+  mascoteImg: { width: 80, height: 80 },
+  balaoFala: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    padding: 12,
     borderRadius: 16,
-    marginBottom: 24,
-  },
-  cooldownTimerText: {
-    fontSize: 28,
-    fontWeight: "900",
+    borderTopLeftRadius: 0,
     marginLeft: 10,
-  },
-  cardTitle: { fontSize: 24, fontWeight: "900", marginBottom: 15 },
-  explanationBody: { fontSize: 16, color: "#333", lineHeight: 25, fontWeight: "600", marginBottom: 20 },
-  missionBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 15,
-    borderRadius: 16,
-    marginBottom: 25,
-  },
-  missionText: { flex: 1, fontSize: 13, fontWeight: "bold", lineHeight: 20 },
-
-  progressBarContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
     marginTop: 10,
+    elevation: 5,
+    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5
   },
-  progressSegment: { flex: 1, height: 6, borderRadius: 3, marginHorizontal: 2 },
-  perguntaIndicator: { fontSize: 12, fontWeight: "900", letterSpacing: 1, marginBottom: 10 },
-  questionText: { fontSize: 18, fontWeight: "bold", color: "#222", lineHeight: 26, marginBottom: 20 },
+  balaoText: { fontSize: 14, fontWeight: "700", color: "#333" },
 
-  mathBox: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 20,
-    borderRadius: 16,
+  scrollArea: { paddingHorizontal: 15, paddingBottom: 40, paddingTop: 10 },
+  cardCentral: {
+    borderRadius: 24,
+    padding: 20,
+    elevation: 8,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }
   },
-  mathSide: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", maxWidth: "40%" },
-  stickerImg: { width: 50, height: 50, margin: 3 },
-  plusSign: { fontSize: 40, fontWeight: "bold", marginHorizontal: 15 },
 
-  optionsContainer: { marginTop: 20 },
-  optionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#999",
-    marginRight: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  optionText: { fontSize: 15, fontWeight: "700", color: "#444" },
+  tituloEtapa: { fontSize: 22, fontWeight: "900", marginBottom: 15 },
+  topicoBox: { padding: 15, borderRadius: 16, marginBottom: 10 },
+  topicoTitulo: { fontSize: 15, fontWeight: "900", marginBottom: 5 },
+  topicoTexto: { fontSize: 15, lineHeight: 22, fontWeight: "500" },
 
-  primaryButton: { paddingVertical: 18, borderRadius: 16, elevation: 4, alignItems: "center" },
-  primaryButtonText: { color: "#FFF", fontSize: 16, fontWeight: "900", textTransform: "uppercase" },
+  btnStart: { padding: 18, borderRadius: 16, alignItems: "center", marginTop: 10 },
+  btnStartText: { color: "#FFF", fontSize: 16, fontWeight: "900", textTransform: "uppercase" },
+
+  perguntaTexto: { fontSize: 17, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
+
+  gameMathBox: {
+    borderRadius: 20, padding: 20, marginBottom: 20,
+    alignItems: "center"
+  },
+  mathGrupo: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
+  mathItemCircle: {
+    width: 50, height: 50,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 12, borderWidth: 2, borderColor: "rgba(255,255,255,0.5)",
+    justifyContent: "center", alignItems: "center"
+  },
+  mathItemImg: { width: 35, height: 35 },
+  mathResultRow: { flexDirection: "row", alignItems: "center", marginTop: 15 },
+  mathNumber: { fontSize: 32, fontWeight: "900" },
+  mathSinal: { fontSize: 32, fontWeight: "900", color: "#FFF", marginVertical: 10 },
+
+  inputDissertativo: {
+    borderWidth: 2, borderRadius: 16, padding: 15, fontSize: 16,
+    minHeight: 120, textAlignVertical: "top", backgroundColor: "rgba(255,255,255,0.5)",
+    marginBottom: 20
+  },
+
+  alternativasGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  btnAlternativa: {
+    width: "48%", paddingVertical: 25, borderRadius: 16,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 15, elevation: 3
+  },
+  btnAlternativaSelecionada: { borderWidth: 4, borderColor: "#FFF" },
+  textoAlternativa: { color: "#FFF", fontSize: 24, fontWeight: "900" },
+
+  btnAcao: { padding: 18, borderRadius: 20, alignItems: "center" },
+  btnAcaoText: { color: "#FFF", fontSize: 18, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1 }
 });
