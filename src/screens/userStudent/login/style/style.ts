@@ -32,9 +32,9 @@ export const styles = StyleSheet.create({
     color: theme.colors.secondary,
     marginBottom: theme.spacing.lg,
   },
-  // AJUSTADO: removeu o margin excessivo entre eles
   inputEmail: {
     marginBottom: theme.spacing.sm || 12,
+    color: "#FFFFFF"
   },
   inputSenha: {
     marginTop: 0,
@@ -44,7 +44,6 @@ export const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: theme.spacing.sm,
   },
-  // NOVO: estilos do link de cadastro
   signUpContainer: {
     flexDirection: "row",
     justifyContent: "center",

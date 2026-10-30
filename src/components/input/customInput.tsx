@@ -74,26 +74,26 @@ export default function CustomInput({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    marginBottom: 35, 
+    marginBottom: 35,
   },
   label: {
     fontSize: theme.fontSize.normal,
     color: theme.colors.textPrimary,
     fontFamily: "Inter_700Bold",
-    marginBottom: 6, 
+    marginBottom: 6,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
     borderColor: theme.colors.textPrimary,
-    marginBottom: 10, 
+    marginBottom: 10,
   },
   input: {
     flex: 1,
     paddingVertical: 8,
     fontSize: theme.fontSize.small,
-    color: theme.colors.textDark,
+    color: theme.colors.textInput
   },
   icon: {
     marginLeft: 8,
