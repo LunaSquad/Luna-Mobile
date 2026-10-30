@@ -101,10 +101,11 @@ const styles = StyleSheet.create({
 
   imageSeta: {
     width: 45,
-    height: 58,
+    height: 50,
     resizeMode: "contain",
     marginLeft: 22,
     marginRight: 10,
+    marginTop: -20
   },
 
   bottonHiperfoco: {
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.sm,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 25,
   },
 
   buttonIconHiperfoco: {
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 250,
   },
-  
+
   noClassText: {
     fontFamily: theme.fonts.bold,
     fontSize: 16,

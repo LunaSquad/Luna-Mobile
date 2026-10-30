@@ -1,36 +1,65 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { theme } from '../../styles/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 type ProgressCardProps = {
   materiaSigla: string;
   title: string;
   description: string;
-  corTema?: string; // Adicionamos a nova prop
+  corTema?: string;
+  concluida?: boolean;
 };
 
-export function ProgressCard({ materiaSigla, title, description, corTema = "#006d77" }: ProgressCardProps) {
+export function ProgressCard({
+  materiaSigla,
+  title,
+  description,
+  corTema = "#006d77",
+  concluida = false,
+}: ProgressCardProps) {
+  const corLateral = concluida ? "#229A2E" : corTema;
+
   return (
-    <View style={styles.cardContainer}>
-      {/* Barra lateral colorida usando a corTema */}
-      <View style={[styles.sideIndicator, { backgroundColor: corTema }]} />
+    <View style={[styles.cardContainer, concluida && styles.cardConcluida]}>
+      <View style={[styles.sideIndicator, { backgroundColor: corLateral }]} />
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          {/* Sigla colorida usando a corTema */}
-          <Text style={[styles.siglaText, { color: corTema }]}>{materiaSigla}</Text>
-          <MaterialIcons name="arrow-forward" size={20} color="#777" />
+      <View style={styles.innerContent}>
+        <View
+          style={[
+            styles.siglaBadge,
+            { backgroundColor: concluida ? "#FFFFFF" : `${corTema}18` },
+          ]}
+        >
+          <Text style={[styles.siglaText, { color: corTema }]}>
+            {materiaSigla}
+          </Text>
         </View>
 
-        <Text style={[styles.titleText, { color: corTema }]}>{title}</Text>
-        <Text style={styles.descText} numberOfLines={2}>{description}</Text>
+        <View style={styles.textSection}>
+          <Text
+            style={[
+              styles.titleText,
+              { color: concluida ? "#555555" : corTema },
+            ]}
+            numberOfLines={2}
+          >
+            {title}
+          </Text>
 
-        <View style={styles.footerRow}>
-          <Text style={styles.actionText}>Visualizar atividade</Text>
-          {/* Ícone de visualizar usando a corTema */}
-          <MaterialIcons name="assignment" size={16} color={corTema} />
+          {!concluida && Boolean(description) && (
+            <Text style={styles.descText} numberOfLines={2}>
+              {description}
+            </Text>
+          )}
         </View>
+
+        {concluida ? (
+          <View style={styles.checkCircle}>
+            <MaterialIcons name="check" size={18} color="#FFFFFF" />
+          </View>
+        ) : (
+          <MaterialIcons name="chevron-right" size={26} color={corTema} />
+        )}
       </View>
     </View>
   );
@@ -38,58 +67,70 @@ export function ProgressCard({ materiaSigla, title, description, corTema = "#006
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#FFFFFF",
     marginHorizontal: 28,
-    marginBottom: 16,
-    borderRadius: 8,
-    flexDirection: 'row',
+    marginBottom: 14,
+    borderRadius: 14,
+    flexDirection: "row",
     elevation: 3,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    overflow: 'hidden',
+    borderColor: "#EFEFEF",
+    overflow: "hidden",
+  },
+  cardConcluida: {
+    backgroundColor: "#F2F4F5",
+    borderColor: "#E5E7EB",
+    elevation: 1,
   },
   sideIndicator: {
     width: 6,
-    height: '100%',
+    height: "100%",
   },
-  content: {
+  innerContent: {
     flex: 1,
-    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+  siglaBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
   },
   siglaText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  textSection: {
+    flex: 1,
+    justifyContent: "center",
+    paddingRight: 8,
   },
   titleText: {
     fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 6,
+    fontWeight: "800",
+    lineHeight: 20,
   },
   descText: {
     fontSize: 13,
-    color: '#555',
+    color: "#666666",
     lineHeight: 18,
-    marginBottom: 14,
+    marginTop: 4,
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 6,
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333',
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#229A2E",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
