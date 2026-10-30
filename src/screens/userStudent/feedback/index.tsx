@@ -1,150 +1,190 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { styles } from "./style/style";
+import API_BASE_URL from "../../../services/ip";
 
 export default function Feedback() {
   const navigation = useNavigation<any>();
+  const [nota, setNota] = useState(0);
+  const [comentario, setComentario] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadUserData() {
+      const storedUserId = await AsyncStorage.getItem("@luna_user_id");
+      const storedToken = await AsyncStorage.getItem("token");
+      if (storedUserId) setUserId(storedUserId);
+      if (storedToken) setToken(storedToken);
+    }
+    loadUserData();
+  }, []);
+
+  const handleStarPress = (rating: number) => {
+    setNota(rating);
+  };
+
+  const enviarFeedback = async () => {
+    if (nota === 0) {
+      Alert.alert("Atenção", "Por favor, selecione uma nota de 1 a 5 estrelas.");
+      return;
+    }
+    if (!comentario.trim()) {
+      Alert.alert("Atenção", "Por favor, escreva um comentário.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(`${API_BASE_URL}/feedbacks`, { // Ajuste a rota da API se for diferente
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userID: userId,
+          comentario: comentario.trim(),
+          nota: nota,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Sucesso", "Feedback enviado com sucesso! Obrigado por nos ajudar a melhorar.", [
+          { text: "OK", onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert("Erro", data.message || "Não foi possível enviar o feedback.");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar feedback:", error);
+      Alert.alert("Erro", "Falha na conexão com o servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Image
-          source={require("../../../assets/luna-positivo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} bounces={false} showsVerticalScrollIndicator={false}>
 
-        <Image
-          source={require("../../../assets/logo mobile-positivo.png")}
-          style={styles.logoBorboleta}
-          resizeMode="contain"
-        />
-      </View>
+        {/* Fundo Branco (Topo) */}
+        <View style={styles.topBackground}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="chevron-left" size={36} color="#005A63" />
+            </TouchableOpacity>
 
-      <View style={styles.card}>
-        <View style={styles.iconBox}>
-          <MaterialIcons name="forum" size={52} color="#006d77" />
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../../assets/luna.png")} // Ajuste para a logo azul escuro
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+
+            <Image
+              source={require("../../../assets/logo mobile.png")} // Borboleta
+              style={styles.logoBorboleta}
+              resizeMode="contain"
+            />
+          </View>
+
+          <Text style={styles.title}>Feedback</Text>
+
+          {/* Troque a imagem abaixo pela ilustração correta que você tem no seu projeto */}
+          <Image
+            source={require("../../../assets/hiperfoco.png")} // Coloque o caminho da ilustração correta aqui
+            style={styles.illustration}
+            resizeMode="contain"
+          />
         </View>
 
-        <Text style={styles.title}>Feedback em construção</Text>
+        {/* Fundo Verde Escuro (Base) */}
+        <View style={styles.bottomBackground}>
 
-        <Text style={styles.description}>
-          Estamos preparando uma área para você enviar sugestões, opiniões e
-          compartilhar sua experiência com o aplicativo.
-        </Text>
+          {/* Cartão Branco Sobreposto */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Deixe seu feedback</Text>
 
-        <Text style={styles.descriptionSmall}>
-          Em breve você poderá nos ajudar a melhorar ainda mais a experiência
-          do Luna.
-        </Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Escreva aqui..."
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={4}
+                value={comentario}
+                onChangeText={setComentario}
+              />
+              <MaterialIcons
+                name="chat-bubble-outline"
+                size={20}
+                color="#005A63"
+                style={styles.inputIcon}
+              />
+            </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={20} color="#ffffff" />
+            <Text style={styles.ratingTitle}>AVALIE SUA EXPERIÊNCIA</Text>
 
-          <Text style={styles.buttonText}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <View style={styles.starsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  activeOpacity={0.7}
+                  onPress={() => handleStarPress(star)}
+                >
+                  <FontAwesome
+                    name={star <= nota ? "star" : "star-o"}
+                    size={32}
+                    color="#005A63"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitButton, loading && { opacity: 0.7 }]}
+              activeOpacity={0.8}
+              onPress={enviarFeedback}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Enviar</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#006d77",
-    paddingHorizontal: 28,
-  },
-
-  header: {
-    height: 120,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingBottom: 16,
-  },
-
-  logo: {
-    width: 65,
-    height: 32,
-  },
-
-  logoBorboleta: {
-    position: "absolute",
-    right: 0,
-    top: 52,
-    width: 24,
-    height: 24,
-  },
-
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    paddingHorizontal: 24,
-    paddingVertical: 36,
-    alignItems: "center",
-    marginTop: 35,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 7,
-  },
-
-  iconBox: {
-    width: 95,
-    height: 95,
-    borderRadius: 48,
-    backgroundColor: "#e9f7f6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-
-  title: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#006d77",
-    textAlign: "center",
-    marginBottom: 14,
-  },
-
-  description: {
-    fontSize: 15,
-    color: "#333333",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-
-  descriptionSmall: {
-    fontSize: 13,
-    color: "#666666",
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 14,
-  },
-
-  button: {
-    marginTop: 32,
-    backgroundColor: "#006d77",
-    height: 48,
-    paddingHorizontal: 28,
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-});

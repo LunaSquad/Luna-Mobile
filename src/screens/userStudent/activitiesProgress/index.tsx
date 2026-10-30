@@ -36,7 +36,7 @@ type Plano = {
 const materias = [
   { sigla: "LP", nome: "Português", cor: "#006d77" },
   { sigla: "MAT", nome: "Matemática", cor: "#06156f" },
-  { sigla: "GEO", nome: "Geografia", cor: "#7c2d12" },
+  { sigla: "GEO", nome: "Geografia", cor: "#b68371" },
   { sigla: "HIS", nome: "História", cor: "#4b1d0d" },
 ];
 
@@ -57,6 +57,12 @@ function identificarSiglaPorNome(nome?: string): string {
   );
 
   return encontrada ? encontrada.sigla : "MAT";
+}
+
+// Função auxiliar para buscar a cor atual
+function obterCorDaMateria(sigla: string): string {
+  const encontrada = materias.find((m) => m.sigla === sigla);
+  return encontrada ? encontrada.cor : "#006d77"; // cor verde por padrão
 }
 
 export default function ActivitiesProgressScreen() {
@@ -163,6 +169,9 @@ export default function ActivitiesProgressScreen() {
     });
   }
 
+  // Pegamos a cor da aba selecionada neste momento
+  const corAtual = obterCorDaMateria(materiaSelecionada);
+
   return (
     <View style={styles.container}>
       <View style={styles.phoneContent}>
@@ -250,6 +259,7 @@ export default function ActivitiesProgressScreen() {
                     materiaSigla={materiaSelecionada}
                     title={plano.titulo}
                     description={plano.descricao}
+                    corTema={corAtual} // PASSANDO A COR DA MATÉRIA AQUI!
                   />
                 </TouchableOpacity>
               ))

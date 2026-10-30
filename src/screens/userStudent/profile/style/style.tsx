@@ -4,133 +4,138 @@ import { theme } from "../../../../styles/theme";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 28,
-  },
-
-  header: {
-    height: 120,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingBottom: 16,
+    backgroundColor: "#F5F7F8",
   },
 
   topSection: {
-    backgroundColor: '#006d77',
-    width: 415,
-    marginLeft: -28,
-    paddingHorizontal: 28,
-    height: 300,
-    borderBottomEndRadius: 50
+    backgroundColor: "#006d77",
+    width: "100%",
+    height: 280,
+    borderBottomEndRadius: 40,
+    borderBottomStartRadius: 0,
+    paddingHorizontal: 24,
   },
 
-  profileSummary: {
+  header: {
+    height: 100,
+    alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 5,
-  },
-
-  userName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: '#ffffff',
-    marginTop: 30,
-    marginLeft: 20
+    paddingBottom: 10,
   },
 
   logo: {
-    width: 65,
-    height: 32,
+    width: 70,
+    height: 35,
   },
 
   logoBorboleta: {
     position: "absolute",
     right: 24,
-    top: 52,
+    top: 50,
     width: 24,
     height: 24,
   },
 
+  profileSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+
+  userName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: "#ffffff",
+    flex: 1,
+  },
+
   profilePhoto: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.radius.full,
-    marginLeft: 260,
-    marginTop: -55,
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
     borderColor: "#FFDDD2",
-    borderWidth: 1
+    borderWidth: 2,
   },
 
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 14,
+    borderRadius: 16,
+    marginHorizontal: 49,
     paddingHorizontal: 24,
-    paddingVertical: 36,
-    marginTop: -70,
-
+    paddingVertical: 30,
+    marginTop: -40,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 4,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
+    marginBottom: 20,
+  },
+
+  infoContainer: {
+    gap: 16,
   },
 
   titleInfo: {
     fontFamily: theme.fonts.bold,
+    fontSize: 12,
+    color: "#333",
+    marginBottom: 4,
   },
 
   infoItem: {
     fontFamily: theme.fonts.light,
-  },
-
-  infoContainer: {
-    gap: 15
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#D9D9D9",
-    width: "100%",
-    marginVertical: 20,
-  },
-
-  actionText: {
-    fontFamily: theme.fonts.light,
-    marginLeft: 14,
-    flex: 1,
-  },
-
-  actionItem: {
-    flexDirection: "row",
-    height: 25,
+    fontSize: 14,
+    color: "#555",
   },
 
   infoItemContainer: {
-    backgroundColor: '#e0f2f3',
+    backgroundColor: "#e0f2f3",
     borderRadius: 8,
-    width: 100,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    gap: 4,
+    width: 110,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    gap: 6,
+    marginTop: 4,
   },
 
   infoItemLaudo: {
     fontFamily: theme.fonts.bold,
-    color: '#006d77',
+    color: "#006d77",
     fontSize: 13,
   },
 
   editButtons: {
-    marginTop: 20
+    marginTop: 10,
   },
 
+  divider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    width: "100%",
+    marginVertical: 14,
+  },
 
+  actionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
 
+  actionText: {
+    fontFamily: theme.fonts.light,
+    fontSize: 15,
+    marginLeft: 14,
+    color: "#333",
+    flex: 1,
+  },
 });
 
 export default styles;

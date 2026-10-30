@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     ai,
     register,
     activities,
+    feedback,  # 1. Adicionamos a importação do arquivo feedback.py aqui
 )
 
 api_router = APIRouter()
@@ -20,3 +21,6 @@ api_router.include_router(
 )
 api_router.include_router(ai.router, prefix="/ai", tags=["AI"])
 api_router.include_router(activities.router, prefix="/activities", tags=["Activities"])
+
+# 2. Registramos a rota para que o aplicativo possa acessá-la
+api_router.include_router(feedback.router, prefix="/feedbacks", tags=["Feedbacks"])

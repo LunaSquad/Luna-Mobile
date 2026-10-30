@@ -103,7 +103,7 @@ export default function Home({ route }: HomeProps) {
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [materias, setMaterias] = useState<MateriaCardData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   const [mostrarOpcoesTurma, setMostrarOpcoesTurma] = useState<boolean>(false);
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -254,7 +254,7 @@ export default function Home({ route }: HomeProps) {
   }, [userId]);
 
   const hiperfocoNome = aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
-  
+
   // Constante flexível para identificar qualquer formato de turma que esteja no MongoDB
   const codigoTurmaAluno = aluno?.turmaID || aluno?.turmaId || aluno?.codTurma || aluno?.idTurma;
 
@@ -321,15 +321,15 @@ export default function Home({ route }: HomeProps) {
           </View>
 
           {loading ? (
-             <ActivityIndicator size="large" color="#0F766E" style={{ marginTop: 50 }} />
+            <ActivityIndicator size="large" color="#0F766E" style={{ marginTop: 50 }} />
           ) : !codigoTurmaAluno ? (
             <View style={styles.noClassContainer}>
               <Text style={styles.noClassText}>Você ainda não está em uma turma.</Text>
-              
+
               {!mostrarOpcoesTurma ? (
                 <View style={{ alignItems: "center" }}>
-                  <TouchableOpacity 
-                    style={styles.joinClassButton} 
+                  <TouchableOpacity
+                    style={styles.joinClassButton}
                     onPress={() => setMostrarOpcoesTurma(true)}
                   >
                     <MaterialIcons name="add" size={40} color="#fff" />
@@ -342,14 +342,14 @@ export default function Home({ route }: HomeProps) {
                     <MaterialIcons name="link" size={24} color="#0F766E" />
                     <Text style={styles.joinOptionText}>Inserir Link da Turma</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity style={styles.joinOptionCard}>
                     <MaterialIcons name="qr-code-scanner" size={24} color="#0F766E" />
                     <Text style={styles.joinOptionText}>Ler QR Code</Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.cancelJoinButton} 
+
+                  <TouchableOpacity
+                    style={styles.cancelJoinButton}
                     onPress={() => setMostrarOpcoesTurma(false)}
                   >
                     <Text style={styles.cancelJoinText}>Cancelar</Text>
@@ -361,7 +361,16 @@ export default function Home({ route }: HomeProps) {
             <View style={styles.spaceMaterias}>
               <View style={styles.spaceTituloMaterias}>
                 <Text style={styles.textMaterias}>Matérias</Text>
-                <Text style={styles.textVejamais}>Veja mais →</Text>
+
+                {/* Botão com o redirecionamento correto para a sua aba */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    navigation.navigate("Em andamento");
+                  }}
+                >
+                  <Text style={styles.textVejamais}>Veja mais →</Text>
+                </TouchableOpacity>
               </View>
 
               {materias.length === 0 ? (

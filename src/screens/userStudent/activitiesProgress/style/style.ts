@@ -9,8 +9,8 @@ export const styles = StyleSheet.create({
   phoneContent: {
     flex: 1,
     backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    // borderBottomLeftRadius: 28,
+    // borderBottomRightRadius: 28,
   },
 
   header: {
@@ -99,10 +99,10 @@ export const styles = StyleSheet.create({
   },
 
   logoBorboleta: {
-  position: "absolute",
-  right: 28,
-  top: 55,
-  width: 24,
-  height: 24,
-},
+    position: "absolute",
+    right: 28,
+    top: 55,
+    width: 24,
+    height: 24,
+  },
 });

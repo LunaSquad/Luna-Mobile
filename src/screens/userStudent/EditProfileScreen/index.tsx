@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -91,25 +91,32 @@ function Dot({ active, done }: { active: boolean; done: boolean }) {
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+
+  const { alunoData } = route.params || {};
 
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
-  const [nome, setNome] = useState("");
-  const [nomeResponsavel, setNomeResponsavel] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [cpfResponsavel, setCpfResponsavel] = useState("");
+  const [nome, setNome] = useState(alunoData?.nome || "");
+  const [nomeResponsavel, setNomeResponsavel] = useState(alunoData?.nomeResponsavel || "");
+  const [cpf, setCpf] = useState(alunoData?.cpf ? maskCPF(alunoData.cpf) : "");
+  const [cpfResponsavel, setCpfResponsavel] = useState(alunoData?.cpfResponsavel ? maskCPF(alunoData.cpfResponsavel) : "");
 
-  const [dataNascimento, setDataNascimento] = useState<Date | null>(null);
+  const [dataNascimento, setDataNascimento] = useState<Date | null>(
+    alunoData?.dataNasc ? new Date(alunoData.dataNasc) : null
+  );
+
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [email, setEmail] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [hiperfoco, setHiperfoco] = useState("");
+  const [email, setEmail] = useState(alunoData?.email || "");
+  const [telefone, setTelefone] = useState(alunoData?.telefone ? maskPhone(alunoData.telefone) : "");
+
+  // Guardamos o hiperfoco na constante, mas não exibimos mais no input
+  const hiperfocoFix = alunoData?.hiperfoco || "";
 
   const [laudos, setLaudos] = useState<string[]>([]);
-  const [fotoRosto, setFotoRosto] = useState<string | null>(null);
+  const [fotoRosto, setFotoRosto] = useState<string | null>(alunoData?.urlFotoAluno || null);
 
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -122,62 +129,20 @@ export default function EditProfileScreen() {
       easing: Easing.out(Easing.exp),
     });
 
-    const initialize = async () => {
+    const getToken = async () => {
       const storedToken = await AsyncStorage.getItem("token");
-      if (storedToken) {
-        setToken(storedToken);
-        await fetchUserProfile(storedToken);
-      } else {
-        setInitialLoading(false);
-      }
+      if (storedToken) setToken(storedToken);
     };
 
-    initialize();
+    getToken();
   }, []);
 
   const modalStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: modalTranslate.value }],
   }));
 
-  async function fetchUserProfile(authToken: string) {
-    try {
-      setInitialLoading(true);
-      const response = await fetch(`${API_BASE_URL}/student/profile`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      console.log("STATUS:", response.status);
-      const data = await response.json();
-
-      if (response.ok && data) {
-        setNome(data.nome || "");
-        setNomeResponsavel(data.nomeResponsavel || "");
-        setCpf(data.cpf ? maskCPF(data.cpf) : "");
-        setCpfResponsavel(data.cpfResponsavel ? maskCPF(data.cpfResponsavel) : "");
-        setEmail(data.email || "");
-        setTelefone(data.telefone ? maskPhone(data.telefone) : "");
-        setHiperfoco(data.hiperfoco || "");
-
-        if (data.dataNascimento) {
-          setDataNascimento(new Date(data.dataNascimento));
-        }
-        if (data.fotoRosto) {
-          setFotoRosto(data.fotoRosto);
-        }
-        if (data.laudos && Array.isArray(data.laudos)) {
-          setLaudos(data.laudos);
-        }
-      }
-    } catch (error) {
-      console.log("ERRO AO CARREGAR PERFIL:", error);
-    } finally {
-      setInitialLoading(false);
-    }
-  }
-
   function maskCPF(value: string) {
+    if (!value) return "";
     return value
       .replace(/\D/g, "")
       .replace(/(\d{3})(\d)/, "$1.$2")
@@ -206,6 +171,7 @@ export default function EditProfileScreen() {
   }
 
   function maskPhone(value: string) {
+    if (!value) return "";
     return value
       .replace(/\D/g, "")
       .replace(/(\d{2})(\d)/, "($1) $2")
@@ -303,7 +269,10 @@ export default function EditProfileScreen() {
       );
       formData.append("email", email);
       formData.append("telefone", telefone.replace(/\D/g, ""));
-      if (hiperfoco) formData.append("hiperfoco", hiperfoco);
+
+      // Envia o hiperfoco salvo para não apagá-lo!
+      if (hiperfocoFix) formData.append("hiperfoco", hiperfocoFix);
+
       if (senha.trim()) formData.append("senha", senha);
 
       if (fotoRosto && fotoRosto.startsWith("file://")) {
@@ -565,22 +534,8 @@ export default function EditProfileScreen() {
                 }
               />
 
-              <CustomInput
-                title="HIPERFOCO"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
-                placeholder="Indique o hiperfoco da criança"
-                value={hiperfoco}
-                onChangeText={setHiperfoco}
-                style={styles.input}
-                icon={
-                  <MaterialCommunityIcons
-                    name="emoticon-happy-outline"
-                    size={20}
-                    color={theme.colors.primary}
-                  />
-                }
-              />
+              {/* O INPUT DO HIPERFOCO FOI REMOVIDO DAQUI */}
+
             </View>
           )}
 
