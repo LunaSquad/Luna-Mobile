@@ -78,5 +78,5 @@ __pycache__/
 backend/data/outputs/
 
 
-backend/app/ai/models/
+backend/app/ai_engine/artifacts/
 

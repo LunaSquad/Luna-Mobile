@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.api import api_router
-from app.api.v1.endpoints import ai
+from app.routes.router import api_router
 
-app = FastAPI()
+app = FastAPI(title="Luna API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,4 +13,3 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
-app.include_router(ai.router, prefix="/ai", tags=["AI"])

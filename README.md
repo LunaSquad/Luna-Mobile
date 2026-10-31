@@ -227,3 +227,18 @@ Projeto desenvolvido por estudantes da FATEC.
 #  Licença
 
 Este projeto possui finalidade acadêmica.
+
+
+
+
+# Passo a Passo 
+
+## 1 - Instalar todas as dependências (Frontend + Ambiente Virtual Python + Bibliotecas do Backend):
+``` bash
+    npm run setup
+```
+
+## 2 - Iniciar o Backend (FastAPI) e o Mobile (Expo) simultaneamente:
+``` bash
+    npm run dev
+```
