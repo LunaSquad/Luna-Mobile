@@ -9,6 +9,7 @@ import EditHyperfocus from "../screens/userStudent/hyperfocus/index";
 import Feedback from "../screens/userStudent/feedback/index";
 import Register from "../screens/userStudent/register/index";
 import EditProfileScreen from "../screens/userStudent/EditProfileScreen";
+import QrCodeScanner from "../screens/userStudent/QrCodeScanner/index"
 
 export type RootStackParamList = {
   Login: undefined;
@@ -51,6 +52,13 @@ export type RootStackParamList = {
   Register: undefined;
 
   EditProfileScreen: undefined;
+
+  QrCodeScanner:
+  | {
+    userId?: string;
+  }
+  | undefined;
+
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -69,6 +77,7 @@ export default function Routes() {
       <Stack.Screen name="Feedback" component={Feedback} />
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+      <Stack.Screen name="QrCodeScanner" component={QrCodeScanner} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

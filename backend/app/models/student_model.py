@@ -90,3 +90,26 @@ def reset_student_visual_assets(aluno_id: str):
         },
         {"$set": {"assetsVisuais": []}},
     )
+
+
+# --- NOVA FUNÇÃO ADICIONADA ---
+def update_student_turma(user_id: str, turma_id: str):
+    try:
+        aluno_oid = to_object_id(user_id)
+        turma_oid = to_object_id(turma_id)
+
+        resultado = alunos_collection.update_one(
+            {
+                "$or": [
+                    {"usuarioId": aluno_oid},
+                    {"_id": aluno_oid},
+                    {"usuarioId": user_id},
+                    {"_id": user_id},
+                ]
+            },
+            {"$set": {"turmaId": turma_oid}},
+        )
+        return resultado.modified_count > 0
+    except Exception as e:
+        print(f"ERRO ao vincular turma no model: {e}")
+        return False

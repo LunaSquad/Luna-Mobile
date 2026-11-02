@@ -11,8 +11,11 @@ import {
   Animated,
   Dimensions,
   Pressable,
+  TextInput,
+  Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import API_BASE_URL from "../../../services/ip";
 
@@ -104,7 +107,11 @@ export default function Home({ route }: HomeProps) {
   const [materias, setMaterias] = useState<MateriaCardData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Estados do Menu e Turma
   const [mostrarOpcoesTurma, setMostrarOpcoesTurma] = useState<boolean>(false);
+  const [inserindoLink, setInserindoLink] = useState<boolean>(false);
+  const [linkConvite, setLinkConvite] = useState<string>("");
+  const [loadingTurma, setLoadingTurma] = useState<boolean>(false);
 
   const [menuAberto, setMenuAberto] = useState(false);
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
@@ -130,58 +137,22 @@ export default function Home({ route }: HomeProps) {
 
   function materiaPreset(nome: string) {
     const n = (nome || "").toLowerCase();
-
     if (n.includes("port")) {
-      return {
-        title: "Língua Portuguesa",
-        image: portuguesImg as ImageSourcePropType,
-        backgroundColor: "#E9F7F6",
-        buttonColor: "#0F766E",
-      };
+      return { title: "Língua Portuguesa", image: portuguesImg as ImageSourcePropType, backgroundColor: "#E9F7F6", buttonColor: "#0F766E" };
     }
-
     if (n.includes("mat")) {
-      return {
-        title: "Matemática",
-        image: matematicaImg as ImageSourcePropType,
-        backgroundColor: "#E6ECFF",
-        buttonColor: "#1E3A8A",
-      };
+      return { title: "Matemática", image: matematicaImg as ImageSourcePropType, backgroundColor: "#E6ECFF", buttonColor: "#1E3A8A" };
     }
-
     if (n.includes("geo")) {
-      return {
-        title: "Geografia",
-        image: geografiaImg as ImageSourcePropType,
-        backgroundColor: "#FFDDD2",
-        buttonColor: "#71270F",
-      };
+      return { title: "Geografia", image: geografiaImg as ImageSourcePropType, backgroundColor: "#FFDDD2", buttonColor: "#71270F" };
     }
-
     if (n.includes("hist")) {
-      return {
-        title: "História",
-        image: geografiaImg as ImageSourcePropType,
-        backgroundColor: "#FFF4D6",
-        buttonColor: "#92400E",
-      };
+      return { title: "História", image: geografiaImg as ImageSourcePropType, backgroundColor: "#FFF4D6", buttonColor: "#92400E" };
     }
-
     if (n.includes("cien") || n.includes("ciên")) {
-      return {
-        title: "Ciências",
-        image: geografiaImg as ImageSourcePropType,
-        backgroundColor: "#E7F8EA",
-        buttonColor: "#166534",
-      };
+      return { title: "Ciências", image: geografiaImg as ImageSourcePropType, backgroundColor: "#E7F8EA", buttonColor: "#166534" };
     }
-
-    return {
-      title: nome,
-      image: geografiaImg as ImageSourcePropType,
-      backgroundColor: "#EFEFEF",
-      buttonColor: "#333",
-    };
+    return { title: nome, image: geografiaImg as ImageSourcePropType, backgroundColor: "#EFEFEF", buttonColor: "#333" };
   }
 
   function formatNumber(i: number): string {
@@ -192,7 +163,6 @@ export default function Home({ route }: HomeProps) {
   function transformarMateriasEmCards(listaMaterias: MateriaApi[]) {
     const cards: MateriaCardData[] = listaMaterias.map((m, idx) => {
       const preset = materiaPreset(m.nome);
-
       return {
         id: m.id || m._id || String(idx),
         number: formatNumber(idx),
@@ -204,58 +174,103 @@ export default function Home({ route }: HomeProps) {
         rota: m.rota || "Atividades",
       };
     });
-
     setMaterias(cards);
   }
 
   function sair() {
     fecharMenu();
     setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
+      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
     }, 260);
   }
 
-  useEffect(() => {
-    async function carregarTudo() {
-      try {
-        if (!userId) return;
+  async function carregarTudo() {
+    try {
+      if (!userId) return;
+      const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
+      const dataAluno: AlunoResponse = await respAluno.json();
 
-        const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
-        const dataAluno: AlunoResponse = await respAluno.json();
-
-        if (!dataAluno.ok) {
-          console.log("❌ ERRO ALUNO:", dataAluno.message);
-        } else {
-          setAluno(dataAluno.aluno || null);
-        }
-
-        const respMat = await fetch(`${API_BASE_URL}/subjects/materias`);
-        const dataMat: MateriasResponse = await respMat.json();
-
-        if (!dataMat.ok) {
-          console.log("❌ ERRO MATERIAS:", dataMat.message);
-          return;
-        }
-
-        const listaMaterias = dataMat.materias || dataMat.detail || [];
-        transformarMateriasEmCards(listaMaterias);
-
-      } catch (e) {
-        console.log("ERRO GERAL HOME:", e);
-      } finally {
-        setLoading(false);
+      if (!dataAluno.ok) {
+        console.log("❌ ERRO ALUNO:", dataAluno.message);
+      } else {
+        setAluno(dataAluno.aluno || null);
       }
+
+      const respMat = await fetch(`${API_BASE_URL}/subjects/materias`);
+      const dataMat: MateriasResponse = await respMat.json();
+
+      if (dataMat.ok) {
+        transformarMateriasEmCards(dataMat.materias || dataMat.detail || []);
+      }
+    } catch (e) {
+      console.log("ERRO GERAL HOME:", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarTudo();
+    }, [userId])
+  );
+
+  // Lógica para quebrar o link e enviar pro Backend
+  async function processarConvite(link: string) {
+    if (!link) {
+      Alert.alert("Aviso", "Por favor, cole um link válido.");
+      return;
     }
 
-    carregarTudo();
-  }, [userId]);
+    try {
+      // Exemplo: luna://app/convite?codigo=K2FY1M&turmaId=6ae7e12440c757d8059ff3de
+      const queryParams = link.split("?")[1];
+      if (!queryParams) throw new Error("Link sem parâmetros.");
+
+      const params = queryParams.split("&");
+      let codigo = "";
+      let turmaIdExtraida = "";
+
+      params.forEach((param) => {
+        const [key, value] = param.split("=");
+        if (key === "codigo") codigo = value;
+        if (key === "turmaId") turmaIdExtraida = value;
+      });
+
+      if (!codigo || !turmaIdExtraida) {
+        Alert.alert("Erro", "O link de convite está incompleto ou inválido.");
+        return;
+      }
+
+      setLoadingTurma(true);
+
+      // Aqui você faz a chamada PUT/PATCH pro seu novo backend Python para vincular o aluno à turma
+      const response = await fetch(`${API_BASE_URL}/students/aluno/${userId}/vincular-turma`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turmaId: turmaIdExtraida, codigoAcesso: codigo }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok || data.ok) {
+        Alert.alert("Sucesso!", "Você entrou na turma com sucesso.");
+        setInserindoLink(false);
+        setMostrarOpcoesTurma(false);
+        carregarTudo(); // Recarrega os dados do aluno para a tela atualizar
+      } else {
+        Alert.alert("Erro", data.message || "Não foi possível entrar na turma.");
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Erro", "Formato de link inválido.");
+    } finally {
+      setLoadingTurma(false);
+    }
+  }
 
   const hiperfocoNome = aluno?.hiperfoco?.nome || aluno?.hyperfoco?.nome || "Não informado";
-
-  // Constante flexível para identificar qualquer formato de turma que esteja no MongoDB
   const codigoTurmaAluno = aluno?.turmaID || aluno?.turmaId || aluno?.codTurma || aluno?.idTurma;
 
   return (
@@ -268,14 +283,8 @@ export default function Home({ route }: HomeProps) {
             <Image style={styles.menu} source={temporyMenu} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate("Perfil", { userId })}
-          >
-            <Image
-              style={styles.profilePhoto}
-              source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil}
-            />
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate("Perfil", { userId })}>
+            <Image style={styles.profilePhoto} source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil} />
           </TouchableOpacity>
         </View>
 
@@ -285,37 +294,23 @@ export default function Home({ route }: HomeProps) {
           </View>
 
           <View style={styles.spaceNameUsuario}>
-            {loading ? (
-              <ActivityIndicator />
-            ) : (
-              <Text style={styles.nameUsuario}>Olá, {aluno?.nome || "Usuário"}</Text>
-            )}
+            {loading ? <ActivityIndicator /> : <Text style={styles.nameUsuario}>Olá, {aluno?.nome || "Usuário"}</Text>}
           </View>
 
           <View style={styles.spaceHiperfocoAux}>
             <View style={styles.spaceHiperfoco}>
               <View style={styles.hiperfocoContent}>
-                <Text style={styles.textoHiperfoco}>
-                  {loading ? "Carregando..." : "Indique o hiperfoco\nda criança aqui!"}
-                </Text>
-
+                <Text style={styles.textoHiperfoco}>{loading ? "Carregando..." : "Indique o hiperfoco\nda criança aqui!"}</Text>
                 <View style={styles.hiperfocoActionArea}>
                   <Image source={seta} style={styles.imageSeta} />
-
                   <TouchableOpacity
                     style={styles.bottonHiperfoco}
-                    onPress={() =>
-                      navigation.navigate("EditHyperfocus", {
-                        userId,
-                        hiperfocoAtual: hiperfocoNome,
-                      })
-                    }
+                    onPress={() => navigation.navigate("EditHyperfocus", { userId, hiperfocoAtual: hiperfocoNome })}
                   >
                     <Image source={buttonIcon} style={styles.buttonIconHiperfoco} />
                   </TouchableOpacity>
                 </View>
               </View>
-
               <Image source={Luna3d} style={styles.luna3d} />
             </View>
           </View>
@@ -328,30 +323,47 @@ export default function Home({ route }: HomeProps) {
 
               {!mostrarOpcoesTurma ? (
                 <View style={{ alignItems: "center" }}>
-                  <TouchableOpacity
-                    style={styles.joinClassButton}
-                    onPress={() => setMostrarOpcoesTurma(true)}
-                  >
+                  <TouchableOpacity style={styles.joinClassButton} onPress={() => setMostrarOpcoesTurma(true)}>
                     <MaterialIcons name="add" size={40} color="#fff" />
                   </TouchableOpacity>
-                  <Text style={styles.joinClassButtonText}>Ingressar em{'\n'}uma turma</Text>
+                  <Text style={styles.joinClassButtonText}>Ingressar em{"\n"}uma turma</Text>
+                </View>
+              ) : inserindoLink ? (
+                // TELA DE DIGITAR/COLAR O LINK
+                <View style={styles.joinOptionsContainer}>
+                  <Text style={styles.inputLabel}>Cole o link de convite abaixo:</Text>
+                  <TextInput
+                    style={styles.inputConvite}
+                    placeholder="luna://app/convite?codigo=..."
+                    value={linkConvite}
+                    onChangeText={setLinkConvite}
+                    autoCapitalize="none"
+                  />
+                  {loadingTurma ? (
+                    <ActivityIndicator size="large" color="#0F766E" style={{ marginVertical: 10 }} />
+                  ) : (
+                    <TouchableOpacity style={styles.btnConfirmar} onPress={() => processarConvite(linkConvite)}>
+                      <Text style={styles.btnConfirmarText}>Entrar na Turma</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={styles.cancelJoinButton} onPress={() => setInserindoLink(false)}>
+                    <Text style={styles.cancelJoinText}>Voltar</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
+                // OPÇÕES: LINK OU QR CODE
                 <View style={styles.joinOptionsContainer}>
-                  <TouchableOpacity style={styles.joinOptionCard}>
+                  <TouchableOpacity style={styles.joinOptionCard} onPress={() => setInserindoLink(true)}>
                     <MaterialIcons name="link" size={24} color="#0F766E" />
                     <Text style={styles.joinOptionText}>Inserir Link da Turma</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.joinOptionCard}>
+                  <TouchableOpacity style={styles.joinOptionCard} onPress={() => navigation.navigate("QrCodeScanner", { userId })}>
                     <MaterialIcons name="qr-code-scanner" size={24} color="#0F766E" />
                     <Text style={styles.joinOptionText}>Ler QR Code</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.cancelJoinButton}
-                    onPress={() => setMostrarOpcoesTurma(false)}
-                  >
+                  <TouchableOpacity style={styles.cancelJoinButton} onPress={() => setMostrarOpcoesTurma(false)}>
                     <Text style={styles.cancelJoinText}>Cancelar</Text>
                   </TouchableOpacity>
                 </View>
@@ -361,14 +373,7 @@ export default function Home({ route }: HomeProps) {
             <View style={styles.spaceMaterias}>
               <View style={styles.spaceTituloMaterias}>
                 <Text style={styles.textMaterias}>Matérias</Text>
-
-                {/* Botão com o redirecionamento correto para a sua aba */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    navigation.navigate("Em andamento");
-                  }}
-                >
+                <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("Em andamento")}>
                   <Text style={styles.textVejamais}>Veja mais →</Text>
                 </TouchableOpacity>
               </View>
@@ -376,11 +381,7 @@ export default function Home({ route }: HomeProps) {
               {materias.length === 0 ? (
                 <Text style={{ marginTop: 16 }}>Nenhuma matéria encontrada.</Text>
               ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingVertical: 16 }}
-                >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 16 }}>
                   {materias.map((materia) => (
                     <MateriaCard
                       key={materia.id}
@@ -394,7 +395,7 @@ export default function Home({ route }: HomeProps) {
                           materiaId: materia.id,
                           materiaNome: materia.nome,
                           userId,
-                          turmaId: codigoTurmaAluno // <-- O parâmetro vital está aqui agora
+                          turmaId: codigoTurmaAluno,
                         })
                       }
                     />
@@ -403,33 +404,15 @@ export default function Home({ route }: HomeProps) {
               )}
             </View>
           )}
-
-          {!loading && aluno && (
-            <View style={{ paddingBottom: 30, paddingTop: 10 }}>
-              {codigoTurmaAluno && <Text>Turma: {codigoTurmaAluno}</Text>}
-              {aluno.escolaID && <Text>Escola: {aluno.escolaID}</Text>}
-            </View>
-          )}
         </View>
       </ScrollView>
 
       {menuAberto && <Pressable style={styles.overlay} onPress={fecharMenu} />}
 
-      <Animated.View
-        style={[
-          styles.drawer,
-          {
-            width: MENU_WIDTH,
-            transform: [{ translateX: slideAnim }],
-          },
-        ]}
-      >
+      <Animated.View style={[styles.drawer, { width: MENU_WIDTH, transform: [{ translateX: slideAnim }] }]}>
         <View>
           <View style={styles.drawerProfile}>
-            <Image
-              style={styles.drawerPhoto}
-              source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil}
-            />
+            <Image style={styles.drawerPhoto} source={aluno?.urlFotoAluno ? { uri: aluno.urlFotoAluno } : testPerfil} />
             <View>
               <Text style={styles.drawerName}>{aluno?.nome || "Usuário"}</Text>
               <Text style={styles.drawerSchool}>Luna App</Text>
@@ -438,41 +421,17 @@ export default function Home({ route }: HomeProps) {
 
           <View style={styles.drawerLine} />
 
-          <TouchableOpacity
-            style={styles.drawerItem}
-            onPress={() => {
-              fecharMenu();
-              navigation.navigate("EditHyperfocus", {
-                userId,
-                hiperfocoAtual: hiperfocoNome,
-              });
-            }}
-          >
+          <TouchableOpacity style={styles.drawerItem} onPress={() => { fecharMenu(); navigation.navigate("EditHyperfocus", { userId, hiperfocoAtual: hiperfocoNome }); }}>
             <Text style={styles.drawerIcon}>☸</Text>
             <Text style={styles.drawerText}>Editar hiperfoco</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.drawerItem}
-            onPress={() => {
-              fecharMenu();
-              navigation.navigate("Feedback");
-            }}
-          >
+          <TouchableOpacity style={styles.drawerItem} onPress={() => { fecharMenu(); navigation.navigate("Feedback"); }}>
             <Text style={styles.drawerIcon}>⚭</Text>
             <Text style={styles.drawerText}>Feedback</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.drawerItem}
-            onPress={() => {
-              fecharMenu();
-              navigation.navigate("ActivitiesProgress", {
-                userId,
-                materiaNome: "Matemática",
-              });
-            }}
-          >
+          <TouchableOpacity style={styles.drawerItem} onPress={() => { fecharMenu(); navigation.navigate("ActivitiesProgress", { userId, materiaNome: "Matemática" }); }}>
             <Text style={styles.drawerIcon}>▣</Text>
             <Text style={styles.drawerText}>Atividades concluídas</Text>
           </TouchableOpacity>

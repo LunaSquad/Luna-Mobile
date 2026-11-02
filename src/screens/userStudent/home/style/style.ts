@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 250,
   },
-
   noClassText: {
     fontFamily: theme.fonts.bold,
     fontSize: 16,
@@ -171,7 +170,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-
   joinClassButton: {
     backgroundColor: theme.colors.primary,
     width: 70,
@@ -179,13 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
   },
-
   joinClassButtonText: {
     fontFamily: theme.fonts.bold,
     fontSize: 13,
@@ -193,16 +185,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
   },
-
   joinOptionsContainer: {
     width: "100%",
     alignItems: "center",
   },
-
   joinOptionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6", // Fundo cinza clarinho
+    backgroundColor: "#F3F4F6",
     width: "85%",
     padding: 16,
     borderRadius: theme.radius.md,
@@ -210,23 +200,53 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     marginBottom: 12,
   },
-
   joinOptionText: {
     fontFamily: theme.fonts.bold,
     fontSize: 15,
     color: theme.colors.primary,
     marginLeft: 12,
   },
-
   cancelJoinButton: {
     marginTop: 8,
     padding: 10,
   },
-
   cancelJoinText: {
     fontFamily: theme.fonts.bold,
     fontSize: 14,
-    color: "#EF4444", // Vermelho para indicar cancelamento/voltar
+    color: "#EF4444",
+  },
+  inputLabel: {
+    fontFamily: theme.fonts.light,
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    marginLeft: '7.5%'
+  },
+  inputConvite: {
+    width: "85%",
+    height: 50,
+    backgroundColor: "#F3F4F6",
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontFamily: theme.fonts.light,
+  },
+  btnConfirmar: {
+    backgroundColor: theme.colors.primary,
+    width: "85%",
+    height: 50,
+    borderRadius: theme.radius.sm,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  btnConfirmarText: {
+    color: "#fff",
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
   },
   /* ================================================= */
 
@@ -327,6 +347,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.primary,
   },
+
+
 });
 
 export default styles;

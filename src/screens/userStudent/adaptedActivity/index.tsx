@@ -37,66 +37,31 @@ type TemaVisualConfig = {
   itemFallback: string;
 };
 
+// MANTEMOS A FUNÇÃO COMO PLANO B / FALLBACK DE TEXTO (Emojis e Itens de Contagem)
 function obterTemaGamificado(hiperfoco: string): TemaVisualConfig {
   const raw = (hiperfoco || "dinossauros").trim().toLowerCase();
 
   const base: TemaVisualConfig = {
-    bgFallback:
-      "https://image.pollinations.ai/prompt/masterpiece%202D%20flat%20vector%20mobile%20game%20background%20illustration%20vibrant%20prehistoric%20valley%20with%20a%20smoking%20volcano%20in%20the%20center%20distance%20sparkling%20waterfall%20lush%20green%20palm%20trees%20warm%20golden%20sunset%20sky%20Khan%20Academy%20Kids%20style?width=1080&height=1920&nologo=true&seed=8088",
-    nomeItemContagem: "dinossauros",
-    emojiInline: "🦖",
-    mascotFallback:
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/T-Rex.png",
-    secondaryMascotFallback:
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Person%20Standing.png",
-    itemFallback:
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Egg.png",
+    bgFallback: "https://image.pollinations.ai/prompt/masterpiece%202D%20flat%20vector%20mobile%20game%20background%20illustration%20vibrant%20prehistoric%20valley%20with%20a%20smoking%20volcano%20in%20the%20center%20distance%20sparkling%20waterfall%20lush%20green%20palm%20trees%20warm%20golden%20sunset%20sky%20Khan%20Academy%20Kids%20style?width=1080&height=1920&nologo=true&seed=8088",
+    nomeItemContagem: "itens",
+    emojiInline: "✨",
+    mascotFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/T-Rex.png",
+    secondaryMascotFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Person%20Standing.png",
+    itemFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Egg.png",
   };
 
   if (raw.includes("video game") || raw.includes("game") || raw.includes("jogo")) {
-    base.nomeItemContagem = "moedas";
-    base.emojiInline = "🪙";
-    base.bgFallback =
-      "https://image.pollinations.ai/prompt/masterpiece%2016-bit%20pixel%20art%20retro%20arcade%20platformer%20night%20landscape%20vibrant%20neon%20purple%20mountains%20floating%20pixel%20grass%20platforms%20golden%20coins%20big%20cyan%20synthwave%20moon?width=1080&height=1920&nologo=true&seed=8088";
-    base.mascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Robot.png";
-    base.secondaryMascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Video%20Game.png";
-    base.itemFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Coin.png";
+    base.nomeItemContagem = "moedas"; base.emojiInline = "🪙";
   } else if (raw.includes("espaço") || raw.includes("espaco") || raw.includes("astronauta") || raw.includes("planeta")) {
-    base.nomeItemContagem = "estrelas";
-    base.emojiInline = "🚀";
-    base.bgFallback =
-      "https://image.pollinations.ai/prompt/masterpiece%20vibrant%202D%20vector%20outer%20space%20game%20background%20glowing%20neon%20Saturn%20planet%20colorful%20nebula%20bright%20stars?width=1080&height=1920&nologo=true&seed=8088";
-    base.mascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png";
-    base.secondaryMascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Ringed%20Planet.png";
-    base.itemFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png";
+    base.nomeItemContagem = "estrelas"; base.emojiInline = "🚀";
   } else if (raw.includes("carro") || raw.includes("corrida")) {
-    base.nomeItemContagem = "carrinhos";
-    base.emojiInline = "🏎️";
-    base.bgFallback =
-      "https://image.pollinations.ai/prompt/masterpiece%20vibrant%202D%20vector%20cartoon%20racing%20track%20stadium%20landscape%20green%20hills%20sunny%20blue%20sky?width=1080&height=1920&nologo=true&seed=8088";
-    base.mascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Racing%20Car.png";
-    base.secondaryMascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Trophy.png";
-    base.itemFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sport%20Utility%20Vehicle.png";
+    base.nomeItemContagem = "carrinhos"; base.emojiInline = "🏎️";
   } else if (raw.includes("futebol") || raw.includes("bola") || raw.includes("esporte")) {
-    base.nomeItemContagem = "bolas";
-    base.emojiInline = "⚽";
-    base.bgFallback =
-      "https://image.pollinations.ai/prompt/masterpiece%202D%20flat%20vector%20soccer%20stadium%20green%20grass%20field%20sunny%20sky%20cartoon%20game%20background?width=1080&height=1920&nologo=true&seed=8088";
-    base.mascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Soccer%20Ball.png";
-    base.secondaryMascotFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Trophy.png";
-    base.itemFallback =
-      "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Goal%20Net.png";
+    base.nomeItemContagem = "bolas"; base.emojiInline = "⚽";
+  } else if (raw.includes("borboleta")) {
+    base.nomeItemContagem = "borboletas"; base.emojiInline = "🦋";
+  } else if (raw.includes("dinossauro")) {
+    base.nomeItemContagem = "dinossauros"; base.emojiInline = "🦖";
   }
 
   return base;
@@ -139,17 +104,7 @@ function extrairNumerosDoTextoPortugues(texto: string): number[] {
   }
 
   const mapaPalavras: Record<string, number> = {
-    dois: 2,
-    duas: 2,
-    tres: 3,
-    três: 3,
-    quatro: 4,
-    cinco: 5,
-    seis: 6,
-    sete: 7,
-    oito: 8,
-    nove: 9,
-    dez: 10,
+    dois: 2, duas: 2, tres: 3, três: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10,
   };
 
   const tokens = texto.toLowerCase().replace(/[\,\.\!\?\:\;\(\)\[\]]/g, " ").split(/\s+/);
@@ -186,6 +141,7 @@ function decorarTextoComFiguras(texto: string, emojiTema: string): string {
     [/\b(estrelas|estrela)\b/gi, `$1 ⭐`],
     [/\b(carrinhos|carrinho|carros|carro)\b/gi, `$1 🏎️`],
     [/\b(bolas|bola)\b/gi, `$1 ⚽`],
+    [/\b(borboletas|borboleta)\b/gi, `$1 🦋`],
   ];
 
   for (const [regex, subst] of substituicoes) {
@@ -239,7 +195,12 @@ export default function AdaptedActivityScreen() {
   const [loading, setLoading] = useState(true);
   const [salvandoRespostas, setSalvandoRespostas] = useState(false);
   const [planoAdaptado, setPlanoAdaptado] = useState<any>(null);
+
+  // ARMAZENANDO AS IMAGENS REAIS VINDAS DO MONGODB/POLLINATIONS
   const [bgCustomizado, setBgCustomizado] = useState<string>("");
+  const [mascoteCustomizado, setMascoteCustomizado] = useState<string>("");
+  const [itemCustomizado, setItemCustomizado] = useState<string>("");
+
   const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
 
   const [etapaIndex, setEtapaIndex] = useState(0);
@@ -527,8 +488,12 @@ export default function AdaptedActivityScreen() {
         const dataIA = await respIA.json();
         setPlanoAdaptado(dataIA.plano_adaptado);
 
-        const temaCfg = obterTemaGamificado(String(hiperfoco));
-        setBgCustomizado(temaCfg.bgFallback);
+        // A MÁGICA ACONTECE AQUI: PEGAR AS IMAGENS DO BANCO DE DADOS (assetsVisuais)
+        if (dataIA.assets && dataIA.assets.length >= 4) {
+          setBgCustomizado(dataIA.assets[0]);
+          setMascoteCustomizado(dataIA.assets[1]);
+          setItemCustomizado(dataIA.assets[2]);
+        }
 
         let encontrouSubmissao = false;
         if (userId && planoId) {
@@ -749,9 +714,11 @@ export default function AdaptedActivityScreen() {
   };
 
   const tema = useMemo(() => obterTemaGamificado(hiperfocoAluno), [hiperfocoAluno]);
+
+  // PRIORIZA A IMAGEM DO BANCO, SE NÃO TIVER, USA O FALLBACK DA FUNÇÃO
   const bgUri = bgCustomizado || tema.bgFallback;
-  const figuraPrincipal = tema.mascotFallback;
-  const figuraSecundaria = tema.secondaryMascotFallback;
+  const figuraPrincipal = mascoteCustomizado || tema.mascotFallback;
+  const figuraSecundaria = itemCustomizado || tema.secondaryMascotFallback;
 
   if (loading) {
     return (
@@ -946,7 +913,7 @@ export default function AdaptedActivityScreen() {
                   <View style={styles.timelineLine} />
                   <MaterialIcons name="arrow-forward" size={24} color={theme.primaryGreen} style={{ marginLeft: -8 }} />
                 </View>
-                <Image source={{ uri: tema.itemFallback }} style={styles.bannerIcon} resizeMode="contain" />
+                <Image source={{ uri: figuraSecundaria }} style={styles.bannerIcon} resizeMode="contain" />
               </View>
 
               {topicosExplicacao.map((t: any, i: number) => (
