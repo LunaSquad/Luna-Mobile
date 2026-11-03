@@ -18,6 +18,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import API_BASE_URL from "../../../services/ip";
+import { preAdaptarTudoEmSegundoPlano } from "../../../services/iaBackgroundservice";
 
 import styles from "./style/style";
 
@@ -255,6 +256,9 @@ export default function Home({ route }: HomeProps) {
       const data = await response.json();
 
       if (response.ok || data.ok) {
+        if (userId) {
+          preAdaptarTudoEmSegundoPlano(userId);
+        }
         Alert.alert("Sucesso!", "Você entrou na turma com sucesso.");
         setInserindoLink(false);
         setMostrarOpcoesTurma(false);

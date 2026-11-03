@@ -8,11 +8,23 @@ MAPA_SIGLAS = {
     "MAT": ["matematica", "mat"],
     "GEO": ["geografia", "geo"],
     "HIS": ["historia", "his"],
+    "CIE": ["ciencias", "ciencia", "cie"],
 }
 
 
 def find_lesson_plans_by_subject(materia_id: str):
-    planos = list(planos_collection.find({"materiaID": materia_id}))
+    oid_mat = tentar_object_id(materia_id)
+    valores = [oid_mat, materia_id] if oid_mat else [materia_id]
+    planos = list(
+        planos_collection.find(
+            {
+                "$or": [
+                    {"materiaID": {"$in": valores}},
+                    {"materiaId": {"$in": valores}},
+                ]
+            }
+        )
+    )
 
     for plano in planos:
         plano["idPlano"] = str(plano["_id"])
@@ -46,12 +58,12 @@ def tentar_object_id(valor: str):
 
 
 def buscar_ids_materia_por_sigla(db, sigla: str):
-    chave = sigla.upper().strip()
+    chave = normalizar_texto(sigla).upper().strip()
     termos = MAPA_SIGLAS.get(chave, [normalizar_texto(chave)])
     ids_encontrados = []
 
     for nome_col in db.list_collection_names():
-        if nome_col in ("planos", "lesson_plans", "lessonPlans"):
+        if nome_col in ("planos", "planos_de_aula", "lesson_plans", "lessonPlans"):
             continue
         colecao = db[nome_col]
         for doc in colecao.find():
@@ -73,10 +85,20 @@ def buscar_turma_do_aluno(db, user_id: str):
         return []
 
     oid_user = tentar_object_id(user_id)
-    criterios_busca = [{"_id": user_id}, {"userID": user_id}, {"userId": user_id}]
+    criterios_busca = [
+        {"_id": user_id},
+        {"usuarioId": user_id},
+        {"userID": user_id},
+        {"userId": user_id},
+    ]
     if oid_user:
         criterios_busca.extend(
-            [{"_id": oid_user}, {"userID": oid_user}, {"userId": oid_user}]
+            [
+                {"_id": oid_user},
+                {"usuarioId": oid_user},
+                {"userID": oid_user},
+                {"userId": oid_user},
+            ]
         )
 
     for nome_col in ("alunos", "students", "users", "usuarios"):
@@ -84,15 +106,16 @@ def buscar_turma_do_aluno(db, user_id: str):
             aluno = db[nome_col].find_one({"$or": criterios_busca})
             if aluno:
                 turma = (
-                    aluno.get("turmaID")
-                    or aluno.get("turmaId")
+                    aluno.get("turmaId")
+                    or aluno.get("turmaID")
+                    or aluno.get("codTurma")
                     or aluno.get("idTurma")
                     or aluno.get("turma")
                 )
                 if isinstance(turma, dict):
-                    turma = turma.get("_id") or turma.get("id")
+                    turma = turma.get("_id") or turma.get("id") or turma.get("$oid")
                 if turma:
                     oid_t = tentar_object_id(str(turma))
-                    return [oid_t, str(turma)] if oid_t else [turma]
+                    return [oid_t, str(turma)] if oid_t else [str(turma)]
 
     return []

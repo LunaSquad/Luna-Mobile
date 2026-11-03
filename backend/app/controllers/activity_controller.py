@@ -8,6 +8,7 @@ from app.models.activity_model import (
     find_activity_answers,
     find_completed_activities_by_student,
 )
+from app.models.student_model import serialize_mongo
 from app.schemas.activity_schema import SubmissaoAtividadeRequest
 
 
@@ -48,8 +49,7 @@ def obter_resposta_atividade(aluno_id: str, plano_id: str):
         if not doc:
             return {"ok": False, "atividade": None}
 
-        doc["_id"] = str(doc["_id"])
-        return {"ok": True, "atividade": doc}
+        return {"ok": True, "atividade": serialize_mongo(doc)}
     except Exception:
         traceback.print_exc()
         raise HTTPException(
@@ -59,10 +59,12 @@ def obter_resposta_atividade(aluno_id: str, plano_id: str):
 
 def listar_atividades_concluidas_aluno(aluno_id: str):
     try:
-        cursor = find_completed_activities_by_student(aluno_id)
-        planos_concluidos = [
-            str(doc.get("planoID")) for doc in cursor if doc.get("planoID")
-        ]
+        docs = find_completed_activities_by_student(aluno_id)
+        planos_concluidos = []
+        for doc in docs:
+            pid = doc.get("planoID") or doc.get("planoId") or doc.get("planoOrigemID")
+            if pid and str(pid) not in planos_concluidos:
+                planos_concluidos.append(str(pid))
         return {"ok": True, "planosConcluidos": planos_concluidos}
     except Exception:
         traceback.print_exc()

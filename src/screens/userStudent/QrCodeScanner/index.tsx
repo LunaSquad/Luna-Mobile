@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } fr
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
-import API_BASE_URL from "../../../services/ip"; // Ajuste o caminho se necessário
+import API_BASE_URL from "../../../services/ip";
+import { preAdaptarTudoEmSegundoPlano } from "../../../services/iaBackgroundservice";
 
 export default function QrCodeScanner() {
     const navigation = useNavigation<any>();
@@ -66,6 +67,9 @@ export default function QrCodeScanner() {
             const respData = await response.json();
 
             if (response.ok || respData.ok) {
+                if (userId) {
+                    preAdaptarTudoEmSegundoPlano(userId);
+                }
                 Alert.alert("Sucesso!", "Você entrou na turma com sucesso.", [
                     { text: "OK", onPress: () => navigation.goBack() },
                 ]);

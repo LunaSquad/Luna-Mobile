@@ -17,6 +17,7 @@ from app.models.activity_model import (
     delete_activity_by_id,
     insert_activity,
     delete_activities_by_student,
+    update_activity_assets,
 )
 from app.models.student_model import (
     buscar_aluno_flexivel,
@@ -49,26 +50,35 @@ def serialize_mongo(document):
     return document
 
 
-def assets_sao_transparentes_atuais(atuais: list[str]) -> bool:
+def assets_estao_no_cloudinary(atuais: list[str]) -> bool:
     if len(atuais) < 4:
         return False
-    return "Animated-Fluent-Emojis" in atuais[1]
+    return all(isinstance(u, str) and "res.cloudinary.com" in u for u in atuais[:4])
 
 
 def garantir_assets_do_aluno(
     aluno_id: str, hiperfoco: str, forcar: bool = False
 ) -> list[str]:
     aluno = buscar_aluno_flexivel(aluno_id)
+    hiperfoco_limpo = (hiperfoco or "dinossauros").strip()
+
     if aluno and not forcar:
+        hiperfoco_aluno_banco = aluno.get("hiperfoco")
+        if isinstance(hiperfoco_aluno_banco, dict):
+            hiperfoco_aluno_banco = hiperfoco_aluno_banco.get("nome")
+        hiperfoco_aluno_str = str(hiperfoco_aluno_banco or "").strip().lower()
+
         atuais = [
             u
             for u in (aluno.get("assetsVisuais") or [])
             if isinstance(u, str) and u.startswith("http")
         ]
-        if assets_sao_transparentes_atuais(atuais):
+        if assets_estao_no_cloudinary(atuais) and (
+            not hiperfoco_aluno_str or hiperfoco_aluno_str == hiperfoco_limpo.lower()
+        ):
             return atuais
 
-    novas_urls = gerar_assets_visuais_ia(hiperfoco)
+    novas_urls = gerar_assets_visuais_ia(hiperfoco_limpo)
 
     if aluno and novas_urls and len(novas_urls) >= 4:
         update_student_visual_assets(aluno["_id"], novas_urls)
@@ -100,10 +110,17 @@ def extrair_texto_pdf_da_url_ou_local(url_pdf: Optional[str]) -> dict:
     return plano_local
 
 
-def cache_esta_atualizado(doc: dict) -> bool:
+def cache_esta_atualizado(doc: dict, hiperfoco_alvo: str) -> bool:
     if not doc:
         return False
     if doc.get("versaoCache") != VERSAO_ATUAL_CACHE:
+        return False
+    hiperfoco_salvo = str(doc.get("hiperfoco") or "").strip().lower()
+    if (
+        hiperfoco_salvo
+        and hiperfoco_alvo
+        and hiperfoco_salvo != hiperfoco_alvo.strip().lower()
+    ):
         return False
     if "topicosExplicacao" not in doc or not isinstance(
         doc.get("topicosExplicacao"), list
@@ -117,7 +134,7 @@ def cache_esta_atualizado(doc: dict) -> bool:
 
 def adaptar_plano(body: AdaptarPlanoComOpcoesRequest):
     try:
-        hiperfoco = body.hiperfoco or "dinossauros"
+        hiperfoco = (body.hiperfoco or "dinossauros").strip()
         assets_garantidos = garantir_assets_do_aluno(
             body.alunoId, hiperfoco, bool(body.forcarRegeneracao)
         )
@@ -127,8 +144,10 @@ def adaptar_plano(body: AdaptarPlanoComOpcoesRequest):
         if (
             atividade_salva
             and not body.forcarRegeneracao
-            and cache_esta_atualizado(atividade_salva)
+            and cache_esta_atualizado(atividade_salva, hiperfoco)
         ):
+            if atividade_salva.get("assetsVisuais") != assets_garantidos:
+                update_activity_assets(atividade_salva["_id"], assets_garantidos)
             normalizada = normalizar_plano_adaptado(atividade_salva, hiperfoco)
             normalizada["assetsVisuais"] = assets_garantidos
             return {

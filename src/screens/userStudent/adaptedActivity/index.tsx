@@ -37,31 +37,54 @@ type TemaVisualConfig = {
   itemFallback: string;
 };
 
-// MANTEMOS A FUNÇÃO COMO PLANO B / FALLBACK DE TEXTO (Emojis e Itens de Contagem)
 function obterTemaGamificado(hiperfoco: string): TemaVisualConfig {
   const raw = (hiperfoco || "dinossauros").trim().toLowerCase();
+  const promptBg = encodeURIComponent(
+    `masterpiece vibrant 2D flat vector mobile game background landscape themed around ${raw}, crisp vector art, high contrast, no text`
+  );
+  const promptMascot = encodeURIComponent(
+    `cute 2D cartoon main character of ${raw}, isolated on white background, game sticker`
+  );
+  const promptSec = encodeURIComponent(
+    `cute 2D cartoon secondary character of ${raw}, isolated on white background, game sticker`
+  );
+  const promptItem = encodeURIComponent(
+    `cute 2D cartoon collectible item of ${raw}, isolated on white background, game sticker`
+  );
 
   const base: TemaVisualConfig = {
-    bgFallback: "https://image.pollinations.ai/prompt/masterpiece%202D%20flat%20vector%20mobile%20game%20background%20illustration%20vibrant%20prehistoric%20valley%20with%20a%20smoking%20volcano%20in%20the%20center%20distance%20sparkling%20waterfall%20lush%20green%20palm%20trees%20warm%20golden%20sunset%20sky%20Khan%20Academy%20Kids%20style?width=1080&height=1920&nologo=true&seed=8088",
-    nomeItemContagem: "itens",
+    bgFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptBg}?width=1080&height=1920&nologo=true&seed=8088`,
+    nomeItemContagem: raw || "itens",
     emojiInline: "✨",
-    mascotFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/T-Rex.png",
-    secondaryMascotFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Person%20Standing.png",
-    itemFallback: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Egg.png",
+    mascotFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptMascot}?width=512&height=512&nologo=true&seed=8090`,
+    secondaryMascotFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptSec}?width=512&height=512&nologo=true&seed=8091`,
+    itemFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptItem}?width=512&height=512&nologo=true&seed=8092`,
   };
 
-  if (raw.includes("video game") || raw.includes("game") || raw.includes("jogo")) {
-    base.nomeItemContagem = "moedas"; base.emojiInline = "🪙";
+  if (raw.includes("borboleta") || raw.includes("inseto") || raw.includes("jardim") || raw.includes("flor")) {
+    base.nomeItemContagem = "borboletas";
+    base.emojiInline = "🦋";
+  } else if (raw.includes("dino") || raw.includes("t-rex") || raw.includes("jurassic") || raw.includes("jurássic")) {
+    base.nomeItemContagem = "dinossauros";
+    base.emojiInline = "🦖";
+  } else if (raw.includes("video game") || raw.includes("game") || raw.includes("jogo")) {
+    base.nomeItemContagem = "moedas";
+    base.emojiInline = "🪙";
   } else if (raw.includes("espaço") || raw.includes("espaco") || raw.includes("astronauta") || raw.includes("planeta")) {
-    base.nomeItemContagem = "estrelas"; base.emojiInline = "🚀";
+    base.nomeItemContagem = "estrelas";
+    base.emojiInline = "🚀";
   } else if (raw.includes("carro") || raw.includes("corrida")) {
-    base.nomeItemContagem = "carrinhos"; base.emojiInline = "🏎️";
+    base.nomeItemContagem = "carrinhos";
+    base.emojiInline = "🏎️";
   } else if (raw.includes("futebol") || raw.includes("bola") || raw.includes("esporte")) {
-    base.nomeItemContagem = "bolas"; base.emojiInline = "⚽";
-  } else if (raw.includes("borboleta")) {
-    base.nomeItemContagem = "borboletas"; base.emojiInline = "🦋";
-  } else if (raw.includes("dinossauro")) {
-    base.nomeItemContagem = "dinossauros"; base.emojiInline = "🦖";
+    base.nomeItemContagem = "bolas";
+    base.emojiInline = "⚽";
+  } else if (raw.includes("minecraft")) {
+    base.nomeItemContagem = "blocos";
+    base.emojiInline = "⛏️";
+  } else if (raw.includes("princesa") || raw.includes("unicórnio") || raw.includes("unicornio")) {
+    base.nomeItemContagem = "coroas";
+    base.emojiInline = "👑";
   }
 
   return base;
@@ -75,13 +98,30 @@ function formatarTempo(totalSegundos: number) {
 
 function detectarOperadorMatematico(pergunta: string): "+" | "-" | "×" | "÷" {
   const p = (pergunta || "").toLowerCase();
-  if (/\d+\s*\-\s*\d+/.test(p) || p.includes("menos") || p.includes("tirou") || p.includes("perdeu") || p.includes("restaram") || p.includes("fugiram")) {
+  if (
+    RegExp("\\d+\\s*\\-\\s*\\d+").test(p) ||
+    p.includes("menos") ||
+    p.includes("tirou") ||
+    p.includes("perdeu") ||
+    p.includes("restaram") ||
+    p.includes("fugiram")
+  ) {
     return "-";
   }
-  if (/\d+\s*[\*x×]\s*\d+/.test(p) || p.includes("vezes") || p.includes("multiplicado")) {
+  if (
+    RegExp("\\d+\\s*[\\*x×]\\s*\\d+").test(p) ||
+    p.includes("vezes") ||
+    p.includes("multiplicado") ||
+    p.includes("cada ") ||
+    p.includes("grupos de")
+  ) {
     return "×";
   }
-  if (/\d+\s*[\/÷]\s*\d+/.test(p) || p.includes("dividido") || p.includes("repartiu")) {
+  if (
+    RegExp("\\d+\\s*[÷]\\s*\\d+").test(p) ||
+    p.includes("dividido") ||
+    p.includes("repartiu")
+  ) {
     return "÷";
   }
   return "+";
@@ -90,12 +130,12 @@ function detectarOperadorMatematico(pergunta: string): "+" | "-" | "×" | "÷" {
 function extrairNumerosDoTextoPortugues(texto: string): number[] {
   if (!texto) return [];
 
-  const expressaoExplicita = texto.match(/(\d+)\s*[\+\-\*\/x×÷]\s*(\d+)/i);
+  const expressaoExplicita = texto.match(RegExp("(\\d+)\\s*[\\+\\-\\*x×÷]\\s*(\\d+)", "i"));
   if (expressaoExplicita) {
     return [parseInt(expressaoExplicita[1], 10), parseInt(expressaoExplicita[2], 10)];
   }
 
-  const digitosExplicitos = Array.from(texto.matchAll(/\b(\d+)\b/g))
+  const digitosExplicitos = Array.from(texto.matchAll(RegExp("\\b(\\d+)\\b", "g")))
     .map((m) => parseInt(m[1], 10))
     .filter((val) => val >= 0 && val <= 100);
 
@@ -104,14 +144,29 @@ function extrairNumerosDoTextoPortugues(texto: string): number[] {
   }
 
   const mapaPalavras: Record<string, number> = {
-    dois: 2, duas: 2, tres: 3, três: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10,
+    um: 1,
+    uma: 1,
+    dois: 2,
+    duas: 2,
+    tres: 3,
+    três: 3,
+    quatro: 4,
+    cinco: 5,
+    seis: 6,
+    sete: 7,
+    oito: 8,
+    nove: 9,
+    dez: 10,
   };
 
-  const tokens = texto.toLowerCase().replace(/[\,\.\!\?\:\;\(\)\[\]]/g, " ").split(/\s+/);
+  const tokens = texto
+    .toLowerCase()
+    .replace(RegExp("[\\,\\.\\!\\?\\:\\;\\(\\)\\[\\]]", "g"), " ")
+    .split(RegExp("\\s+"));
   const encontrados: number[] = [];
 
   for (const tk of tokens) {
-    if (/^\d+$/.test(tk)) {
+    if (RegExp("^\\d+$").test(tk)) {
       const val = parseInt(tk, 10);
       if (val >= 0 && val <= 100) encontrados.push(val);
     } else if (mapaPalavras[tk] !== undefined) {
@@ -133,21 +188,36 @@ function decorarTextoComFiguras(texto: string, emojiTema: string): string {
   if (!texto) return "";
   let resultado = texto;
   const substituicoes: Array<[RegExp, string]> = [
-    [/\b(t-rex|tiranossauro|dinossauros|dinossauro|dinos|dino)\b/gi, `$1 🦖`],
-    [/\b(brontossauros|brontossauro|braquiossauro|sauropode|pescoçudo|triceratops|estegossauro|velociraptor)\b/gi, `$1 🦕`],
-    [/\b(ovinhos|ovinho|ovos|ovo)\b/gi, `$1 🥚`],
-    [/\b(moedinhas|moedinha|moedas|moeda)\b/gi, `$1 🪙`],
-    [/\b(foguetes|foguete)\b/gi, `$1 🚀`],
-    [/\b(estrelas|estrela)\b/gi, `$1 ⭐`],
-    [/\b(carrinhos|carrinho|carros|carro)\b/gi, `$1 🏎️`],
-    [/\b(bolas|bola)\b/gi, `$1 ⚽`],
-    [/\b(borboletas|borboleta)\b/gi, `$1 🦋`],
+    [RegExp("\\b(borboletas|borboleta)\\b", "gi"), "$1 🦋"],
+    [RegExp("\\b(flores|flor|margarida|margaridas)\\b", "gi"), "$1 🌸"],
+    [RegExp("\\b(t-rex|tiranossauro|dinossauros|dinossauro|dinos|dino)\\b", "gi"), "$1 🦖"],
+    [
+      RegExp(
+        "\\b(brontossauros|brontossauro|braquiossauro|sauropode|pescoçudo|triceratops|estegossauro|velociraptor)\\b",
+        "gi"
+      ),
+      "$1 🦕",
+    ],
+    [RegExp("\\b(ovinhos|ovinho|ovos|ovo)\\b", "gi"), "$1 🥚"],
+    [RegExp("\\b(moedinhas|moedinha|moedas|moeda)\\b", "gi"), "$1 🪙"],
+    [RegExp("\\b(foguetes|foguete)\\b", "gi"), "$1 🚀"],
+    [RegExp("\\b(estrelas|estrela)\\b", "gi"), "$1 ⭐"],
+    [RegExp("\\b(carrinhos|carrinho|carros|carro)\\b", "gi"), "$1 🏎️"],
+    [RegExp("\\b(bolas|bola)\\b", "gi"), "$1 ⚽"],
   ];
 
   for (const [regex, subst] of substituicoes) {
     resultado = resultado.replace(regex, subst);
   }
   return resultado;
+}
+
+function limparPrefixoOpcao(texto: string): string {
+  return (texto || "")
+    .trim()
+    .replace(RegExp("^(\\d+[\\.\\)\\-]\\s*|[a-eA-E][\\.\\)\\-]\\s*)"), "")
+    .trim()
+    .toLowerCase();
 }
 
 type PassoQuestao = {
@@ -196,10 +266,11 @@ export default function AdaptedActivityScreen() {
   const [salvandoRespostas, setSalvandoRespostas] = useState(false);
   const [planoAdaptado, setPlanoAdaptado] = useState<any>(null);
 
-  // ARMAZENANDO AS IMAGENS REAIS VINDAS DO MONGODB/POLLINATIONS
   const [bgCustomizado, setBgCustomizado] = useState<string>("");
   const [mascoteCustomizado, setMascoteCustomizado] = useState<string>("");
+  const [secundarioCustomizado, setSecundarioCustomizado] = useState<string>("");
   const [itemCustomizado, setItemCustomizado] = useState<string>("");
+  const [comentarioProfessor, setComentarioProfessor] = useState<string>("");
 
   const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
 
@@ -222,8 +293,13 @@ export default function AdaptedActivityScreen() {
     if (Array.isArray(planoAdaptado?.topicosExplicacao) && planoAdaptado.topicosExplicacao.length > 0) {
       return planoAdaptado.topicosExplicacao;
     }
-    const textoBruto = String(planoAdaptado?.explicacaoTeorica || planoAdaptado?.explicacaoAdaptada || "").trim();
-    const blocos = textoBruto.split(/\n\n+/).map((b: string) => b.trim()).filter(Boolean);
+    const textoBruto = String(
+      planoAdaptado?.explicacaoTeorica || planoAdaptado?.explicacaoAdaptada || ""
+    ).trim();
+    const blocos = textoBruto
+      .split(RegExp("\\n\\n+"))
+      .map((b: string) => b.trim())
+      .filter(Boolean);
     if (blocos.length === 0) return [];
     return blocos.map((bloco: string, idx: number) => ({
       subtitulo: idx === 0 ? "Explicação" : `Parte ${idx + 1}`,
@@ -265,7 +341,9 @@ export default function AdaptedActivityScreen() {
         if (!perguntaStr) return null;
 
         let respFinal = String(q?.respostaCorreta || "").trim();
-        let alts: string[] = Array.isArray(q?.alternativas) ? q.alternativas.map((a: any) => String(a).trim()) : [];
+        let alts: string[] = Array.isArray(q?.alternativas)
+          ? q.alternativas.map((a: any) => String(a).trim())
+          : [];
 
         const ehDissertativaReal =
           String(q?.tipo || "").toLowerCase() === "dissertativa" || alts.length === 0;
@@ -273,11 +351,12 @@ export default function AdaptedActivityScreen() {
         if (!ehDissertativaReal) {
           const numerosExtraidos = extrairNumerosDoTextoPortugues(perguntaStr);
           const op = detectarOperadorMatematico(perguntaStr);
-          const alternativasSaoNumericas = alts.length > 0 && alts.every((a: string) => /^\d+$/.test(a));
+          const alternativasSaoNumericas =
+            alts.length > 0 && alts.every((a: string) => RegExp("^\\d+$").test(a));
           const ehPerguntaCalculo =
-            /\d+\s*[\+\-\*\/x×÷]/.test(perguntaStr) ||
+            RegExp("\\d+\\s*[\\+\\-\\*x×÷]").test(perguntaStr) ||
             alternativasSaoNumericas ||
-            numerosExtraidos.length >= 2;
+            (numerosExtraidos.length >= 2 && RegExp("^\\d+$").test(respFinal));
 
           if (ehPerguntaCalculo) {
             const valorCalculado =
@@ -285,7 +364,7 @@ export default function AdaptedActivityScreen() {
                 ? calcularResultadoOperacao(numerosExtraidos[0], numerosExtraidos[1], op)
                 : null;
 
-            const respEhNumeroValido = /^\d+$/.test(respFinal);
+            const respEhNumeroValido = RegExp("^\\d+$").test(respFinal);
 
             if (!respEhNumeroValido || !alts.includes(respFinal)) {
               if (valorCalculado !== null) {
@@ -310,15 +389,21 @@ export default function AdaptedActivityScreen() {
                 if (opcoes.size < 3) opcoes.add(String(c));
               }
               alts = Array.from(opcoes).sort((a: string, b: string) => Number(a) - Number(b));
-            } else if (!alts.includes(respFinal) && /^\d+$/.test(respFinal)) {
+            } else if (!alts.includes(respFinal) && RegExp("^\\d+$").test(respFinal)) {
               alts[0] = respFinal;
               alts.sort((a: string, b: string) => Number(a) - Number(b));
             }
           } else {
-            const respExisteNasAlternativas = alts.some(
-              (a) => a.toLowerCase() === respFinal.toLowerCase()
+            const respSemPrefixo = limparPrefixoOpcao(respFinal);
+            const alternativaEquivalente = alts.find(
+              (a) =>
+                a.toLowerCase() === respFinal.toLowerCase() ||
+                limparPrefixoOpcao(a) === respSemPrefixo ||
+                a.toLowerCase().includes(respSemPrefixo)
             );
-            if (!respExisteNasAlternativas && alts.length > 0) {
+            if (alternativaEquivalente) {
+              respFinal = alternativaEquivalente;
+            } else if (alts.length > 0) {
               respFinal = alts[0];
             }
           }
@@ -391,17 +476,20 @@ export default function AdaptedActivityScreen() {
     return `${materiaNome || ""} ${planoAdaptado?.disciplina || ""} ${planoAdaptado?.temaDetectado || ""} ${planoAdaptado?.materia || ""} ${planoTitulo || ""} ${planoDescricao || ""} ${questaoAtual?.pergunta || ""}`
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(RegExp("[\\u0300-\\u036f]", "g"), "");
   }, [materiaNome, planoAdaptado, planoTitulo, planoDescricao, questaoAtual]);
 
   const ehQuestaoMatematica = useMemo(() => {
     const textoPergunta = (questaoAtual?.pergunta || "").toLowerCase();
-    const temSinalMatematico = /\d+\s*[\+\-\*\/x×÷]/.test(textoPergunta);
-    const temPalavrasCalculo = /(soma|somar|juntar|mais|menos|subtrair|restaram|quantos|total|ao todo|calcul|adic|multipl|divid)/i.test(textoPergunta);
+    const temSinalMatematico = RegExp("\\d+\\s*[\\+\\-\\*x×÷]").test(textoPergunta);
+    const temPalavrasCalculo = RegExp(
+      "(soma|somar|juntar|mais|menos|subtrair|restaram|quantos|total|ao todo|calcul|adic|multipl|divid|vezes)",
+      "i"
+    ).test(textoPergunta);
     const alternativasNumericas =
       questaoAtual?.alternativas &&
       questaoAtual.alternativas.length > 0 &&
-      questaoAtual.alternativas.every((a) => /^\d+(\s+\w+)?$/.test(a.trim()));
+      questaoAtual.alternativas.every((a) => RegExp("^\\d+(\\s+\\w+)?$").test(a.trim()));
 
     const contextoEhMat =
       contextoCompletoTexto.includes("mat") ||
@@ -418,9 +506,19 @@ export default function AdaptedActivityScreen() {
     if (planoAdaptado?.temaDetectado) return planoAdaptado.temaDetectado;
     if (planoAdaptado?.materia) return planoAdaptado.materia;
     if (ehQuestaoMatematica) return "Matemática";
-    if (contextoCompletoTexto.includes("hist") || contextoCompletoTexto.includes("idade media") || contextoCompletoTexto.includes("tempo")) return "História";
+    if (
+      contextoCompletoTexto.includes("hist") ||
+      contextoCompletoTexto.includes("idade media") ||
+      contextoCompletoTexto.includes("tempo")
+    )
+      return "História";
     if (contextoCompletoTexto.includes("geo")) return "Geografia";
-    if (contextoCompletoTexto.includes("port") || contextoCompletoTexto.includes("texto") || contextoCompletoTexto.includes("leitura")) return "Português";
+    if (
+      contextoCompletoTexto.includes("port") ||
+      contextoCompletoTexto.includes("texto") ||
+      contextoCompletoTexto.includes("leitura")
+    )
+      return "Português";
     if (contextoCompletoTexto.includes("cien")) return "Ciências";
     return planoTitulo || "Atividade";
   }, [materiaNome, planoAdaptado, ehQuestaoMatematica, contextoCompletoTexto, planoTitulo]);
@@ -459,6 +557,7 @@ export default function AdaptedActivityScreen() {
       try {
         setLoading(true);
         let hiperfoco = "dinossauros";
+        let assetsAluno: string[] = [];
 
         try {
           const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${userId}`);
@@ -468,9 +567,15 @@ export default function AdaptedActivityScreen() {
             dataAluno.aluno?.hyperfoco?.nome ||
             dataAluno.aluno?.hiperfoco ||
             "dinossauros";
+          if (Array.isArray(dataAluno.aluno?.assetsVisuais)) {
+            assetsAluno = dataAluno.aluno.assetsVisuais;
+          }
         } catch (err) { }
 
-        setHiperfocoAluno(String(hiperfoco));
+        const hiperfocoLimpo = String(hiperfoco).trim();
+        setHiperfocoAluno(hiperfocoLimpo);
+
+        const temaCfg = obterTemaGamificado(hiperfocoLimpo);
 
         const respIA = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
           method: "POST",
@@ -479,7 +584,7 @@ export default function AdaptedActivityScreen() {
             planoId,
             turmaId,
             materiaId,
-            hiperfoco,
+            hiperfoco: hiperfocoLimpo,
             urlPlanoDeAula,
             alunoId: userId,
             forcarRegeneracao: false,
@@ -488,11 +593,24 @@ export default function AdaptedActivityScreen() {
         const dataIA = await respIA.json();
         setPlanoAdaptado(dataIA.plano_adaptado);
 
-        // A MÁGICA ACONTECE AQUI: PEGAR AS IMAGENS DO BANCO DE DADOS (assetsVisuais)
-        if (dataIA.assets && dataIA.assets.length >= 4) {
-          setBgCustomizado(dataIA.assets[0]);
-          setMascoteCustomizado(dataIA.assets[1]);
-          setItemCustomizado(dataIA.assets[2]);
+        const assetsFinais: string[] =
+          (Array.isArray(dataIA.assets) && dataIA.assets.length >= 4
+            ? dataIA.assets
+            : Array.isArray(dataIA.plano_adaptado?.assetsVisuais) &&
+              dataIA.plano_adaptado.assetsVisuais.length >= 4
+              ? dataIA.plano_adaptado.assetsVisuais
+              : assetsAluno) || [];
+
+        if (assetsFinais.length >= 4) {
+          setBgCustomizado(assetsFinais[0] || temaCfg.bgFallback);
+          setMascoteCustomizado(assetsFinais[1] || temaCfg.mascotFallback);
+          setSecundarioCustomizado(assetsFinais[2] || temaCfg.secondaryMascotFallback);
+          setItemCustomizado(assetsFinais[3] || temaCfg.itemFallback);
+        } else {
+          setBgCustomizado(temaCfg.bgFallback);
+          setMascoteCustomizado(temaCfg.mascotFallback);
+          setSecundarioCustomizado(temaCfg.secondaryMascotFallback);
+          setItemCustomizado(temaCfg.itemFallback);
         }
 
         let encontrouSubmissao = false;
@@ -509,6 +627,9 @@ export default function AdaptedActivityScreen() {
                   mapa[r.numeroQuestao] = r;
                 });
                 setRespostasAluno(mapa);
+                if (dataSub.atividade.comentarioProfessor) {
+                  setComentarioProfessor(String(dataSub.atividade.comentarioProfessor));
+                }
                 setAtividadeJaRespondida(true);
                 encontrouSubmissao = true;
               }
@@ -630,9 +751,11 @@ export default function AdaptedActivityScreen() {
 
     if (!opcaoSelecionada) return;
 
-    const sl = opcaoSelecionada.trim().toLowerCase();
-    const cl = (q.respostaCorreta || "").trim().toLowerCase();
-    const acertou = sl === cl || sl.startsWith(`${cl} `) || sl.startsWith(`${cl})`);
+    const sl = limparPrefixoOpcao(opcaoSelecionada);
+    const cl = limparPrefixoOpcao(q.respostaCorreta || "");
+    const acertou =
+      opcaoSelecionada.trim().toLowerCase() === (q.respostaCorreta || "").trim().toLowerCase() ||
+      sl === cl;
 
     const registro: RespostaRegistrada = {
       numeroQuestao: numQ,
@@ -691,17 +814,13 @@ export default function AdaptedActivityScreen() {
       etapaAtual.numeroQuestao === etapaAtual.totalQuestoes;
 
     if (ehUltimaQuestao) {
-      Alert.alert(
-        "Finalizar Atividade",
-        "Deseja mesmo enviar suas respostas?",
-        [
-          { text: "Revisar", style: "cancel" },
-          {
-            text: "Enviar",
-            onPress: salvarRespostasNoBanco,
-          },
-        ]
-      );
+      Alert.alert("Finalizar Atividade", "Deseja mesmo enviar suas respostas?", [
+        { text: "Revisar", style: "cancel" },
+        {
+          text: "Enviar",
+          onPress: salvarRespostasNoBanco,
+        },
+      ]);
       return;
     }
 
@@ -714,11 +833,10 @@ export default function AdaptedActivityScreen() {
   };
 
   const tema = useMemo(() => obterTemaGamificado(hiperfocoAluno), [hiperfocoAluno]);
-
-  // PRIORIZA A IMAGEM DO BANCO, SE NÃO TIVER, USA O FALLBACK DA FUNÇÃO
   const bgUri = bgCustomizado || tema.bgFallback;
   const figuraPrincipal = mascoteCustomizado || tema.mascotFallback;
-  const figuraSecundaria = itemCustomizado || tema.secondaryMascotFallback;
+  const figuraSecundaria = secundarioCustomizado || tema.secondaryMascotFallback;
+  const figuraItem = itemCustomizado || tema.itemFallback;
 
   if (loading) {
     return (
@@ -809,7 +927,15 @@ export default function AdaptedActivityScreen() {
               <Text style={[styles.cardTitle, { textAlign: "center", fontSize: 22, marginBottom: 6 }]}>
                 Atividade Concluída! 🎉
               </Text>
-              <Text style={{ textAlign: "center", color: "#555", marginBottom: 16, fontSize: 15, fontWeight: "700" }}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#555",
+                  marginBottom: 16,
+                  fontSize: 15,
+                  fontWeight: "700",
+                }}
+              >
                 Você acertou {totalAcertos} de {listaQuestoes.length} questões
               </Text>
 
@@ -818,6 +944,15 @@ export default function AdaptedActivityScreen() {
                 style={{ width: 72, height: 72, alignSelf: "center", marginBottom: 12 }}
                 resizeMode="contain"
               />
+
+              {Boolean(comentarioProfessor) && (
+                <View style={styles.reviewCorrectBox}>
+                  <Text style={styles.reviewAnswerLabel}>Comentário do Professor:</Text>
+                  <Text style={[styles.reviewAnswerValue, { color: theme.primaryGreen }]}>
+                    {comentarioProfessor}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <Text style={styles.reviewSectionTitle}>Suas Respostas</Text>
@@ -825,9 +960,13 @@ export default function AdaptedActivityScreen() {
             {listaQuestoes.map((q, idx) => {
               const numQ = idx + 1;
               const respSalva = respostasAluno[numQ];
-              const acertou = respSalva?.acertou;
               const textoRespAluno = respSalva?.respostaAluno || "Não respondida";
               const textoRespCorreta = q.respostaCorreta;
+              const acertou =
+                respSalva !== undefined
+                  ? limparPrefixoOpcao(textoRespAluno) === limparPrefixoOpcao(textoRespCorreta) ||
+                  Boolean(respSalva.acertou)
+                  : false;
 
               return (
                 <View key={numQ} style={styles.reviewCard}>
@@ -877,7 +1016,7 @@ export default function AdaptedActivityScreen() {
                         { color: acertou ? theme.primaryGreen : "#E53935" },
                       ]}
                     >
-                      {/^\d+$/.test(textoRespAluno) && ehQuestaoMatematica
+                      {RegExp("^\\d+$").test(textoRespAluno) && ehQuestaoMatematica
                         ? `${textoRespAluno} ${tema.nomeItemContagem}`
                         : textoRespAluno}
                     </Text>
@@ -887,7 +1026,7 @@ export default function AdaptedActivityScreen() {
                     <View style={styles.reviewCorrectBox}>
                       <Text style={styles.reviewAnswerLabel}>Resposta correta:</Text>
                       <Text style={[styles.reviewAnswerValue, { color: theme.primaryGreen }]}>
-                        {/^\d+$/.test(textoRespCorreta) && ehQuestaoMatematica
+                        {RegExp("^\\d+$").test(textoRespCorreta) && ehQuestaoMatematica
                           ? `${textoRespCorreta} ${tema.nomeItemContagem}`
                           : textoRespCorreta}
                       </Text>
@@ -905,27 +1044,38 @@ export default function AdaptedActivityScreen() {
           <View style={styles.mainCard}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.phaseLabel}>EXPLICAÇÃO DA AULA</Text>
-              <Text style={styles.cardTitle}>{planoAdaptado?.tituloAdaptado || planoTitulo || "Vamos Aprender!"}</Text>
+              <Text style={styles.cardTitle}>
+                {planoAdaptado?.tituloAdaptado || planoTitulo || "Vamos Aprender!"}
+              </Text>
 
               <View style={styles.visualBanner}>
                 <Image source={{ uri: figuraPrincipal }} style={styles.bannerIcon} resizeMode="contain" />
                 <View style={styles.timelineContainer}>
                   <View style={styles.timelineLine} />
-                  <MaterialIcons name="arrow-forward" size={24} color={theme.primaryGreen} style={{ marginLeft: -8 }} />
+                  <MaterialIcons
+                    name="arrow-forward"
+                    size={24}
+                    color={theme.primaryGreen}
+                    style={{ marginLeft: -8 }}
+                  />
                 </View>
-                <Image source={{ uri: figuraSecundaria }} style={styles.bannerIcon} resizeMode="contain" />
+                <Image source={{ uri: figuraItem }} style={styles.bannerIcon} resizeMode="contain" />
               </View>
 
               {topicosExplicacao.map((t: any, i: number) => (
                 <View key={i} style={{ marginBottom: 16 }}>
                   <Text style={styles.topicTitle}>{t.subtitulo}</Text>
-                  <Text style={styles.topicBody}>{decorarTextoComFiguras(t.textoAdaptado, tema.emojiInline)}</Text>
+                  <Text style={styles.topicBody}>
+                    {decorarTextoComFiguras(t.textoAdaptado, tema.emojiInline)}
+                  </Text>
                 </View>
               ))}
 
               <TouchableOpacity
                 style={styles.mainActionButton}
-                onPress={() => (topicosExemplo.length > 0 ? setEtapaIndex(1) : iniciarCronometroEIrParaQuestoes())}
+                onPress={() =>
+                  topicosExemplo.length > 0 ? setEtapaIndex(1) : iniciarCronometroEIrParaQuestoes()
+                }
               >
                 <Text style={styles.mainActionButtonText}>Continuar</Text>
               </TouchableOpacity>
@@ -940,11 +1090,16 @@ export default function AdaptedActivityScreen() {
               {topicosExemplo.map((e: any, i: number) => (
                 <View key={i} style={{ marginBottom: 16 }}>
                   <Text style={styles.topicTitle}>{e.titulo || "Passo a Passo"}</Text>
-                  <Text style={styles.topicBody}>{decorarTextoComFiguras(e.passoAPasso, tema.emojiInline)}</Text>
+                  <Text style={styles.topicBody}>
+                    {decorarTextoComFiguras(e.passoAPasso, tema.emojiInline)}
+                  </Text>
                 </View>
               ))}
 
-              <TouchableOpacity style={styles.mainActionButton} onPress={iniciarCronometroEIrParaQuestoes}>
+              <TouchableOpacity
+                style={styles.mainActionButton}
+                onPress={iniciarCronometroEIrParaQuestoes}
+              >
                 <Text style={styles.mainActionButtonText}>Ir para Atividade</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1014,9 +1169,12 @@ export default function AdaptedActivityScreen() {
               ) : (
                 questaoAtual?.alternativas.map((alt, idx) => {
                   const isSelected = opcaoSelecionada === alt;
-                  const respLimpa = (questaoAtual?.respostaCorreta || "").trim().toLowerCase();
-                  const altLimpa = alt.trim().toLowerCase();
-                  const ehCorreta = altLimpa === respLimpa || altLimpa.startsWith(`${respLimpa} `);
+                  const respLimpa = limparPrefixoOpcao(questaoAtual?.respostaCorreta || "");
+                  const altLimpa = limparPrefixoOpcao(alt);
+                  const ehCorreta =
+                    alt.trim().toLowerCase() ===
+                    (questaoAtual?.respostaCorreta || "").trim().toLowerCase() ||
+                    altLimpa === respLimpa;
 
                   let boxStyle: any = styles.radioBox;
                   let dotStyle: any = styles.radioDotEmpty;
@@ -1026,15 +1184,21 @@ export default function AdaptedActivityScreen() {
                     dotStyle = styles.radioDotFilled;
                   } else if (feedbackExibido) {
                     if (ehCorreta) {
-                      boxStyle = [styles.radioBox, { borderColor: theme.primaryGreen, backgroundColor: "#E7F8EA" }];
+                      boxStyle = [
+                        styles.radioBox,
+                        { borderColor: theme.primaryGreen, backgroundColor: "#E7F8EA" },
+                      ];
                       dotStyle = styles.radioDotFilled;
                     } else if (isSelected && !ehCorreta) {
-                      boxStyle = [styles.radioBox, { borderColor: "#E53935", backgroundColor: "#FFEBEE" }];
+                      boxStyle = [
+                        styles.radioBox,
+                        { borderColor: "#E53935", backgroundColor: "#FFEBEE" },
+                      ];
                       dotStyle = [styles.radioDotEmpty, { borderColor: "#E53935" }];
                     }
                   }
 
-                  const textoExibicao = /^\d+$/.test(alt.trim())
+                  const textoExibicao = RegExp("^\\d+$").test(alt.trim())
                     ? `${alt.trim()} ${tema.nomeItemContagem}`
                     : alt;
 
@@ -1079,7 +1243,8 @@ export default function AdaptedActivityScreen() {
             <TouchableOpacity
               style={[
                 styles.mainActionButton,
-                ((!opcaoSelecionada && !ehDissertativa) || (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
+                ((!opcaoSelecionada && !ehDissertativa) ||
+                  (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
                   !feedbackExibido
                   ? { opacity: 0.55 }
                   : {},
@@ -1087,7 +1252,8 @@ export default function AdaptedActivityScreen() {
               activeOpacity={0.8}
               disabled={
                 salvandoRespostas ||
-                (((!opcaoSelecionada && !ehDissertativa) || (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
+                (((!opcaoSelecionada && !ehDissertativa) ||
+                  (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
                   !feedbackExibido)
               }
               onPress={feedbackExibido ? handleProximaQuestao : confirmarResposta}
@@ -1233,6 +1399,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     paddingVertical: 20,
     paddingHorizontal: 12,
+    marginBottom: 16,
   },
 
   mathGroup: {

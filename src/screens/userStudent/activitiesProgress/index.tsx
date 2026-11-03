@@ -89,33 +89,49 @@ export default function ActivitiesProgressScreen() {
     }
   }, [materiaNome, materiaId]);
 
-  useEffect(() => {
-    async function sincronizarDadosLocais() {
-      if (userId) {
-        setUserIdAtivo(userId);
-        await AsyncStorage.setItem("@luna_user_id", String(userId));
-      } else {
-        const salvoUser = await AsyncStorage.getItem("@luna_user_id");
-        if (salvoUser) setUserIdAtivo(salvoUser);
-      }
-
-      if (turmaId) {
-        setTurmaIdAtiva(turmaId);
-        await AsyncStorage.setItem("@luna_turma_id", String(turmaId));
-      } else {
-        const salvoTurma = await AsyncStorage.getItem("@luna_turma_id");
-        if (salvoTurma) setTurmaIdAtiva(salvoTurma);
-      }
-    }
-    sincronizarDadosLocais();
-  }, [userId, turmaId]);
-
   const carregarAtividades = useCallback(async () => {
     setLoading(true);
 
     try {
-      const idUsuario = userId || userIdAtivo || (await AsyncStorage.getItem("@luna_user_id")) || "";
-      const idTurma = turmaId || turmaIdAtiva || (await AsyncStorage.getItem("@luna_turma_id")) || "auto";
+      let idUsuario = userId || userIdAtivo || "";
+      if (userId) {
+        setUserIdAtivo(userId);
+        await AsyncStorage.setItem("@luna_user_id", String(userId));
+      } else if (!idUsuario) {
+        idUsuario = (await AsyncStorage.getItem("@luna_user_id")) || "";
+        if (idUsuario) setUserIdAtivo(idUsuario);
+      }
+
+      if (!idUsuario) {
+        setPlanos([]);
+        return;
+      }
+
+      let idTurma = turmaId || "";
+      try {
+        const respAluno = await fetch(`${API_BASE_URL}/students/aluno/${idUsuario}`);
+        const dataAluno = await respAluno.json();
+        if (dataAluno.ok && dataAluno.aluno) {
+          const turmaBanco =
+            dataAluno.aluno.turmaId ||
+            dataAluno.aluno.turmaID ||
+            dataAluno.aluno.codTurma ||
+            dataAluno.aluno.idTurma ||
+            "";
+          if (turmaBanco) {
+            idTurma = String(turmaBanco);
+            setTurmaIdAtiva(idTurma);
+          } else {
+            idTurma = "";
+            setTurmaIdAtiva(undefined);
+          }
+        }
+      } catch (e) { }
+
+      if (!idTurma) {
+        setPlanos([]);
+        return;
+      }
 
       const usarMateriaIdDaRota =
         Boolean(materiaId) &&
@@ -124,20 +140,18 @@ export default function ActivitiesProgressScreen() {
 
       const parametroMateria = usarMateriaIdDaRota ? materiaId : materiaSelecionada;
 
-      let planosRespondidosBanco = new Set<string>();
-      if (idUsuario) {
-        try {
-          const respConcluidas = await fetch(`${API_BASE_URL}/activities/aluno/${idUsuario}`);
-          if (respConcluidas.ok) {
-            const dataConcluidas = await respConcluidas.json();
-            if (Array.isArray(dataConcluidas.planosConcluidos)) {
-              dataConcluidas.planosConcluidos.forEach((idP: string) =>
-                planosRespondidosBanco.add(String(idP))
-              );
-            }
+      const planosRespondidosBanco = new Set<string>();
+      try {
+        const respConcluidas = await fetch(`${API_BASE_URL}/activities/aluno/${idUsuario}`);
+        if (respConcluidas.ok) {
+          const dataConcluidas = await respConcluidas.json();
+          if (Array.isArray(dataConcluidas.planosConcluidos)) {
+            dataConcluidas.planosConcluidos.forEach((idP: string) =>
+              planosRespondidosBanco.add(String(idP))
+            );
           }
-        } catch (e) { }
-      }
+        }
+      } catch (e) { }
 
       const url = `${API_BASE_URL}/lesson-plans/turma/${idTurma}/materia/${parametroMateria}?sigla=${materiaSelecionada}&userId=${idUsuario}`;
       const response = await fetch(url);
@@ -146,13 +160,17 @@ export default function ActivitiesProgressScreen() {
       if (response.ok && Array.isArray(data.planos)) {
         const planosMapeados: Plano[] = await Promise.all(
           data.planos.map(async (plano: any) => {
-            const idPlanoStr = String(plano._id || plano.id);
-            const chaveLocal = `@luna_respostas_${idUsuario || "aluno"}_${idPlanoStr}`;
+            const idPlanoStr = String(plano._id || plano.id || plano.idPlano);
+            const chaveLocal = `@luna_respostas_${idUsuario}_${idPlanoStr}`;
             const salvoLocal = await AsyncStorage.getItem(chaveLocal);
             const jaConcluida =
               plano.status === "concluida" ||
+              plano.status === "corrigida" ||
               planosRespondidosBanco.has(idPlanoStr) ||
               Boolean(salvoLocal);
+
+            const tId = plano.turmaId || plano.turmaID || idTurma;
+            const mId = plano.materiaId || plano.materiaID || (usarMateriaIdDaRota ? materiaId : undefined);
 
             return {
               idPlano: idPlanoStr,
@@ -162,15 +180,11 @@ export default function ActivitiesProgressScreen() {
               concluida: jaConcluida,
               materia: materiaSelecionada,
               urlPlanoDeAula: plano.urlPlanoDeAula,
-              turmaId: plano.turmaID ? String(plano.turmaID) : idTurma !== "auto" ? idTurma : undefined,
-              materiaId: plano.materiaID ? String(plano.materiaID) : usarMateriaIdDaRota ? materiaId : undefined,
+              turmaId: tId ? String(tId) : undefined,
+              materiaId: mId ? String(mId) : undefined,
             };
           })
         );
-
-        if (planosMapeados.length > 0 && planosMapeados[0].turmaId) {
-          await AsyncStorage.setItem("@luna_turma_id", planosMapeados[0].turmaId);
-        }
 
         setPlanos(planosMapeados);
       } else {
@@ -181,7 +195,7 @@ export default function ActivitiesProgressScreen() {
     } finally {
       setLoading(false);
     }
-  }, [materiaSelecionada, turmaId, turmaIdAtiva, userId, userIdAtivo, materiaId, materiaNome]);
+  }, [materiaSelecionada, turmaId, userId, userIdAtivo, materiaId, materiaNome]);
 
   useFocusEffect(
     useCallback(() => {
@@ -276,7 +290,7 @@ export default function ActivitiesProgressScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>Nenhuma atividade lançada</Text>
             <Text style={styles.emptyText}>
-              Ainda não existem atividades disponíveis para essa matéria.
+              Ainda não existem atividades disponíveis para essa matéria na sua turma.
             </Text>
           </View>
         ) : (
