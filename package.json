@@ -13,7 +13,7 @@
     "ip": "python setup_ip.py",
     "back": "cd backend && .\\venv\\Scripts\\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
     "front": "npx expo start -c",
-    "dev": "npm run ip && concurrently -n \"BACKEND,MOBILE\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run back\" \"npm run front\""
+    "dev": "npm run ip && start npm run back && npm run front"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",

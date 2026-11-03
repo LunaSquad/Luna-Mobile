@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     color: theme.colors.borderFirstMatter,
   },
 
-  /* ====== NOVOS ESTILOS PARA ALUNO SEM TURMA ====== */
+  // Estilos para alunos sem turma
   noClassContainer: {
     marginTop: theme.spacing.xx,
     alignItems: "center",
@@ -248,7 +248,6 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
     fontSize: 16,
   },
-  /* ================================================= */
 
   body: {
     flex: 1,

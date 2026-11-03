@@ -21,7 +21,6 @@ export default function Perfil({ route }: any) {
   const { userId, tipoUser } = route.params || {};
   const [aluno, setAluno] = useState<any>(null);
 
-  // useFocusEffect garante que os dados recarreguem sempre que o usuário voltar para essa tela (após editar)
   useFocusEffect(
     useCallback(() => {
       async function carregarAluno() {
@@ -143,7 +142,6 @@ export default function Perfil({ route }: any) {
             style={styles.actionItem}
             activeOpacity={0.6}
             onPress={() => {
-              // AQUI MUDOU: Passando hiperfoco e alunoData para a tela
               navigation.navigate("EditHyperfocus", {
                 userId: userId,
                 hiperfocoAtual: aluno?.hiperfoco || "Não informado",

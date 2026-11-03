@@ -53,7 +53,7 @@ export default function Feedback() {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_BASE_URL}/feedbacks`, { // Ajuste a rota da API se for diferente
+      const response = await fetch(`${API_BASE_URL}/feedbacks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export default function Feedback() {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} bounces={false} showsVerticalScrollIndicator={false}>
 
-        {/* Fundo Branco (Topo) */}
+        {/* Fundo Branco no topo */}
         <View style={styles.topBackground}>
           <View style={styles.header}>
             <TouchableOpacity
@@ -103,14 +103,14 @@ export default function Feedback() {
 
             <View style={styles.logoContainer}>
               <Image
-                source={require("../../../assets/luna.png")} // Ajuste para a logo azul escuro
+                source={require("../../../assets/luna.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />
             </View>
 
             <Image
-              source={require("../../../assets/logo mobile.png")} // Borboleta
+              source={require("../../../assets/logo mobile.png")}
               style={styles.logoBorboleta}
               resizeMode="contain"
             />
@@ -118,15 +118,14 @@ export default function Feedback() {
 
           <Text style={styles.title}>Feedback</Text>
 
-          {/* Troque a imagem abaixo pela ilustração correta que você tem no seu projeto */}
           <Image
-            source={require("../../../assets/hiperfoco.png")} // Coloque o caminho da ilustração correta aqui
+            source={require("../../../assets/hiperfoco.png")}
             style={styles.illustration}
             resizeMode="contain"
           />
         </View>
 
-        {/* Fundo Verde Escuro (Base) */}
+        {/* Fundo Verde Escuro na base */}
         <View style={styles.bottomBackground}>
 
           {/* Cartão Branco Sobreposto */}

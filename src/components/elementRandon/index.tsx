@@ -13,14 +13,14 @@ export default function ElementosVisuaisAleatorios({ imagens }: Props) {
     return imagens.map((url) => {
       // Sorteia altura entre 10% e 80% da tela
       const randomTop = Math.floor(Math.random() * 70) + 10 + "%";
-      
+
       // Joga ou para a extrema esquerda (2% a 15%) ou extrema direita (75% a 85%)
       const isLeft = Math.random() > 0.5;
       const randomLeft = isLeft
         ? Math.floor(Math.random() * 13) + 2 + "%"
         : Math.floor(Math.random() * 10) + 75 + "%";
 
-      const randomRotation = Math.floor(Math.random() * 60) - 30 + "deg"; // Rotação de -30 a 30 graus
+      const randomRotation = Math.floor(Math.random() * 60) - 30 + "deg";
 
       return { url, randomTop, randomLeft, randomRotation };
     });
@@ -38,7 +38,7 @@ export default function ElementosVisuaisAleatorios({ imagens }: Props) {
             left: item.randomLeft as any,
             width: 65,
             height: 65,
-            opacity: 0.85, // Leve transparência para não distrair muito
+            opacity: 0.85,
             transform: [{ rotate: item.randomRotation }],
           }}
           resizeMode="contain"

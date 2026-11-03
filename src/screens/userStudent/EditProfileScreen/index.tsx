@@ -406,8 +406,6 @@ export default function EditProfileScreen() {
             <View style={styles.inputsContainer}>
               <CustomInput
                 title="NOME"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="Nome completo do aluno"
                 value={nome}
                 onChangeText={setNome}
@@ -419,8 +417,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="NOME DO RESPONSÁVEL"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="Nome completo do responsável"
                 value={nomeResponsavel}
                 onChangeText={setNomeResponsavel}
@@ -432,8 +428,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="CPF"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="000.000.000-00"
                 keyboardType="numeric"
                 maxLength={14}
@@ -447,8 +441,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="CPF DO RESPONSÁVEL"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="000.000.000-00"
                 keyboardType="numeric"
                 maxLength={14}
@@ -471,8 +463,6 @@ export default function EditProfileScreen() {
                 <View pointerEvents="none">
                   <CustomInput
                     title="DATA DE NASCIMENTO"
-                    titleColor={theme.colors.primary}
-                    borderColor={theme.colors.primary}
                     placeholder="Selecione no calendário"
                     value={
                       dataNascimento
@@ -506,8 +496,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="E-MAIL"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="exemplo@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -521,8 +509,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="TELEFONE"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="(00) 00000-0000"
                 keyboardType="phone-pad"
                 maxLength={15}
@@ -533,9 +519,6 @@ export default function EditProfileScreen() {
                   <Feather name="smartphone" size={20} color={theme.colors.primary} />
                 }
               />
-
-              {/* O INPUT DO HIPERFOCO FOI REMOVIDO DAQUI */}
-
             </View>
           )}
 
@@ -621,8 +604,6 @@ export default function EditProfileScreen() {
             <View style={styles.passwordStepWrapper}>
               <CustomInput
                 title="NOVA SENHA"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="Deixe em branco para manter a atual"
                 secureTextEntry={true}
                 value={senha}
@@ -635,8 +616,6 @@ export default function EditProfileScreen() {
 
               <CustomInput
                 title="CONFIRMAR NOVA SENHA"
-                titleColor={theme.colors.primary}
-                borderColor={theme.colors.primary}
                 placeholder="Confirme a nova senha"
                 secureTextEntry={true}
                 value={confirmarSenha}

@@ -101,7 +101,7 @@ export default function RegisterScreen() {
     return resto === parseInt(clean.substring(10, 11));
   }
 
-  // Formatador e Validador de Telefone (celular brasileiro: 11 dígitos)
+  // Formatador e Validador de Telefone (numero br: 11 dígitos)
   function maskPhone(value: string) {
     return value
       .replace(/\D/g, "")

@@ -1,4 +1,3 @@
-// src/screens/userStudent/login/index.tsx
 import { useEffect, useState } from "react";
 import { View, Text, Dimensions, Alert, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -135,7 +134,7 @@ export default function LoginScreen() {
         <CustomInput
           title="SENHA"
           placeholder="Digite sua senha"
-          isPassword={true} // <-- AQUI MUDA DE secureTextEntry PARA isPassword
+          isPassword={true}
           icon={<MaterialIcons name="lock" size={24} color={theme.colors.secondary} />}
           style={styles.inputSenha}
           value={senha}

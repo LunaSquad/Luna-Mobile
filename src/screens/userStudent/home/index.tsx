@@ -225,7 +225,6 @@ export default function Home({ route }: HomeProps) {
     }
 
     try {
-      // Exemplo: luna://app/convite?codigo=K2FY1M&turmaId=6ae7e12440c757d8059ff3de
       const queryParams = link.split("?")[1];
       if (!queryParams) throw new Error("Link sem parâmetros.");
 
@@ -246,7 +245,6 @@ export default function Home({ route }: HomeProps) {
 
       setLoadingTurma(true);
 
-      // Aqui você faz a chamada PUT/PATCH pro seu novo backend Python para vincular o aluno à turma
       const response = await fetch(`${API_BASE_URL}/students/aluno/${userId}/vincular-turma`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -262,7 +260,7 @@ export default function Home({ route }: HomeProps) {
         Alert.alert("Sucesso!", "Você entrou na turma com sucesso.");
         setInserindoLink(false);
         setMostrarOpcoesTurma(false);
-        carregarTudo(); // Recarrega os dados do aluno para a tela atualizar
+        carregarTudo();
       } else {
         Alert.alert("Erro", data.message || "Não foi possível entrar na turma.");
       }
@@ -355,7 +353,6 @@ export default function Home({ route }: HomeProps) {
                   </TouchableOpacity>
                 </View>
               ) : (
-                // OPÇÕES: LINK OU QR CODE
                 <View style={styles.joinOptionsContainer}>
                   <TouchableOpacity style={styles.joinOptionCard} onPress={() => setInserindoLink(true)}>
                     <MaterialIcons name="link" size={24} color="#0F766E" />

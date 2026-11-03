@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     left: theme.spacing.lg,
-    top: 32, // acompanha o header
+    top: 32,
     zIndex: 10,
   },
   lunaLogo: {
@@ -30,7 +30,7 @@ export const styles = StyleSheet.create({
   },
   card: {
     width: width,
-    height: height * 0.85, 
+    height: height * 0.85,
     backgroundColor: theme.colors.background,
     position: "absolute",
     bottom: 0,
@@ -48,7 +48,7 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 17, 
+    fontSize: 17,
     fontFamily: theme.fonts.bold,
     color: theme.colors.primary,
     textAlign: "left",
@@ -62,7 +62,7 @@ export const styles = StyleSheet.create({
     marginLeft: 10
   },
   inputsContainer: {
-    gap: 4,  
+    gap: 4,
   },
   input: {
     width: "100%",
