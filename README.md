@@ -87,7 +87,7 @@ O projeto utiliza uma arquitetura combinada de IA Generativa e Machine Learning 
 Preparamos o projeto de forma que avaliadores e utilizadores possam testá-lo rapidamente, sem necessidade de configurações complexas. 
 
 > **⚠️ Nota sobre Variáveis de Ambiente e Chaves de API:**
-> Para facilitar a apresentação e testes práticos do projeto (como por professores e bancas avaliadoras), nós **disponibilizamos intencionalmente as credenciais do banco de dados (MongoDB), Cloudinary, OpenAI e Gemini** no ficheiro de configuração padrão e `.env.example`. 
+> Para facilitar a apresentação e testes práticos do projeto (como por professores e bancas avaliadoras), nós **disponibilizamos intencionalmente as credenciais do banco de dados (MongoDB), Cloudinary e Gemini** no ficheiro de configuração padrão e `.env`. 
 > 
 > Estas chaves estão associadas a contas gratuitas/de desenvolvimento criadas **exclusivamente para a apresentação deste projeto académico** e não contêm dados sensíveis ou informações em produção real. Estão aí para garantir que o sistema de Inteligência Artificial funcione imediatamente na vossa máquina!
 
