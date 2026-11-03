@@ -114,7 +114,7 @@ O nosso ficheiro `package.json` possui um comando unificado que instala automati
 ```bash
 npm run setup
 ```
-*(Caso esteja no macOS/Linux, certifique-se de que tem o Python instalado).*
+*(Certifique-se de que tem o Python instalado em sua máquina).*
 
 ## 5. Iniciar o projeto (FastAPI + Expo)
 
