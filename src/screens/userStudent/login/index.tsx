@@ -1,3 +1,4 @@
+// src/screens/userStudent/login/index.tsx
 import { useEffect, useState } from "react";
 import { View, Text, Dimensions, Alert, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -79,22 +80,16 @@ export default function LoginScreen() {
       });
 
       const data: LoginResponse = await response.json();
-      console.log("BACKEND:", data);
 
       if (data.ok) {
         if (data.tipoUser === "aluno") {
-          
-          // 1. Dispara a adaptação em segundo plano SEM travar a tela
           if (data.userId) {
             preAdaptarTudoEmSegundoPlano(data.userId);
           }
-
-          // 2. Navega para a tela inicial enviando os parâmetros corretos
           navigation.replace("StudentTabs", {
             userId: data.userId,
             tipoUser: data.tipoUser,
           });
-          
           return;
         }
 
@@ -131,13 +126,7 @@ export default function LoginScreen() {
         <CustomInput
           title="E-MAIL"
           placeholder="Digite seu e-mail"
-          icon={
-            <MaterialIcons
-              name="email"
-              size={24}
-              color={theme.colors.secondary}
-            />
-          }
+          icon={<MaterialIcons name="email" size={24} color={theme.colors.secondary} />}
           style={styles.inputEmail}
           value={email}
           onChangeText={setEmail}
@@ -146,14 +135,8 @@ export default function LoginScreen() {
         <CustomInput
           title="SENHA"
           placeholder="Digite sua senha"
-          secureTextEntry={true}
-          icon={
-            <MaterialIcons
-              name="lock"
-              size={24}
-              color={theme.colors.secondary}
-            />
-          }
+          isPassword={true} // <-- AQUI MUDA DE secureTextEntry PARA isPassword
+          icon={<MaterialIcons name="lock" size={24} color={theme.colors.secondary} />}
           style={styles.inputSenha}
           value={senha}
           onChangeText={setSenha}

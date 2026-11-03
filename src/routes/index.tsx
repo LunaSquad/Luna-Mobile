@@ -10,8 +10,10 @@ import Feedback from "../screens/userStudent/feedback/index";
 import Register from "../screens/userStudent/register/index";
 import EditProfileScreen from "../screens/userStudent/EditProfileScreen";
 import QrCodeScanner from "../screens/userStudent/QrCodeScanner/index"
+import Splash from "../screens/userStudent/splash/index";
 
 export type RootStackParamList = {
+  Splash: undefined;
   Login: undefined;
 
   StudentTabs:
@@ -59,6 +61,8 @@ export type RootStackParamList = {
   }
   | undefined;
 
+
+
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -67,8 +71,9 @@ export default function Routes() {
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="Login"
+      initialRouteName="Splash"
     >
+      <Stack.Screen name="Splash" component={Splash} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="StudentTabs" component={StudentTabs} />
       <Stack.Screen name="Atividades" component={Activies} />
@@ -78,6 +83,7 @@ export default function Routes() {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
       <Stack.Screen name="QrCodeScanner" component={QrCodeScanner} options={{ headerShown: false }} />
+
     </Stack.Navigator>
   );
 }

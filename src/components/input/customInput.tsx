@@ -1,71 +1,41 @@
-import React, { ReactNode } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-  KeyboardTypeOptions,
-} from "react-native";
+// src/components/input/customInput.tsx
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, TextInputProps, TouchableOpacity } from "react-native";
 import { theme } from "../../styles/theme";
+import { Feather } from "@expo/vector-icons";
 
-export interface Props {
-  title?: string;
-  titleColor?: string;
-  borderColor?: string;
-  placeholder?: string;
-  icon?: ReactNode;
-  value?: string;
-  onChangeText?: (text: string) => void;
-  secureTextEntry?: boolean;
-  style?: StyleProp<ViewStyle>;
-  keyboardType?: KeyboardTypeOptions;
-  maxLength?: number;
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+interface CustomInputProps extends TextInputProps {
+  title: string;
+  icon?: React.ReactNode;
+  isPassword?: boolean;
 }
 
-export default function CustomInput({
-  title,
-  titleColor,
-  borderColor,
-  placeholder,
-  icon,
-  value,
-  onChangeText,
-  secureTextEntry = false,
-  style,
-  keyboardType = "default",
-  maxLength,
-  autoCapitalize = "sentences",
-}: Props) {
+export default function CustomInput({ title, icon, isPassword, style, ...rest }: CustomInputProps) {
+  const [ocultarSenha, setOcultarSenha] = useState(isPassword);
+
   return (
     <View style={[styles.container, style]}>
-      {title && (
-        <Text style={[styles.label, titleColor ? { color: titleColor } : null]}>
-          {title}
-        </Text>
-      )}
-
-      <View
-        style={[
-          styles.inputContainer,
-          borderColor ? { borderColor: borderColor } : null,
-        ]}
-      >
+      <Text style={styles.title}>{title}</Text>
+      <View style={styles.inputArea}>
+        <View style={styles.leftIcon}>{icon}</View>
         <TextInput
           style={styles.input}
-          placeholder={placeholder}
           placeholderTextColor={theme.colors.textInput}
-          value={value}
-          onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          maxLength={maxLength}
-          autoCapitalize={autoCapitalize}
+          secureTextEntry={ocultarSenha}
+          {...rest}
         />
-
-        {icon && <View style={styles.icon}>{icon}</View>}
+        {isPassword && (
+          <TouchableOpacity
+            style={styles.rightIcon}
+            onPress={() => setOcultarSenha(!ocultarSenha)}
+          >
+            <Feather
+              name={ocultarSenha ? "eye-off" : "eye"}
+              size={20}
+              color={theme.colors.secondary}
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -74,28 +44,33 @@ export default function CustomInput({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    marginBottom: 35,
+    marginBottom: theme.spacing.sm,
   },
-  label: {
-    fontSize: theme.fontSize.normal,
+  title: {
+    fontSize: theme.fontSize.small,
+    fontFamily: theme.fonts.bold,
     color: theme.colors.textPrimary,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  inputContainer: {
+  inputArea: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "transparent",
     borderBottomWidth: 1,
-    borderColor: theme.colors.textPrimary,
-    marginBottom: 10,
+    borderBottomColor: theme.colors.textInput,
+    paddingBottom: 4,
+  },
+  leftIcon: {
+    marginRight: 8,
+  },
+  rightIcon: {
+    paddingLeft: 8,
   },
   input: {
     flex: 1,
-    paddingVertical: 8,
-    fontSize: theme.fontSize.small,
-    color: theme.colors.textInput
-  },
-  icon: {
-    marginLeft: 8,
+    fontSize: theme.fontSize.normal,
+    fontFamily: theme.fonts.light,
+    color: theme.colors.textPrimary,
+    paddingVertical: 4,
   },
 });

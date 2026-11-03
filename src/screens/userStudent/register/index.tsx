@@ -573,13 +573,16 @@ export default function RegisterScreen() {
             </View>
           )}
 
+// Substituir dentro de src/screens/userStudent/register/index.tsx
+          // (Substitua a ETAPA 4)
+
           {/* ETAPA 4 */}
           {step === 4 && (
             <View style={styles.inputsContainer}>
               <CustomInput
                 title="SENHA"
                 placeholder="Digite sua senha"
-                secureTextEntry={true}
+                isPassword={true} // <-- Aqui
                 value={senha}
                 onChangeText={setSenha}
                 style={[styles.input, { marginTop: 28 }]}
@@ -595,7 +598,7 @@ export default function RegisterScreen() {
               <CustomInput
                 title="CONFIRMAR SENHA"
                 placeholder="Confirme sua senha"
-                secureTextEntry={true}
+                isPassword={true} // <-- E Aqui
                 value={confirmarSenha}
                 onChangeText={setConfirmarSenha}
                 style={[styles.input, { marginTop: 58 }]}

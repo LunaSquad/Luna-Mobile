@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,7 +10,7 @@ import ActivitiesProgress from "../screens/userStudent/activitiesProgress";
 import Profile from "../screens/userStudent/profile";
 import { RootStackParamList } from "./index";
 
-type StudentTabsParamList = {
+export type StudentTabsParamList = {
   Início: { userId?: string; tipoUser?: string; turmaId?: string };
   Desempenho: { userId?: string; tipoUser?: string; turmaId?: string };
   "Em andamento": {
@@ -53,26 +53,21 @@ export default function StudentTabs({ route }: Props) {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: { height: 70, paddingTop: 10, paddingBottom: 12 },
+        tabBarStyle: styles.tabBar,
         tabBarIcon: ({ focused }) => {
           const iconName = iconByRoute(route.name);
 
           if (!focused) {
-            return <Ionicons name={iconName} size={22} color={GREEN} />;
+            return (
+              <View style={styles.iconContainer}>
+                <Ionicons name={iconName} size={24} color={GREEN} />
+              </View>
+            );
           }
 
           return (
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: GREEN,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name={iconName} size={22} color={PINK} />
+            <View style={styles.iconContainerActive}>
+              <Ionicons name={iconName} size={24} color={PINK} />
             </View>
           );
         },
@@ -104,3 +99,35 @@ export default function StudentTabs({ route }: Props) {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    height: 70,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 0,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    paddingBottom: 25, // Afasta os ícones do fundo da tela
+    paddingTop: 13,
+  },
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconContainerActive: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: GREEN,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+});

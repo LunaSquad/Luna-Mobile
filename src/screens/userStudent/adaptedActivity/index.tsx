@@ -7,7 +7,6 @@ import {
   Image,
   ImageBackground,
   ScrollView,
-  BackHandler,
   TextInput,
   StyleSheet,
   Alert,
@@ -28,9 +27,12 @@ const theme = {
   radioBorder: "#B0C2BE",
 };
 
+const BASE_TWEMOJI = "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72";
+
 type TemaVisualConfig = {
   nomeItemContagem: string;
   emojiInline: string;
+  corFundoSegura: string;
   bgFallback: string;
   mascotFallback: string;
   secondaryMascotFallback: string;
@@ -38,53 +40,67 @@ type TemaVisualConfig = {
 };
 
 function obterTemaGamificado(hiperfoco: string): TemaVisualConfig {
-  const raw = (hiperfoco || "dinossauros").trim().toLowerCase();
-  const promptBg = encodeURIComponent(
-    `masterpiece vibrant 2D flat vector mobile game background landscape themed around ${raw}, crisp vector art, high contrast, no text`
-  );
-  const promptMascot = encodeURIComponent(
-    `cute 2D cartoon main character of ${raw}, isolated on white background, game sticker`
-  );
-  const promptSec = encodeURIComponent(
-    `cute 2D cartoon secondary character of ${raw}, isolated on white background, game sticker`
-  );
-  const promptItem = encodeURIComponent(
-    `cute 2D cartoon collectible item of ${raw}, isolated on white background, game sticker`
-  );
+  const raw = (hiperfoco || "aventura").trim().toLowerCase();
 
   const base: TemaVisualConfig = {
-    bgFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptBg}?width=1080&height=1920&nologo=true&seed=8088`,
+    corFundoSegura: "#E6F4F1",
+    bgFallback: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
     nomeItemContagem: raw || "itens",
     emojiInline: "✨",
-    mascotFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptMascot}?width=512&height=512&nologo=true&seed=8090`,
-    secondaryMascotFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptSec}?width=512&height=512&nologo=true&seed=8091`,
-    itemFallback: `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){promptItem}?width=512&height=512&nologo=true&seed=8092`,
+    mascotFallback: `${BASE_TWEMOJI}/2728.png`,
+    secondaryMascotFallback: `${BASE_TWEMOJI}/2b50.png`,
+    itemFallback: `${BASE_TWEMOJI}/1f3c6.png`,
   };
 
   if (raw.includes("borboleta") || raw.includes("inseto") || raw.includes("jardim") || raw.includes("flor")) {
     base.nomeItemContagem = "borboletas";
     base.emojiInline = "🦋";
+    base.corFundoSegura = "#E4F7F2";
+    base.mascotFallback = `${BASE_TWEMOJI}/1f98b.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f33a.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1f33c.png`;
   } else if (raw.includes("dino") || raw.includes("t-rex") || raw.includes("jurassic") || raw.includes("jurássic")) {
     base.nomeItemContagem = "dinossauros";
     base.emojiInline = "🦖";
-  } else if (raw.includes("video game") || raw.includes("game") || raw.includes("jogo")) {
+    base.corFundoSegura = "#DCEFE4";
+    base.mascotFallback = `${BASE_TWEMOJI}/1f996.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f995.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1f95a.png`;
+  } else if (raw.includes("video game") || raw.includes("game") || raw.includes("jogo") || raw.includes("roblox")) {
     base.nomeItemContagem = "moedas";
     base.emojiInline = "🪙";
+    base.corFundoSegura = "#E6E9FA";
+    base.mascotFallback = `${BASE_TWEMOJI}/1f916.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f3ae.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1fa99.png`;
   } else if (raw.includes("espaço") || raw.includes("espaco") || raw.includes("astronauta") || raw.includes("planeta")) {
     base.nomeItemContagem = "estrelas";
     base.emojiInline = "🚀";
+    base.corFundoSegura = "#DCE7F7";
+    base.mascotFallback = `${BASE_TWEMOJI}/1f680.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1fa90.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/2b50.png`;
   } else if (raw.includes("carro") || raw.includes("corrida")) {
     base.nomeItemContagem = "carrinhos";
     base.emojiInline = "🏎️";
+    base.corFundoSegura = "#E3F2FD";
+    base.mascotFallback = `${BASE_TWEMOJI}/1f3ce.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f3c6.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1f699.png`;
   } else if (raw.includes("futebol") || raw.includes("bola") || raw.includes("esporte")) {
     base.nomeItemContagem = "bolas";
     base.emojiInline = "⚽";
-  } else if (raw.includes("minecraft")) {
+    base.corFundoSegura = "#DFF5E3";
+    base.mascotFallback = `${BASE_TWEMOJI}/26bd.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f3c6.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1f947.png`;
+  } else if (raw.includes("minecraft") || raw.includes("bloco")) {
     base.nomeItemContagem = "blocos";
     base.emojiInline = "⛏️";
-  } else if (raw.includes("princesa") || raw.includes("unicórnio") || raw.includes("unicornio")) {
-    base.nomeItemContagem = "coroas";
-    base.emojiInline = "👑";
+    base.corFundoSegura = "#DFF2E1";
+    base.mascotFallback = `${BASE_TWEMOJI}/26cf.png`;
+    base.secondaryMascotFallback = `${BASE_TWEMOJI}/1f48e.png`;
+    base.itemFallback = `${BASE_TWEMOJI}/1f52e.png`;
   }
 
   return base;
@@ -98,30 +114,13 @@ function formatarTempo(totalSegundos: number) {
 
 function detectarOperadorMatematico(pergunta: string): "+" | "-" | "×" | "÷" {
   const p = (pergunta || "").toLowerCase();
-  if (
-    RegExp("\\d+\\s*\\-\\s*\\d+").test(p) ||
-    p.includes("menos") ||
-    p.includes("tirou") ||
-    p.includes("perdeu") ||
-    p.includes("restaram") ||
-    p.includes("fugiram")
-  ) {
+  if (/\d+\s*\-\s*\d+/.test(p) || p.includes("menos") || p.includes("tirou") || p.includes("perdeu")) {
     return "-";
   }
-  if (
-    RegExp("\\d+\\s*[\\*x×]\\s*\\d+").test(p) ||
-    p.includes("vezes") ||
-    p.includes("multiplicado") ||
-    p.includes("cada ") ||
-    p.includes("grupos de")
-  ) {
+  if (/\d+\s*[\*x×]\s*\d+/.test(p) || p.includes("vezes") || p.includes("multiplicado") || p.includes("grupos de")) {
     return "×";
   }
-  if (
-    RegExp("\\d+\\s*[÷]\\s*\\d+").test(p) ||
-    p.includes("dividido") ||
-    p.includes("repartiu")
-  ) {
+  if (/\d+\s*[÷]\s*\d+/.test(p) || p.includes("dividido") || p.includes("repartiu")) {
     return "÷";
   }
   return "+";
@@ -129,51 +128,29 @@ function detectarOperadorMatematico(pergunta: string): "+" | "-" | "×" | "÷" {
 
 function extrairNumerosDoTextoPortugues(texto: string): number[] {
   if (!texto) return [];
-
-  const expressaoExplicita = texto.match(RegExp("(\\d+)\\s*[\\+\\-\\*x×÷]\\s*(\\d+)", "i"));
+  const expressaoExplicita = texto.match(/(\d+)\s*[\+\-\*x×÷]\s*(\d+)/i);
   if (expressaoExplicita) {
     return [parseInt(expressaoExplicita[1], 10), parseInt(expressaoExplicita[2], 10)];
   }
-
-  const digitosExplicitos = Array.from(texto.matchAll(RegExp("\\b(\\d+)\\b", "g")))
+  const digitosExplicitos = Array.from(texto.matchAll(/\b(\d+)\b/g))
     .map((m) => parseInt(m[1], 10))
     .filter((val) => val >= 0 && val <= 100);
-
-  if (digitosExplicitos.length >= 2) {
-    return digitosExplicitos;
-  }
+  if (digitosExplicitos.length >= 2) return digitosExplicitos;
 
   const mapaPalavras: Record<string, number> = {
-    um: 1,
-    uma: 1,
-    dois: 2,
-    duas: 2,
-    tres: 3,
-    três: 3,
-    quatro: 4,
-    cinco: 5,
-    seis: 6,
-    sete: 7,
-    oito: 8,
-    nove: 9,
-    dez: 10,
+    um: 1, uma: 1, dois: 2, duas: 2, tres: 3, três: 3, quatro: 4, cinco: 5,
+    seis: 6, sete: 7, oito: 8, nove: 9, dez: 10,
   };
-
-  const tokens = texto
-    .toLowerCase()
-    .replace(RegExp("[\\,\\.\\!\\?\\:\\;\\(\\)\\[\\]]", "g"), " ")
-    .split(RegExp("\\s+"));
+  const tokens = texto.toLowerCase().replace(/[\,\.\!\?\:\;\(\)\[\]]/g, " ").split(/\s+/);
   const encontrados: number[] = [];
-
   for (const tk of tokens) {
-    if (RegExp("^\\d+$").test(tk)) {
+    if (/^\d+$/.test(tk)) {
       const val = parseInt(tk, 10);
       if (val >= 0 && val <= 100) encontrados.push(val);
     } else if (mapaPalavras[tk] !== undefined) {
       encontrados.push(mapaPalavras[tk]);
     }
   }
-
   return encontrados;
 }
 
@@ -188,24 +165,17 @@ function decorarTextoComFiguras(texto: string, emojiTema: string): string {
   if (!texto) return "";
   let resultado = texto;
   const substituicoes: Array<[RegExp, string]> = [
-    [RegExp("\\b(borboletas|borboleta)\\b", "gi"), "$1 🦋"],
-    [RegExp("\\b(flores|flor|margarida|margaridas)\\b", "gi"), "$1 🌸"],
-    [RegExp("\\b(t-rex|tiranossauro|dinossauros|dinossauro|dinos|dino)\\b", "gi"), "$1 🦖"],
-    [
-      RegExp(
-        "\\b(brontossauros|brontossauro|braquiossauro|sauropode|pescoçudo|triceratops|estegossauro|velociraptor)\\b",
-        "gi"
-      ),
-      "$1 🦕",
-    ],
-    [RegExp("\\b(ovinhos|ovinho|ovos|ovo)\\b", "gi"), "$1 🥚"],
-    [RegExp("\\b(moedinhas|moedinha|moedas|moeda)\\b", "gi"), "$1 🪙"],
-    [RegExp("\\b(foguetes|foguete)\\b", "gi"), "$1 🚀"],
-    [RegExp("\\b(estrelas|estrela)\\b", "gi"), "$1 ⭐"],
-    [RegExp("\\b(carrinhos|carrinho|carros|carro)\\b", "gi"), "$1 🏎️"],
-    [RegExp("\\b(bolas|bola)\\b", "gi"), "$1 ⚽"],
+    [/\b(borboletas|borboleta)\b/gi, `$1 🦋`],
+    [/\b(flores|flor|margarida|margaridas)\b/gi, `$1 🌸`],
+    [/\b(t-rex|tiranossauro|dinossauros|dinossauro|dinos|dino)\b/gi, `$1 🦖`],
+    [/\b(brontossauros|brontossauro|braquiossauro|sauropode|pescoçudo|triceratops|estegossauro|velociraptor)\b/gi, `$1 🦕`],
+    [/\b(ovinhos|ovinho|ovos|ovo)\b/gi, `$1 🥚`],
+    [/\b(moedinhas|moedinha|moedas|moeda)\b/gi, `$1 🪙`],
+    [/\b(foguetes|foguete)\b/gi, `$1 🚀`],
+    [/\b(estrelas|estrela)\b/gi, `$1 ⭐`],
+    [/\b(carrinhos|carrinho|carros|carro)\b/gi, `$1 🏎️`],
+    [/\b(bolas|bola)\b/gi, `$1 ⚽`],
   ];
-
   for (const [regex, subst] of substituicoes) {
     resultado = resultado.replace(regex, subst);
   }
@@ -213,11 +183,7 @@ function decorarTextoComFiguras(texto: string, emojiTema: string): string {
 }
 
 function limparPrefixoOpcao(texto: string): string {
-  return (texto || "")
-    .trim()
-    .replace(RegExp("^(\\d+[\\.\\)\\-]\\s*|[a-eA-E][\\.\\)\\-]\\s*)"), "")
-    .trim()
-    .toLowerCase();
+  return (texto || "").trim().replace(/^(\d+[\.\)\-]\s*|[a-eA-E][\.\)\-]\s*)/, "").trim().toLowerCase();
 }
 
 type PassoQuestao = {
@@ -265,14 +231,13 @@ export default function AdaptedActivityScreen() {
   const [loading, setLoading] = useState(true);
   const [salvandoRespostas, setSalvandoRespostas] = useState(false);
   const [planoAdaptado, setPlanoAdaptado] = useState<any>(null);
+  const [comentarioProfessor, setComentarioProfessor] = useState<string>("");
+  const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
 
   const [bgCustomizado, setBgCustomizado] = useState<string>("");
   const [mascoteCustomizado, setMascoteCustomizado] = useState<string>("");
   const [secundarioCustomizado, setSecundarioCustomizado] = useState<string>("");
   const [itemCustomizado, setItemCustomizado] = useState<string>("");
-  const [comentarioProfessor, setComentarioProfessor] = useState<string>("");
-
-  const [hiperfocoAluno, setHiperfocoAluno] = useState("dinossauros");
 
   const [etapaIndex, setEtapaIndex] = useState(0);
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
@@ -286,8 +251,14 @@ export default function AdaptedActivityScreen() {
   const [segundosRestantes, setSegundosRestantes] = useState(TEMPO_ATIVIDADE_SEGUNDOS);
   const [bloqueado, setBloqueado] = useState(false);
   const [segundosBloqueio, setSegundosBloqueio] = useState(0);
+  const [verificandoBloqueio, setVerificandoBloqueio] = useState(true);
 
   const tempoEsgotadoAcionado = useRef(false);
+  const aviso1MinutoExibido = useRef(false);
+  const bloqueioRef = useRef<number | null>(null); // timestamp em que o cooldown acaba
+  const fimRef = useRef<number | null>(null); // timestamp em que a atividade acaba
+  const atividadeEmAndamentoRef = useRef(false);
+  const saidaLiberadaRef = useRef(false);
 
   const topicosExplicacao = useMemo(() => {
     if (Array.isArray(planoAdaptado?.topicosExplicacao) && planoAdaptado.topicosExplicacao.length > 0) {
@@ -296,10 +267,7 @@ export default function AdaptedActivityScreen() {
     const textoBruto = String(
       planoAdaptado?.explicacaoTeorica || planoAdaptado?.explicacaoAdaptada || ""
     ).trim();
-    const blocos = textoBruto
-      .split(RegExp("\\n\\n+"))
-      .map((b: string) => b.trim())
-      .filter(Boolean);
+    const blocos = textoBruto.split(/\n\n+/).map((b: string) => b.trim()).filter(Boolean);
     if (blocos.length === 0) return [];
     return blocos.map((bloco: string, idx: number) => ({
       subtitulo: idx === 0 ? "Explicação" : `Parte ${idx + 1}`,
@@ -352,11 +320,11 @@ export default function AdaptedActivityScreen() {
           const numerosExtraidos = extrairNumerosDoTextoPortugues(perguntaStr);
           const op = detectarOperadorMatematico(perguntaStr);
           const alternativasSaoNumericas =
-            alts.length > 0 && alts.every((a: string) => RegExp("^\\d+$").test(a));
+            alts.length > 0 && alts.every((a: string) => /^\d+$/.test(a));
           const ehPerguntaCalculo =
-            RegExp("\\d+\\s*[\\+\\-\\*x×÷]").test(perguntaStr) ||
+            /\d+\s*[\+\-\*x×÷]/.test(perguntaStr) ||
             alternativasSaoNumericas ||
-            (numerosExtraidos.length >= 2 && RegExp("^\\d+$").test(respFinal));
+            (numerosExtraidos.length >= 2 && /^\d+$/.test(respFinal));
 
           if (ehPerguntaCalculo) {
             const valorCalculado =
@@ -364,7 +332,7 @@ export default function AdaptedActivityScreen() {
                 ? calcularResultadoOperacao(numerosExtraidos[0], numerosExtraidos[1], op)
                 : null;
 
-            const respEhNumeroValido = RegExp("^\\d+$").test(respFinal);
+            const respEhNumeroValido = /^\d+$/.test(respFinal);
 
             if (!respEhNumeroValido || !alts.includes(respFinal)) {
               if (valorCalculado !== null) {
@@ -389,7 +357,7 @@ export default function AdaptedActivityScreen() {
                 if (opcoes.size < 3) opcoes.add(String(c));
               }
               alts = Array.from(opcoes).sort((a: string, b: string) => Number(a) - Number(b));
-            } else if (!alts.includes(respFinal) && RegExp("^\\d+$").test(respFinal)) {
+            } else if (!alts.includes(respFinal) && /^\d+$/.test(respFinal)) {
               alts[0] = respFinal;
               alts.sort((a: string, b: string) => Number(a) - Number(b));
             }
@@ -460,9 +428,15 @@ export default function AdaptedActivityScreen() {
 
   const etapaAtual = etapasFluxo[etapaIndex];
   const atividadeEmAndamento =
-    !atividadeJaRespondida && etapaIndex >= indicePrimeiraQuestao && etapaIndex < etapasFluxo.length;
+    !loading &&
+    !atividadeJaRespondida &&
+    etapaIndex >= indicePrimeiraQuestao &&
+    etapaIndex < etapasFluxo.length;
   const atividadeConcluida =
     atividadeJaRespondida || (etapasFluxo.length > 0 && etapaIndex >= etapasFluxo.length);
+
+  // Mantém uma cópia em ref para o listener de navegação (sempre com o valor mais recente)
+  atividadeEmAndamentoRef.current = atividadeEmAndamento;
 
   const questaoAtual = etapaAtual?.tipoEtapa === "questao" ? etapaAtual.questao : null;
   const ehDissertativa = questaoAtual?.tipo === "dissertativa";
@@ -476,20 +450,17 @@ export default function AdaptedActivityScreen() {
     return `${materiaNome || ""} ${planoAdaptado?.disciplina || ""} ${planoAdaptado?.temaDetectado || ""} ${planoAdaptado?.materia || ""} ${planoTitulo || ""} ${planoDescricao || ""} ${questaoAtual?.pergunta || ""}`
       .toLowerCase()
       .normalize("NFD")
-      .replace(RegExp("[\\u0300-\\u036f]", "g"), "");
+      .replace(/[\u0300-\u036f]/g, "");
   }, [materiaNome, planoAdaptado, planoTitulo, planoDescricao, questaoAtual]);
 
   const ehQuestaoMatematica = useMemo(() => {
     const textoPergunta = (questaoAtual?.pergunta || "").toLowerCase();
-    const temSinalMatematico = RegExp("\\d+\\s*[\\+\\-\\*x×÷]").test(textoPergunta);
-    const temPalavrasCalculo = RegExp(
-      "(soma|somar|juntar|mais|menos|subtrair|restaram|quantos|total|ao todo|calcul|adic|multipl|divid|vezes)",
-      "i"
-    ).test(textoPergunta);
+    const temSinalMatematico = /\d+\s*[\+\-\*x×÷]/.test(textoPergunta);
+    const temPalavrasCalculo = /(soma|somar|juntar|mais|menos|subtrair|restaram|quantos|total|ao todo|calcul|adic|multipl|divid|vezes)/i.test(textoPergunta);
     const alternativasNumericas =
       questaoAtual?.alternativas &&
       questaoAtual.alternativas.length > 0 &&
-      questaoAtual.alternativas.every((a) => RegExp("^\\d+(\\s+\\w+)?$").test(a.trim()));
+      questaoAtual.alternativas.every((a) => /^\d+(\s+\w+)?$/.test(a.trim()));
 
     const contextoEhMat =
       contextoCompletoTexto.includes("mat") ||
@@ -506,19 +477,9 @@ export default function AdaptedActivityScreen() {
     if (planoAdaptado?.temaDetectado) return planoAdaptado.temaDetectado;
     if (planoAdaptado?.materia) return planoAdaptado.materia;
     if (ehQuestaoMatematica) return "Matemática";
-    if (
-      contextoCompletoTexto.includes("hist") ||
-      contextoCompletoTexto.includes("idade media") ||
-      contextoCompletoTexto.includes("tempo")
-    )
-      return "História";
+    if (contextoCompletoTexto.includes("hist") || contextoCompletoTexto.includes("idade media") || contextoCompletoTexto.includes("tempo")) return "História";
     if (contextoCompletoTexto.includes("geo")) return "Geografia";
-    if (
-      contextoCompletoTexto.includes("port") ||
-      contextoCompletoTexto.includes("texto") ||
-      contextoCompletoTexto.includes("leitura")
-    )
-      return "Português";
+    if (contextoCompletoTexto.includes("port") || contextoCompletoTexto.includes("texto") || contextoCompletoTexto.includes("leitura")) return "Português";
     if (contextoCompletoTexto.includes("cien")) return "Ciências";
     return planoTitulo || "Atividade";
   }, [materiaNome, planoAdaptado, ehQuestaoMatematica, contextoCompletoTexto, planoTitulo]);
@@ -542,17 +503,197 @@ export default function AdaptedActivityScreen() {
     return [2, 1];
   }, [numerosExtraidosQuestao, questaoAtual]);
 
+  // ---------------------------------------------------------------------------
+  // BLOQUEIO (COOLDOWN) E CRONÔMETRO
+  // ---------------------------------------------------------------------------
+
+  // Bloqueia primeiro em memória (síncrono) e depois persiste no disco.
+  // Quem chama deve dar await antes de fechar a tela.
   const ativarBloqueio = useCallback(async () => {
     const expiraEm = Date.now() + TEMPO_BLOQUEIO_MS;
-    await AsyncStorage.setItem(chaveBloqueio, String(expiraEm));
-    await AsyncStorage.removeItem(chaveFimAtividade);
+    bloqueioRef.current = expiraEm;
+    fimRef.current = null;
+    setSegundosBloqueio(Math.ceil(TEMPO_BLOQUEIO_MS / 1000));
+    setBloqueado(true);
+    try {
+      await AsyncStorage.setItem(chaveBloqueio, String(expiraEm));
+      await AsyncStorage.removeItem(chaveFimAtividade);
+    } catch { }
   }, [chaveBloqueio, chaveFimAtividade]);
 
   const limparSessao = useCallback(async () => {
-    await AsyncStorage.removeItem(chaveFimAtividade);
+    fimRef.current = null;
+    try {
+      await AsyncStorage.removeItem(chaveFimAtividade);
+    } catch { }
   }, [chaveFimAtividade]);
 
+  // Cooldown acabou: zera tudo e deixa o effect de carga buscar os dados de novo.
+  const liberarBloqueio = useCallback(async () => {
+    bloqueioRef.current = null;
+    fimRef.current = null;
+    tempoEsgotadoAcionado.current = false;
+    aviso1MinutoExibido.current = false;
+    saidaLiberadaRef.current = false;
+
+    setLoading(true);
+    setPlanoAdaptado(null);
+    setEtapaIndex(0);
+    setOpcaoSelecionada(null);
+    setRespostaDissertativa("");
+    setFeedbackExibido(false);
+    setAcertouQuestao(null);
+    setRespostasAluno({});
+    setAtividadeJaRespondida(false);
+    setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
+    setBloqueado(false);
+
+    try {
+      await AsyncStorage.multiRemove([chaveBloqueio, chaveFimAtividade]);
+    } catch { }
+  }, [chaveBloqueio, chaveFimAtividade]);
+
+  const iniciarCronometro = useCallback(async () => {
+    if (fimRef.current !== null) return; // já existe um cronômetro válido: não reinicia
+    const fim = Date.now() + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
+    fimRef.current = fim;
+    setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
+    try {
+      await AsyncStorage.setItem(chaveFimAtividade, String(fim));
+    } catch { }
+  }, [chaveFimAtividade]);
+
+  // 1) Checagem do cooldown ANTES de qualquer outra coisa (a carga da API espera por isso)
   useEffect(() => {
+    let ativo = true;
+    (async () => {
+      try {
+        const salvo = await AsyncStorage.getItem(chaveBloqueio);
+        const expiraEm = salvo ? parseInt(salvo, 10) : 0;
+        if (!ativo) return;
+        if (expiraEm > Date.now()) {
+          bloqueioRef.current = expiraEm;
+          setSegundosBloqueio(Math.ceil((expiraEm - Date.now()) / 1000));
+          setBloqueado(true);
+        } else if (salvo) {
+          AsyncStorage.removeItem(chaveBloqueio).catch(() => { });
+        }
+      } catch {
+      } finally {
+        if (ativo) setVerificandoBloqueio(false);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [chaveBloqueio]);
+
+  // 2) Um único ticker para cooldown + cronômetro, lendo só da memória
+  useEffect(() => {
+    if (verificandoBloqueio) return;
+
+    const tick = () => {
+      const agora = Date.now();
+
+      if (bloqueioRef.current !== null) {
+        const restante = Math.ceil((bloqueioRef.current - agora) / 1000);
+        if (restante <= 0) {
+          liberarBloqueio();
+        } else {
+          setSegundosBloqueio(restante);
+        }
+        return;
+      }
+
+      if (fimRef.current !== null) {
+        const restante = Math.max(0, Math.ceil((fimRef.current - agora) / 1000));
+        setSegundosRestantes(restante);
+
+        if (restante <= 60 && restante > 0 && !aviso1MinutoExibido.current) {
+          aviso1MinutoExibido.current = true;
+          Alert.alert("⏰ Atenção!", "Falta apenas 1 minuto para terminar a atividade!");
+        }
+
+        if (restante <= 0 && !tempoEsgotadoAcionado.current) {
+          tempoEsgotadoAcionado.current = true;
+          ativarBloqueio();
+        }
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [verificandoBloqueio, ativarBloqueio, liberarBloqueio]);
+
+  // 3) Restaura (ou inicia) o cronômetro depois que os dados carregaram
+  useEffect(() => {
+    if (loading || verificandoBloqueio || bloqueado || atividadeJaRespondida) return;
+    let ativo = true;
+    (async () => {
+      try {
+        const salvo = await AsyncStorage.getItem(chaveFimAtividade);
+        if (!ativo || bloqueioRef.current !== null || fimRef.current !== null) return;
+        const fim = salvo ? parseInt(salvo, 10) : NaN;
+        if (!isNaN(fim)) {
+          fimRef.current = fim; // o ticker cuida de expirar, se já passou
+        } else if (indicePrimeiraQuestao === 0) {
+          await iniciarCronometro();
+        }
+      } catch { }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [
+    loading,
+    verificandoBloqueio,
+    bloqueado,
+    atividadeJaRespondida,
+    indicePrimeiraQuestao,
+    chaveFimAtividade,
+    iniciarCronometro,
+  ]);
+
+  // 4) Saída da tela: um único ponto de interceptação (header, botão físico, swipe-back)
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove", (e: any) => {
+      if (saidaLiberadaRef.current) return;
+      if (bloqueioRef.current !== null) return; // já bloqueado: sai livre, sem renovar castigo
+      if (!atividadeEmAndamentoRef.current) return; // fora da atividade: sai livre
+
+      e.preventDefault();
+      Alert.alert(
+        "Sair da Atividade",
+        "Se você sair da atividade agora, terá que esperar 5 minutos para tentar novamente. Deseja mesmo sair?",
+        [
+          { text: "Ficar", style: "cancel" },
+          {
+            text: "Sair",
+            style: "destructive",
+            onPress: async () => {
+              await ativarBloqueio(); // persiste ANTES de fechar a tela
+              saidaLiberadaRef.current = true;
+              navigation.dispatch(e.data.action);
+            },
+          },
+        ]
+      );
+    });
+    return unsub;
+  }, [navigation, ativarBloqueio]);
+
+  const handleVoltar = useCallback(() => {
+    navigation.goBack(); // o beforeRemove decide se pergunta ou não
+  }, [navigation]);
+
+  // ---------------------------------------------------------------------------
+  // CARGA DE DADOS (só depois de checar o cooldown, e só se não estiver bloqueado)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!userId || verificandoBloqueio || bloqueado) return;
+    let ativo = true;
+
     async function carregarDadosDaAula() {
       try {
         setLoading(true);
@@ -572,9 +713,10 @@ export default function AdaptedActivityScreen() {
           }
         } catch (err) { }
 
+        if (!ativo) return;
+
         const hiperfocoLimpo = String(hiperfoco).trim();
         setHiperfocoAluno(hiperfocoLimpo);
-
         const temaCfg = obterTemaGamificado(hiperfocoLimpo);
 
         const respIA = await fetch(`${API_BASE_URL}/ai/adaptar-plano`, {
@@ -591,6 +733,8 @@ export default function AdaptedActivityScreen() {
           }),
         });
         const dataIA = await respIA.json();
+        if (!ativo) return;
+
         setPlanoAdaptado(dataIA.plano_adaptado);
 
         const assetsFinais: string[] =
@@ -616,11 +760,10 @@ export default function AdaptedActivityScreen() {
         let encontrouSubmissao = false;
         if (userId && planoId) {
           try {
-            const respSub = await fetch(
-              `${API_BASE_URL}/activities/resposta?alunoId=${userId}&planoId=${planoId}`
-            );
+            const respSub = await fetch(`${API_BASE_URL}/activities/resposta?alunoId=${userId}&planoId=${planoId}`);
             if (respSub.ok) {
               const dataSub = await respSub.json();
+              if (!ativo) return;
               if (dataSub.ok && dataSub.atividade && Array.isArray(dataSub.atividade.respostas)) {
                 const mapa: Record<number, RespostaRegistrada> = {};
                 dataSub.atividade.respostas.forEach((r: RespostaRegistrada) => {
@@ -639,6 +782,7 @@ export default function AdaptedActivityScreen() {
 
         if (!encontrouSubmissao) {
           const localSalvo = await AsyncStorage.getItem(chaveRespostasSalvas);
+          if (!ativo) return;
           if (localSalvo) {
             const parsed = JSON.parse(localSalvo);
             if (parsed && Object.keys(parsed).length > 0) {
@@ -649,77 +793,31 @@ export default function AdaptedActivityScreen() {
         }
       } catch (e) {
       } finally {
-        setLoading(false);
+        if (ativo) setLoading(false);
       }
     }
-    if (userId) carregarDadosDaAula();
-  }, [userId, planoId, turmaId, materiaId, urlPlanoDeAula, chaveRespostasSalvas]);
 
-  useEffect(() => {
-    if (!loading && !atividadeJaRespondida && etapasFluxo.length > 0 && indicePrimeiraQuestao === 0) {
-      AsyncStorage.getItem(chaveFimAtividade).then((salvo) => {
-        if (!salvo) {
-          const novoFim = Date.now() + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
-          AsyncStorage.setItem(chaveFimAtividade, String(novoFim));
-        }
-      });
-    }
-  }, [loading, atividadeJaRespondida, etapasFluxo, indicePrimeiraQuestao, chaveFimAtividade]);
+    carregarDadosDaAula();
+    return () => {
+      ativo = false;
+    };
+  }, [
+    userId,
+    planoId,
+    turmaId,
+    materiaId,
+    urlPlanoDeAula,
+    chaveRespostasSalvas,
+    verificandoBloqueio,
+    bloqueado,
+  ]);
 
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      navigation.goBack();
-      return true;
-    });
-    return () => sub.remove();
-  }, [navigation]);
-
-  useEffect(() => {
-    if (!bloqueado) return;
-    const int = setInterval(async () => {
-      const bloqueioSalvo = await AsyncStorage.getItem(chaveBloqueio);
-      if (!bloqueioSalvo) {
-        setBloqueado(false);
-        setSegundosBloqueio(0);
-        clearInterval(int);
-        return;
-      }
-      const expiraEm = parseInt(bloqueioSalvo, 10);
-      const restante = Math.max(0, Math.ceil((expiraEm - Date.now()) / 1000));
-      setSegundosBloqueio(restante);
-      if (restante <= 0) {
-        clearInterval(int);
-        await AsyncStorage.removeItem(chaveBloqueio);
-        setBloqueado(false);
-        setEtapaIndex(0);
-        setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
-      }
-    }, 1000);
-    return () => clearInterval(int);
-  }, [bloqueado, chaveBloqueio]);
-
-  useEffect(() => {
-    if (loading || bloqueado || !atividadeEmAndamento) return;
-    const int = setInterval(async () => {
-      const fimSalvo = await AsyncStorage.getItem(chaveFimAtividade);
-      if (!fimSalvo) return;
-      const timestampFim = parseInt(fimSalvo, 10);
-      const restante = Math.max(0, Math.ceil((timestampFim - Date.now()) / 1000));
-      setSegundosRestantes(restante);
-      if (restante <= 0 && !tempoEsgotadoAcionado.current) {
-        tempoEsgotadoAcionado.current = true;
-        clearInterval(int);
-        await ativarBloqueio();
-        setBloqueado(true);
-      }
-    }, 1000);
-    return () => clearInterval(int);
-  }, [loading, bloqueado, atividadeEmAndamento, chaveFimAtividade, ativarBloqueio]);
+  // ---------------------------------------------------------------------------
+  // AÇÕES DA ATIVIDADE
+  // ---------------------------------------------------------------------------
 
   const iniciarCronometroEIrParaQuestoes = async () => {
-    const novoFim = Date.now() + TEMPO_ATIVIDADE_SEGUNDOS * 1000;
-    await AsyncStorage.setItem(chaveFimAtividade, String(novoFim));
-    setSegundosRestantes(TEMPO_ATIVIDADE_SEGUNDOS);
+    await iniciarCronometro();
     setOpcaoSelecionada(null);
     setRespostaDissertativa("");
     setFeedbackExibido(false);
@@ -753,9 +851,7 @@ export default function AdaptedActivityScreen() {
 
     const sl = limparPrefixoOpcao(opcaoSelecionada);
     const cl = limparPrefixoOpcao(q.respostaCorreta || "");
-    const acertou =
-      opcaoSelecionada.trim().toLowerCase() === (q.respostaCorreta || "").trim().toLowerCase() ||
-      sl === cl;
+    const acertou = opcaoSelecionada.trim().toLowerCase() === (q.respostaCorreta || "").trim().toLowerCase() || sl === cl;
 
     const registro: RespostaRegistrada = {
       numeroQuestao: numQ,
@@ -779,8 +875,10 @@ export default function AdaptedActivityScreen() {
       );
       const totalAcertos = listaRespostas.filter((r) => r.acertou).length;
 
-      await AsyncStorage.setItem(chaveRespostasSalvas, JSON.stringify(respostasAluno));
-      await limparSessao();
+      try {
+        await AsyncStorage.setItem(chaveRespostasSalvas, JSON.stringify(respostasAluno));
+      } catch { }
+      await limparSessao(); // para o cronômetro; concluir a atividade NÃO gera cooldown
 
       try {
         await fetch(`${API_BASE_URL}/activities/responder`, {
@@ -816,10 +914,7 @@ export default function AdaptedActivityScreen() {
     if (ehUltimaQuestao) {
       Alert.alert("Finalizar Atividade", "Deseja mesmo enviar suas respostas?", [
         { text: "Revisar", style: "cancel" },
-        {
-          text: "Enviar",
-          onPress: salvarRespostasNoBanco,
-        },
+        { text: "Enviar", onPress: salvarRespostasNoBanco },
       ]);
       return;
     }
@@ -832,19 +927,20 @@ export default function AdaptedActivityScreen() {
     setEtapaIndex(nx);
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+
   const tema = useMemo(() => obterTemaGamificado(hiperfocoAluno), [hiperfocoAluno]);
   const bgUri = bgCustomizado || tema.bgFallback;
   const figuraPrincipal = mascoteCustomizado || tema.mascotFallback;
   const figuraSecundaria = secundarioCustomizado || tema.secondaryMascotFallback;
   const figuraItem = itemCustomizado || tema.itemFallback;
 
-  if (loading) {
+  if (verificandoBloqueio) {
     return (
       <View style={[styles.center, { backgroundColor: "#fff" }]}>
         <ActivityIndicator size="large" color={theme.primaryGreen} />
-        <Text style={{ color: theme.primaryGreen, marginTop: 12, fontWeight: "bold", fontSize: 16 }}>
-          Carregando Atividade...
-        </Text>
       </View>
     );
   }
@@ -870,6 +966,17 @@ export default function AdaptedActivityScreen() {
     );
   }
 
+  if (loading) {
+    return (
+      <View style={[styles.center, { backgroundColor: tema.corFundoSegura }]}>
+        <ActivityIndicator size="large" color={theme.primaryGreen} />
+        <Text style={{ color: theme.primaryGreen, marginTop: 12, fontWeight: "bold", fontSize: 16 }}>
+          Adaptando atividade para {hiperfocoAluno}...
+        </Text>
+      </View>
+    );
+  }
+
   const totalFasesBarra = listaQuestoes.length > 0 ? listaQuestoes.length : 1;
   const faseAtualBarra =
     atividadeConcluida
@@ -884,11 +991,15 @@ export default function AdaptedActivityScreen() {
   const totalAcertos = listaRespostasOrdenadas.filter((r) => r.acertou).length;
 
   return (
-    <ImageBackground source={{ uri: bgUri }} style={styles.container} resizeMode="cover">
+    <ImageBackground
+      source={{ uri: bgUri }}
+      style={[styles.container, { backgroundColor: tema.corFundoSegura }]}
+      resizeMode="cover"
+    >
       <View style={styles.overlayLight} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButtonCircular} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButtonCircular} onPress={handleVoltar}>
           <MaterialIcons name="chevron-left" size={28} color={theme.primaryGreen} />
         </TouchableOpacity>
 
@@ -927,15 +1038,7 @@ export default function AdaptedActivityScreen() {
               <Text style={[styles.cardTitle, { textAlign: "center", fontSize: 22, marginBottom: 6 }]}>
                 Atividade Concluída! 🎉
               </Text>
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: "#555",
-                  marginBottom: 16,
-                  fontSize: 15,
-                  fontWeight: "700",
-                }}
-              >
+              <Text style={{ textAlign: "center", color: "#555", marginBottom: 16, fontSize: 15, fontWeight: "700" }}>
                 Você acertou {totalAcertos} de {listaQuestoes.length} questões
               </Text>
 
@@ -983,14 +1086,7 @@ export default function AdaptedActivityScreen() {
                         size={16}
                         color={acertou ? theme.primaryGreen : "#E53935"}
                       />
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "800",
-                          color: acertou ? theme.primaryGreen : "#E53935",
-                          marginLeft: 4,
-                        }}
-                      >
+                      <Text style={{ fontSize: 12, fontWeight: "800", color: acertou ? theme.primaryGreen : "#E53935", marginLeft: 4 }}>
                         {acertou ? "Acertou" : "Errou"}
                       </Text>
                     </View>
@@ -1010,13 +1106,8 @@ export default function AdaptedActivityScreen() {
                     ]}
                   >
                     <Text style={styles.reviewAnswerLabel}>Sua resposta:</Text>
-                    <Text
-                      style={[
-                        styles.reviewAnswerValue,
-                        { color: acertou ? theme.primaryGreen : "#E53935" },
-                      ]}
-                    >
-                      {RegExp("^\\d+$").test(textoRespAluno) && ehQuestaoMatematica
+                    <Text style={[styles.reviewAnswerValue, { color: acertou ? theme.primaryGreen : "#E53935" }]}>
+                      {/^\d+$/.test(textoRespAluno) && ehQuestaoMatematica
                         ? `${textoRespAluno} ${tema.nomeItemContagem}`
                         : textoRespAluno}
                     </Text>
@@ -1026,7 +1117,7 @@ export default function AdaptedActivityScreen() {
                     <View style={styles.reviewCorrectBox}>
                       <Text style={styles.reviewAnswerLabel}>Resposta correta:</Text>
                       <Text style={[styles.reviewAnswerValue, { color: theme.primaryGreen }]}>
-                        {RegExp("^\\d+$").test(textoRespCorreta) && ehQuestaoMatematica
+                        {/^\d+$/.test(textoRespCorreta) && ehQuestaoMatematica
                           ? `${textoRespCorreta} ${tema.nomeItemContagem}`
                           : textoRespCorreta}
                       </Text>
@@ -1052,12 +1143,7 @@ export default function AdaptedActivityScreen() {
                 <Image source={{ uri: figuraPrincipal }} style={styles.bannerIcon} resizeMode="contain" />
                 <View style={styles.timelineContainer}>
                   <View style={styles.timelineLine} />
-                  <MaterialIcons
-                    name="arrow-forward"
-                    size={24}
-                    color={theme.primaryGreen}
-                    style={{ marginLeft: -8 }}
-                  />
+                  <MaterialIcons name="arrow-forward" size={24} color={theme.primaryGreen} style={{ marginLeft: -8 }} />
                 </View>
                 <Image source={{ uri: figuraItem }} style={styles.bannerIcon} resizeMode="contain" />
               </View>
@@ -1073,9 +1159,7 @@ export default function AdaptedActivityScreen() {
 
               <TouchableOpacity
                 style={styles.mainActionButton}
-                onPress={() =>
-                  topicosExemplo.length > 0 ? setEtapaIndex(1) : iniciarCronometroEIrParaQuestoes()
-                }
+                onPress={() => (topicosExemplo.length > 0 ? setEtapaIndex(1) : iniciarCronometroEIrParaQuestoes())}
               >
                 <Text style={styles.mainActionButtonText}>Continuar</Text>
               </TouchableOpacity>
@@ -1087,6 +1171,15 @@ export default function AdaptedActivityScreen() {
               <Text style={styles.phaseLabel}>EXEMPLO PRÁTICO</Text>
               <Text style={styles.cardTitle}>Veja como é fácil</Text>
 
+              <View style={styles.visualBanner}>
+                <Image source={{ uri: figuraPrincipal }} style={styles.bannerIcon} resizeMode="contain" />
+                <View style={styles.timelineContainer}>
+                  <View style={styles.timelineLine} />
+                  <MaterialIcons name="auto-awesome" size={22} color={theme.primaryGreen} style={{ marginLeft: -6 }} />
+                </View>
+                <Image source={{ uri: figuraSecundaria }} style={styles.bannerIcon} resizeMode="contain" />
+              </View>
+
               {topicosExemplo.map((e: any, i: number) => (
                 <View key={i} style={{ marginBottom: 16 }}>
                   <Text style={styles.topicTitle}>{e.titulo || "Passo a Passo"}</Text>
@@ -1096,10 +1189,7 @@ export default function AdaptedActivityScreen() {
                 </View>
               ))}
 
-              <TouchableOpacity
-                style={styles.mainActionButton}
-                onPress={iniciarCronometroEIrParaQuestoes}
-              >
+              <TouchableOpacity style={styles.mainActionButton} onPress={iniciarCronometroEIrParaQuestoes}>
                 <Text style={styles.mainActionButtonText}>Ir para Atividade</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1139,12 +1229,7 @@ export default function AdaptedActivityScreen() {
                       <View style={styles.timelineTick} />
                       <View style={styles.timelineTick} />
                     </View>
-                    <MaterialIcons
-                      name="play-arrow"
-                      size={26}
-                      color={theme.primaryGreen}
-                      style={{ marginLeft: -10 }}
-                    />
+                    <MaterialIcons name="play-arrow" size={26} color={theme.primaryGreen} style={{ marginLeft: -10 }} />
                   </View>
 
                   <Image source={{ uri: figuraSecundaria }} style={styles.bannerIcon} resizeMode="contain" />
@@ -1171,10 +1256,7 @@ export default function AdaptedActivityScreen() {
                   const isSelected = opcaoSelecionada === alt;
                   const respLimpa = limparPrefixoOpcao(questaoAtual?.respostaCorreta || "");
                   const altLimpa = limparPrefixoOpcao(alt);
-                  const ehCorreta =
-                    alt.trim().toLowerCase() ===
-                    (questaoAtual?.respostaCorreta || "").trim().toLowerCase() ||
-                    altLimpa === respLimpa;
+                  const ehCorreta = alt.trim().toLowerCase() === (questaoAtual?.respostaCorreta || "").trim().toLowerCase() || altLimpa === respLimpa;
 
                   let boxStyle: any = styles.radioBox;
                   let dotStyle: any = styles.radioDotEmpty;
@@ -1184,21 +1266,15 @@ export default function AdaptedActivityScreen() {
                     dotStyle = styles.radioDotFilled;
                   } else if (feedbackExibido) {
                     if (ehCorreta) {
-                      boxStyle = [
-                        styles.radioBox,
-                        { borderColor: theme.primaryGreen, backgroundColor: "#E7F8EA" },
-                      ];
+                      boxStyle = [styles.radioBox, { borderColor: theme.primaryGreen, backgroundColor: "#E7F8EA" }];
                       dotStyle = styles.radioDotFilled;
                     } else if (isSelected && !ehCorreta) {
-                      boxStyle = [
-                        styles.radioBox,
-                        { borderColor: "#E53935", backgroundColor: "#FFEBEE" },
-                      ];
+                      boxStyle = [styles.radioBox, { borderColor: "#E53935", backgroundColor: "#FFEBEE" }];
                       dotStyle = [styles.radioDotEmpty, { borderColor: "#E53935" }];
                     }
                   }
 
-                  const textoExibicao = RegExp("^\\d+$").test(alt.trim())
+                  const textoExibicao = /^\d+$/.test(alt.trim())
                     ? `${alt.trim()} ${tema.nomeItemContagem}`
                     : alt;
 
@@ -1220,17 +1296,7 @@ export default function AdaptedActivityScreen() {
 
             {feedbackExibido && (
               <View style={[styles.mainCard, { marginTop: 4, padding: 16 }]}>
-                <Text
-                  style={[
-                    styles.cardTitle,
-                    {
-                      color: acertouQuestao ? theme.primaryGreen : "#E53935",
-                      marginBottom: 0,
-                      fontSize: 17,
-                      textAlign: "center",
-                    },
-                  ]}
-                >
+                <Text style={[styles.cardTitle, { color: acertouQuestao ? theme.primaryGreen : "#E53935", marginBottom: 0, fontSize: 17, textAlign: "center" }]}>
                   {ehDissertativa
                     ? "Muito bem! Resposta registrada! 🌟"
                     : acertouQuestao
@@ -1243,30 +1309,17 @@ export default function AdaptedActivityScreen() {
             <TouchableOpacity
               style={[
                 styles.mainActionButton,
-                ((!opcaoSelecionada && !ehDissertativa) ||
-                  (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
-                  !feedbackExibido
-                  ? { opacity: 0.55 }
-                  : {},
+                ((!opcaoSelecionada && !ehDissertativa) || (ehDissertativa && respostaDissertativa.trim().length < 2)) && !feedbackExibido ? { opacity: 0.55 } : {},
               ]}
               activeOpacity={0.8}
-              disabled={
-                salvandoRespostas ||
-                (((!opcaoSelecionada && !ehDissertativa) ||
-                  (ehDissertativa && respostaDissertativa.trim().length < 2)) &&
-                  !feedbackExibido)
-              }
+              disabled={salvandoRespostas || (((!opcaoSelecionada && !ehDissertativa) || (ehDissertativa && respostaDissertativa.trim().length < 2)) && !feedbackExibido)}
               onPress={feedbackExibido ? handleProximaQuestao : confirmarResposta}
             >
               {salvandoRespostas ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.mainActionButtonText}>
-                  {feedbackExibido
-                    ? etapaAtual.numeroQuestao === etapaAtual.totalQuestoes
-                      ? "Finalizar Atividade"
-                      : "Próxima Pergunta"
-                    : "Enviar resposta"}
+                  {feedbackExibido ? (etapaAtual.numeroQuestao === etapaAtual.totalQuestoes ? "Finalizar Atividade" : "Próxima Pergunta") : "Enviar resposta"}
                 </Text>
               )}
             </TouchableOpacity>
@@ -1280,352 +1333,52 @@ export default function AdaptedActivityScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { flex: 1, width: "100%", height: "100%" },
-  overlayLight: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.38)",
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 50,
-    paddingBottom: 10,
-    zIndex: 10,
-  },
-  backButtonCircular: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  materiaTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-  },
-  timerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 3,
-  },
-  completedBadgeHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E7F8EA",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-  },
-  timerText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: theme.primaryGreen,
-    marginLeft: 6,
-  },
-
-  dotsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 24,
-    marginTop: 10,
-    marginBottom: 16,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: theme.primaryGreen,
-  },
-
-  contentWrapper: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-
-  mainCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 22,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    marginBottom: 18,
-  },
-  phaseLabel: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: theme.textColor,
-    marginBottom: 14,
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.textColor,
-    lineHeight: 23,
-    marginBottom: 18,
-  },
-
-  visualBanner: {
-    backgroundColor: theme.lightGreen,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-
-  mathGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    elevation: 1,
-  },
-  mathNumberText: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginRight: 6,
-  },
-  mathFigure: {
-    width: 48,
-    height: 48,
-  },
-  mathOperatorText: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginHorizontal: 6,
-  },
-
-  bannerIcon: {
-    width: 68,
-    height: 68,
-  },
-  timelineContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  timelineLine: {
-    height: 3,
-    backgroundColor: theme.primaryGreen,
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-  },
-  timelineTick: {
-    width: 3,
-    height: 12,
-    backgroundColor: theme.primaryGreen,
-  },
-
-  optionsContainer: {
-    gap: 12,
-    marginBottom: 18,
-  },
-  radioBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  radioBoxSelected: {
-    borderColor: theme.primaryGreen,
-  },
-  radioDotEmpty: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: theme.radioBorder,
-    marginRight: 14,
-  },
-  radioDotFilled: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 7,
-    borderColor: theme.primaryGreen,
-    marginRight: 14,
-  },
-  radioText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.textColor,
-    flex: 1,
-  },
-
-  dissertativeWrapper: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-  },
-  dissertativaLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginBottom: 8,
-  },
-  dissertativaInput: {
-    height: 110,
-    textAlignVertical: "top",
-    fontSize: 15,
-    fontWeight: "600",
-    color: theme.textColor,
-    backgroundColor: "#F9FBFB",
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#D0E0DC",
-  },
-
-  mainActionButton: {
-    backgroundColor: theme.primaryGreen,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 4,
-    marginTop: 6,
-  },
-  mainActionButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-
-  topicTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginBottom: 6,
-  },
-  topicBody: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: theme.textColor,
-    lineHeight: 22,
-  },
-
-  blockTimerBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.lightGreen,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-  blockTimerText: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginLeft: 10,
-  },
-
-  reviewSectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-    marginBottom: 12,
-  },
-  reviewCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 14,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-  },
-  reviewHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  reviewQuestionNumber: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: theme.primaryGreen,
-  },
-  reviewStatusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  reviewQuestionText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: theme.textColor,
-    lineHeight: 21,
-    marginBottom: 12,
-  },
-  reviewAnswerBox: {
-    borderWidth: 1.5,
-    borderRadius: 10,
-    padding: 12,
-  },
-  reviewCorrectBox: {
-    marginTop: 8,
-    backgroundColor: "#E7F8EA",
-    borderRadius: 10,
-    padding: 12,
-  },
-  reviewAnswerLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#666",
-    marginBottom: 2,
-  },
-  reviewAnswerValue: {
-    fontSize: 15,
-    fontWeight: "900",
-  },
+  overlayLight: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255, 255, 255, 0.38)" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 50, paddingBottom: 10, zIndex: 10 },
+  backButtonCircular: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 },
+  materiaTitle: { fontSize: 22, fontWeight: "900", color: theme.primaryGreen },
+  timerBadge: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, elevation: 3 },
+  completedBadgeHeader: { flexDirection: "row", alignItems: "center", backgroundColor: "#E7F8EA", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, elevation: 2 },
+  timerText: { fontSize: 13, fontWeight: "800", color: theme.primaryGreen, marginLeft: 6 },
+  dotsContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 6, paddingHorizontal: 24, marginTop: 10, marginBottom: 16 },
+  dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: theme.primaryGreen },
+  contentWrapper: { flex: 1, paddingHorizontal: 24 },
+  mainCard: { backgroundColor: "#fff", borderRadius: 16, padding: 22, elevation: 4, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, marginBottom: 18 },
+  phaseLabel: { fontSize: 13, fontWeight: "900", color: theme.primaryGreen, marginBottom: 12, letterSpacing: 0.5 },
+  cardTitle: { fontSize: 20, fontWeight: "900", color: theme.textColor, marginBottom: 14 },
+  questionText: { fontSize: 16, fontWeight: "800", color: theme.textColor, lineHeight: 23, marginBottom: 18 },
+  visualBanner: { backgroundColor: theme.lightGreen, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", paddingVertical: 20, paddingHorizontal: 12, marginBottom: 16 },
+  mathGroup: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, elevation: 1 },
+  mathNumberText: { fontSize: 30, fontWeight: "900", color: theme.primaryGreen, marginRight: 6 },
+  mathFigure: { width: 48, height: 48 },
+  mathOperatorText: { fontSize: 32, fontWeight: "900", color: theme.primaryGreen, marginHorizontal: 6 },
+  bannerIcon: { width: 68, height: 68 },
+  timelineContainer: { flexDirection: "row", alignItems: "center", justifyContent: "center", flex: 1, marginHorizontal: 10 },
+  timelineLine: { height: 3, backgroundColor: theme.primaryGreen, flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center" },
+  timelineTick: { width: 3, height: 12, backgroundColor: theme.primaryGreen },
+  optionsContainer: { gap: 12, marginBottom: 18 },
+  radioBox: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 12, paddingVertical: 16, paddingHorizontal: 18, elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, borderWidth: 2, borderColor: "transparent" },
+  radioBoxSelected: { borderColor: theme.primaryGreen },
+  radioDotEmpty: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: theme.radioBorder, marginRight: 14 },
+  radioDotFilled: { width: 22, height: 22, borderRadius: 11, borderWidth: 7, borderColor: theme.primaryGreen, marginRight: 14 },
+  radioText: { fontSize: 16, fontWeight: "800", color: theme.textColor, flex: 1 },
+  dissertativeWrapper: { backgroundColor: "#fff", borderRadius: 12, padding: 16, elevation: 2 },
+  dissertativaLabel: { fontSize: 12, fontWeight: "900", color: theme.primaryGreen, marginBottom: 8 },
+  dissertativaInput: { height: 110, textAlignVertical: "top", fontSize: 15, fontWeight: "600", color: theme.textColor, backgroundColor: "#F9FBFB", borderRadius: 8, padding: 12, borderWidth: 1, borderColor: "#D0E0DC" },
+  mainActionButton: { backgroundColor: theme.primaryGreen, borderRadius: 12, paddingVertical: 16, alignItems: "center", justifyContent: "center", elevation: 4, marginTop: 6 },
+  mainActionButtonText: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  topicTitle: { fontSize: 16, fontWeight: "900", color: theme.primaryGreen, marginBottom: 6 },
+  topicBody: { fontSize: 15, fontWeight: "600", color: theme.textColor, lineHeight: 22 },
+  blockTimerBox: { flexDirection: "row", alignItems: "center", backgroundColor: theme.lightGreen, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, marginBottom: 24 },
+  blockTimerText: { fontSize: 24, fontWeight: "900", color: theme.primaryGreen, marginLeft: 10 },
+  reviewSectionTitle: { fontSize: 18, fontWeight: "900", color: theme.primaryGreen, marginBottom: 12 },
+  reviewCard: { backgroundColor: "#fff", borderRadius: 14, padding: 18, marginBottom: 14, elevation: 3, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4 },
+  reviewHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  reviewQuestionNumber: { fontSize: 12, fontWeight: "900", color: theme.primaryGreen },
+  reviewStatusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  reviewQuestionText: { fontSize: 15, fontWeight: "700", color: theme.textColor, lineHeight: 21, marginBottom: 12 },
+  reviewAnswerBox: { borderWidth: 1.5, borderRadius: 10, padding: 12 },
+  reviewCorrectBox: { marginTop: 8, backgroundColor: "#E7F8EA", borderRadius: 10, padding: 12 },
+  reviewAnswerLabel: { fontSize: 11, fontWeight: "800", color: "#666", marginBottom: 2 },
+  reviewAnswerValue: { fontSize: 15, fontWeight: "900" },
 });

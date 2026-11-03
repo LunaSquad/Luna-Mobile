@@ -50,10 +50,11 @@ Você é um especialista em neuroeducação e gamificação para estudantes com 
 O aluno possui o hiperfoco estrito em: "{hiperfoco}".
 
 REGRAS OBRIGATÓRIAS DE ADAPTAÇÃO:
-1. TODAS as explicações, exemplos, enunciados de questões e historietas DEVEM ser ambientadas exclusivamente no universo de "{hiperfoco}". 
-   - NUNCA mencione animais ou elementos fora do hiperfoco (por exemplo, se o hiperfoco for Dinossauros, NUNCA cite mamutes, tigres dente-de-sabre ou eras glaciais; cite T-Rex, Triceratops, ovos de dinossauro e a Era Jurássica).
+1. TODAS as explicações, exemplos e historietas DEVEM ser ambientadas exclusivamente no universo de "{hiperfoco}". 
+   - NUNCA mencione animais ou elementos fora do hiperfoco.
 2. Textos claros, sem quebras bruscas ou frases cortadas ("..."). Cada frase deve ser completa e envolvente.
-3. Crie questões objetivas com 3 ou 4 alternativas numéricas ou curtas para facilitar o jogo no celular.
+3. SE A QUESTÃO ORIGINAL TIVER ALTERNATIVAS, mantenha-as e adapte o texto (tipo "objetiva"). 
+4. SE A QUESTÃO ORIGINAL FOR ABERTA OU NÃO TIVER ALTERNATIVAS, NÃO INVENTE ALTERNATIVAS. Defina o tipo como "dissertativa" e deixe a lista de alternativas VAZIA ([]).
 
 Retorne APENAS um JSON válido (sem markdown, sem blocos de código) seguindo estritamente esta estrutura:
 {{
@@ -85,11 +86,11 @@ Retorne APENAS um JSON válido (sem markdown, sem blocos de código) seguindo es
       "conteudoAdaptado": "Instrução clara",
       "questoes": [
         {{
-          "tipo": "objetiva | dissertativa",
+          "tipo": "objetiva ou dissertativa",
           "pergunta": "Enunciado completo, sem cortes, usando estritamente elementos de {hiperfoco}",
           "dicaTDAH": "Dica rápida para ajudar o aluno",
           "respostaCorreta": "Resposta correta exata",
-          "alternativas": ["opção 1", "opção 2", "opção 3"]
+          "alternativas": ["opção 1", "opção 2"]
         }}
       ]
     }}
@@ -111,21 +112,6 @@ PLANO DE AULA ORIGINAL:
         raise ValueError(f"Resposta inválida da IA:\n{texto}") from e
 
     return normalizar_plano_adaptado(plano_adaptado, hiperfoco)
-
-
-def gerar_alternativas_numericas(valor_correto: int) -> list[str]:
-    opcoes = {valor_correto}
-    candidatos = [
-        max(0, valor_correto - 1),
-        valor_correto + 1,
-        valor_correto + 2,
-        max(1, valor_correto - 2),
-        valor_correto + 3,
-    ]
-    for c in candidatos:
-        if len(opcoes) < 3:
-            opcoes.add(c)
-    return [str(x) for x in sorted(opcoes)]
 
 
 def normalizar_plano_adaptado(
@@ -201,22 +187,12 @@ def normalizar_plano_adaptado(
             alternativas = [str(a).strip() for a in alternativas if str(a).strip()]
 
             tipo = str(q.get("tipo") or "").strip().lower()
-            eh_conta = bool(re.search(r"\d+\s*[\+\-\*\/x÷]", pergunta))
-
-            if eh_conta and len(alternativas) == 0:
-                numeros_conta = [int(n) for n in re.findall(r"\d+", pergunta)]
-                if not resposta and len(numeros_conta) >= 2:
-                    resposta = str(numeros_conta[0] + numeros_conta[1])
-                try:
-                    val_num = int(re.findall(r"\d+", resposta)[0])
-                    alternativas = gerar_alternativas_numericas(val_num)
-                    resposta = str(val_num)
-                    tipo = "objetiva"
-                except Exception:
-                    pass
 
             if tipo not in ["objetiva", "dissertativa"]:
                 tipo = "objetiva" if len(alternativas) > 0 else "dissertativa"
+
+            if tipo == "dissertativa":
+                alternativas = []
 
             item_questao = {
                 "tituloAtividade": titulo_atv,
