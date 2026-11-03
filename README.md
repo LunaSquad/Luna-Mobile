@@ -128,10 +128,6 @@ npm run dev
 
 ---
 
-# 📸 Telas do aplicativo
-
----
-
 # 🎓 Objetivo acadêmico
 
 O projeto foi desenvolvido como parte do **Projeto Integrador** do curso de Desenvolvimento de Software Multiplataforma da FATEC Registro.
